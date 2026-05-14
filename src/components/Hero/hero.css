@@ -119,6 +119,10 @@
   display: block;
   width: 100% !important;
   height: 100% !important;
+  /* Fade the canvas to transparent at the edges so the orrery blends into
+     the background instead of having a hard rectangular cut-off line. */
+  -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 45%, rgba(0, 0, 0, 0.85) 65%, transparent 88%);
+  mask-image: radial-gradient(ellipse at 50% 50%, #000 45%, rgba(0, 0, 0, 0.85) 65%, transparent 88%);
 }
 /* Loading state — shown while the Three.js bundle streams in */
 .wireframe-core-loading {
@@ -142,38 +146,28 @@
 
 .wireframe-halo {
   position: absolute;
-  inset: -10%;
+  inset: -25%;            /* extend further so the glow bleeds into the background */
   border-radius: 50%;
   background:
-    radial-gradient(circle at 50% 50%, rgba(127, 209, 211, 0.25) 0%, rgba(127, 209, 211, 0) 40%),
-    radial-gradient(circle at 50% 50%, rgba(255, 192, 0, 0.10) 0%, rgba(255, 192, 0, 0) 60%);
+    radial-gradient(circle at 50% 50%, rgba(127, 209, 211, 0.32) 0%, rgba(127, 209, 211, 0) 40%),
+    radial-gradient(circle at 50% 50%, rgba(255, 192, 0, 0.12) 0%, rgba(255, 192, 0, 0) 60%);
   pointer-events: none;
   z-index: -1;
-  filter: blur(20px);
+  filter: blur(28px);
 }
 
-/* HUD overlay — corner brackets + crosshair guides + mono readouts.
-   Renders inside .wireframe-core, on top of the canvas. Pure CSS. */
+/* HUD overlay — soft crosshair guides only. Corner brackets and mono
+   readouts removed because they collided with the orbital nav labels
+   pinned to the same corners of the .wireframe-core area. */
 .hud {
   position: absolute;
-  inset: 8%;
+  inset: 18%;
   pointer-events: none;
   z-index: 2;
 }
-.hud-corner {
-  position: absolute;
-  width: 22px;
-  height: 22px;
-  border-color: rgba(127, 209, 211, 0.55);
-}
-.hud-corner.hud-tl { top: 0; left: 0; border-top: 1px solid; border-left: 1px solid; }
-.hud-corner.hud-tr { top: 0; right: 0; border-top: 1px solid; border-right: 1px solid; }
-.hud-corner.hud-bl { bottom: 0; left: 0; border-bottom: 1px solid; border-left: 1px solid; }
-.hud-corner.hud-br { bottom: 0; right: 0; border-bottom: 1px solid; border-right: 1px solid; }
-
 .hud-cross {
   position: absolute;
-  background: linear-gradient(to right, transparent, rgba(127, 209, 211, 0.18) 40%, rgba(127, 209, 211, 0.18) 60%, transparent);
+  background: linear-gradient(to right, transparent, rgba(127, 209, 211, 0.14) 40%, rgba(127, 209, 211, 0.14) 60%, transparent);
 }
 .hud-cross.hud-cross-h {
   left: 0; right: 0;
@@ -186,18 +180,8 @@
   left: 50%;
   width: 1px;
   transform: translateX(-50%);
-  background: linear-gradient(to bottom, transparent, rgba(127, 209, 211, 0.18) 40%, rgba(127, 209, 211, 0.18) 60%, transparent);
+  background: linear-gradient(to bottom, transparent, rgba(127, 209, 211, 0.14) 40%, rgba(127, 209, 211, 0.14) 60%, transparent);
 }
-
-.hud-readout {
-  position: absolute;
-  font-size: 0.6rem;
-  letter-spacing: 0.2em;
-  color: rgba(127, 209, 211, 0.7);
-  text-shadow: 0 0 6px rgba(127, 209, 211, 0.4);
-}
-.hud-readout-tl { top: -18px; left: 0; }
-.hud-readout-br { bottom: -18px; right: 0; }
 
 .hero-scroll-hint {
   position: absolute;

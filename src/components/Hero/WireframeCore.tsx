@@ -167,16 +167,12 @@ export function WireframeCore() {
         <Orrery />
       </Canvas>
 
-      {/* HUD overlay — corner brackets + crosshairs + mono readouts */}
+      {/* HUD overlay — only the soft crosshair grid through the canvas.
+          Corner brackets + readouts removed because they collided with the
+          orbital nav labels at the same corners. */}
       <div className="hud" aria-hidden>
-        <span className="hud-corner hud-tl" />
-        <span className="hud-corner hud-tr" />
-        <span className="hud-corner hud-bl" />
-        <span className="hud-corner hud-br" />
         <span className="hud-cross hud-cross-h" />
         <span className="hud-cross hud-cross-v" />
-        <span className="hud-readout hud-readout-tl mono">LOCK · 087.42</span>
-        <span className="hud-readout hud-readout-br mono">SYS · NOMINAL</span>
       </div>
 
       <div className="wireframe-halo" aria-hidden />
