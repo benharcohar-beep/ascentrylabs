@@ -30,6 +30,9 @@ export function BootSequence() {
   useEffect(() => {
     // Honor reduced motion + don't replay within a session
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // Don't run boot if the tab is hidden on first paint — rAF is throttled
+    // and the boot would stall on screen until the tab is foregrounded
+    if (document.hidden) return;
     try {
       if (sessionStorage.getItem(SS_KEY)) return;
       sessionStorage.setItem(SS_KEY, "1");
