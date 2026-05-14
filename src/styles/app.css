@@ -1,0 +1,11 @@
+/* Layer content above the fixed background */
+.app-content {
+  position: relative;
+  z-index: 1;
+}
+
+main { display: block; }
+
+/* Smooth scroll for anchor jumps */
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }

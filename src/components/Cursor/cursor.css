@@ -1,0 +1,59 @@
+.cursor-dot, .cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 9999;
+  will-change: transform;
+}
+
+.cursor-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(127, 209, 211, 0.9), 0 0 32px rgba(127, 209, 211, 0.4);
+  mix-blend-mode: screen;
+  transition: opacity 0.2s ease;
+}
+
+.cursor-ring {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(127, 209, 211, 0.55);
+  background: transparent;
+  transition: width 0.25s var(--ease-out-quart), height 0.25s var(--ease-out-quart),
+              border-color 0.25s var(--ease-out-quart), background 0.25s var(--ease-out-quart),
+              opacity 0.2s ease;
+  box-shadow: 0 0 0 1px rgba(3, 3, 10, 0.6) inset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cursor-ring.is-hover {
+  width: 56px;
+  height: 56px;
+  border-color: rgba(174, 245, 248, 0.9);
+  background: rgba(127, 209, 211, 0.06);
+}
+
+.cursor-ring.is-down {
+  width: 26px;
+  height: 26px;
+  border-color: var(--accent-hot);
+}
+
+/* Reticle ticks (the four little nubs at N/E/S/W) */
+.cursor-tick {
+  position: absolute;
+  background: var(--accent);
+  width: 1px;
+  height: 4px;
+  opacity: 0.85;
+}
+.cursor-tick.t { top: -2px; left: 50%; transform: translateX(-50%); }
+.cursor-tick.b { bottom: -2px; left: 50%; transform: translateX(-50%); }
+.cursor-tick.l { left: -2px; top: 50%; width: 4px; height: 1px; transform: translateY(-50%); }
+.cursor-tick.r { right: -2px; top: 50%; width: 4px; height: 1px; transform: translateY(-50%); }

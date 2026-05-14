@@ -1,0 +1,94 @@
+.about-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 4rem;
+}
+
+.about-stat {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  background: var(--glass-bg);
+  cursor: default;
+}
+.about-stat-num {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.about-stat-label {
+  font-size: 0.85rem;
+  color: var(--fg-1);
+  letter-spacing: 0.02em;
+}
+
+.about-resume {
+  position: relative;
+  padding: 32px 0 0 56px;
+}
+.about-resume-line {
+  position: absolute;
+  left: 28px;
+  top: 32px;
+  bottom: 16px;
+  width: 1px;
+  background: linear-gradient(to bottom, var(--accent), transparent 95%);
+  opacity: 0.5;
+}
+
+.about-resume-item {
+  position: relative;
+  padding: 24px 0 28px;
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.about-resume-marker {
+  position: absolute;
+  left: -36px;
+  top: 32px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--bg-0);
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 12px rgba(127, 209, 211, 0.7);
+}
+.about-resume-period {
+  color: var(--accent);
+  letter-spacing: 0.18em;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  padding-top: 6px;
+}
+.about-resume-role {
+  font-size: 1.15rem;
+  color: var(--fg-0);
+  margin-bottom: 4px;
+}
+.about-resume-org {
+  font-size: 0.78rem;
+  color: var(--fg-2);
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+.about-resume-note {
+  font-size: 0.92rem;
+  color: var(--fg-1);
+  line-height: 1.6;
+  max-width: 64ch;
+}
+
+@media (max-width: 880px) {
+  .about-grid { grid-template-columns: repeat(2, 1fr); }
+  .about-resume { padding-left: 36px; }
+  .about-resume-line { left: 14px; }
+  .about-resume-marker { left: -28px; }
+  .about-resume-item { grid-template-columns: 1fr; gap: 8px; }
+}

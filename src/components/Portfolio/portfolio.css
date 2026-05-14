@@ -1,0 +1,126 @@
+.port-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 2.5rem;
+}
+.port-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--line-0);
+  border-radius: 999px;
+  background: rgba(245, 247, 255, 0.02);
+  color: var(--fg-2);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-family: var(--font-display);
+  transition: border-color 0.25s var(--ease-out-quart), color 0.25s var(--ease-out-quart), background 0.25s var(--ease-out-quart);
+}
+.port-tab:hover {
+  border-color: var(--line-2);
+  color: var(--fg-0);
+}
+.port-tab.is-active {
+  background: rgba(127, 209, 211, 0.06);
+}
+.port-tab-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.port-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 22px;
+}
+
+.port-card {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 360px;
+  position: relative;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  cursor: default;
+}
+.port-card.is-featured {
+  background: linear-gradient(135deg, rgba(127, 209, 211, 0.06), rgba(13, 13, 42, 0.7));
+  border-color: rgba(127, 209, 211, 0.28);
+}
+
+.port-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.port-card-code {
+  color: var(--fg-3);
+  letter-spacing: 0.15em;
+}
+.port-card-cat {
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+}
+
+.port-card-client {
+  color: var(--fg-2);
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+}
+
+.port-card-title {
+  font-size: 1.4rem;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--fg-0);
+}
+
+.port-card-desc {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--fg-1);
+  flex: 1;
+}
+
+.port-card-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line-0);
+  border-bottom: 1px solid var(--line-0);
+}
+.port-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+  color: var(--fg-0);
+}
+
+.port-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.port-tag {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  background: rgba(245, 247, 255, 0.04);
+  border: 1px solid var(--line-0);
+  color: var(--fg-1);
+}
+
+@media (max-width: 880px) {
+  .port-grid { grid-template-columns: 1fr; }
+  .port-card { min-height: auto; padding: 22px; }
+  .port-card-metrics { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+}
