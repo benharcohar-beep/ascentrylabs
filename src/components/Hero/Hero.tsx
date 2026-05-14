@@ -1,13 +1,11 @@
-import { lazy, Suspense } from "react";
-import { motion } from "framer-motion";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { ScrambleText } from "../ui/ScrambleText";
 import { MagneticButton } from "../ui/MagneticButton";
 import { ArrowUpRight, ArrowRight } from "lucide-react";
 import "./hero.css";
 
 // Three.js + R3F is ~800KB. Lazy-load it so first paint isn't blocked on
-// the WebGL canvas — the hero still has plenty of content to read while
-// the core warms up. The CoreFallback below holds the layout space.
+// the WebGL canvas.
 const WireframeCore = lazy(() =>
   import("./WireframeCore").then((m) => ({ default: m.WireframeCore }))
 );
@@ -21,49 +19,66 @@ function CoreFallback() {
   );
 }
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.7, delay: 0.1 + i * 0.12, ease: [0.22, 1, 0.36, 1] as const },
-  }),
-};
-
 export function Hero() {
+  // If the page is hidden on first render (background tab / headless),
+  // skip entrance animations so content shows in its final state.
+  // Real users with focused tabs get the staggered fade-up.
+  const [skipAnim] = useState(() =>
+    typeof document !== "undefined" && document.hidden
+  );
+
+  // When a backgrounded tab returns to foreground, force-finish entrance
+  // animations by toggling a class — covers the edge case where rAF was
+  // throttled before any frame fired.
+  const [revealReady, setRevealReady] = useState(true);
+  useEffect(() => {
+    if (!skipAnim) return;
+    setRevealReady(false);
+    const onVis = () => {
+      if (!document.hidden) {
+        setRevealReady(true);
+        document.removeEventListener("visibilitychange", onVis);
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [skipAnim]);
+
+  const animClass = skipAnim ? "no-anim" : "";
+
   return (
-    <section className="hero" id="top">
+    <section className={`hero ${animClass} ${revealReady ? "" : "is-pre"}`} id="top">
       <div className="container hero-inner">
         <div className="hero-left">
-          <motion.div className="eyebrow" variants={fadeUp} initial="hidden" animate="visible" custom={0}>
+          <div className="eyebrow hero-reveal" style={{ animationDelay: "0.1s" }}>
             <span className="mono">ASCENTRY OS · v2.0 · ONLINE</span>
-          </motion.div>
+          </div>
 
           <h1 className="hero-title">
-            <motion.span className="hero-title-line" variants={fadeUp} initial="hidden" animate="visible" custom={1}>
+            <span className="hero-title-line hero-reveal" style={{ animationDelay: "0.22s" }}>
               <ScrambleText text="Bring your company" durationMs={1100} />
-            </motion.span>
-            <motion.span className="hero-title-line" variants={fadeUp} initial="hidden" animate="visible" custom={2}>
+            </span>
+            <span className="hero-title-line hero-reveal" style={{ animationDelay: "0.34s" }}>
               <ScrambleText text="into the era of " durationMs={1300} delayMs={200} />
               <span className="hero-accent">
                 <ScrambleText text="AI." durationMs={900} delayMs={1100} />
               </span>
-            </motion.span>
+            </span>
           </h1>
 
-          <motion.p className="hero-sub" variants={fadeUp} initial="hidden" animate="visible" custom={3}>
+          <p className="hero-sub hero-reveal" style={{ animationDelay: "0.46s" }}>
             Fragmented ERPs and data providers, hours lost to Excel wrangling, no real-time view of performance,
             and a creeping sense of falling behind: most companies know they need AI but don't know where to start.
-          </motion.p>
+          </p>
 
-          <motion.p className="hero-sub" variants={fadeUp} initial="hidden" animate="visible" custom={4}>
+          <p className="hero-sub hero-reveal" style={{ animationDelay: "0.58s" }}>
             Ascentry Labs closes that gap. Founded by <strong>Hunter Sandidge</strong> — the engineer behind the
             AI and analytics ecosystem that monitors life support on the International Space Station, father of the
             AI copilot for the xEVAS spacesuit, and smart-factory and digital transformation lead at a Fortune&nbsp;100 —
             Ascentry Labs translates the noise around AI into systems that actually run your operation.
-          </motion.p>
+          </p>
 
-          <motion.div className="hero-cta" variants={fadeUp} initial="hidden" animate="visible" custom={5}>
+          <div className="hero-cta hero-reveal" style={{ animationDelay: "0.7s" }}>
             <MagneticButton href="#consult" className="btn btn-primary">
               Free 30-min Consultation
               <ArrowUpRight size={16} className="arrow" />
@@ -72,9 +87,9 @@ export function Hero() {
               See how we help
               <ArrowRight size={16} className="arrow" />
             </MagneticButton>
-          </motion.div>
+          </div>
 
-          <motion.div className="hero-meta" variants={fadeUp} initial="hidden" animate="visible" custom={6}>
+          <div className="hero-meta hero-reveal" style={{ animationDelay: "0.82s" }}>
             <div className="hero-meta-item">
               <span className="mono dim">CLIENTS</span>
               <span>NASA · Collins Aerospace · Marquette</span>
@@ -83,30 +98,20 @@ export function Hero() {
               <span className="mono dim">SECTORS</span>
               <span>Aerospace · Defense · Finance · Education</span>
             </div>
-          </motion.div>
+          </div>
         </div>
 
-        <motion.div
-          className="hero-right"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
-        >
+        <div className="hero-right hero-reveal-fade">
           <Suspense fallback={<CoreFallback />}>
             <WireframeCore />
           </Suspense>
-        </motion.div>
+        </div>
       </div>
 
-      <motion.div
-        className="hero-scroll-hint"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.8, duration: 0.8 }}
-      >
+      <div className="hero-scroll-hint">
         <span className="mono dim">SCROLL</span>
         <span className="hero-scroll-bar" aria-hidden />
-      </motion.div>
+      </div>
     </section>
   );
 }
