@@ -1,0 +1,82 @@
+.status-bar {
+  position: relative;
+  padding: 24px 0;
+  border-top: 1px solid var(--line-0);
+  border-bottom: 1px solid var(--line-0);
+  background: linear-gradient(90deg, transparent, rgba(127, 209, 211, 0.04), transparent);
+}
+
+.status-inner {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 36px;
+  align-items: center;
+}
+
+.status-lead {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--accent);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+}
+.status-lead .status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: status-pulse 2.4s ease-in-out infinite;
+}
+
+.status-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+.status-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 14px;
+  border-left: 1px solid var(--line-0);
+  min-width: 0;
+}
+.status-stat .mono { font-size: 0.65rem; letter-spacing: 0.18em; }
+.status-stat-value {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--fg-0);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.status-stat.tone-accent .status-stat-value { color: var(--fg-0); }
+.status-stat.tone-gold .status-stat-value { color: var(--gold); text-shadow: 0 0 14px rgba(255, 192, 0, 0.4); }
+.status-stat.tone-blue .status-stat-value { color: var(--blue); text-shadow: 0 0 14px rgba(91, 157, 217, 0.4); }
+.status-stat.tone-accent:first-child .status-stat-value,
+.status-stat.tone-accent + .status-stat .status-stat-value { /* primary tone gets a subtle cyan glow */ }
+.status-stat.tone-accent .status-stat-value { text-shadow: 0 0 14px rgba(127, 209, 211, 0.35); }
+
+.status-latest {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--fg-1);
+  font-size: 0.85rem;
+  max-width: 360px;
+}
+.status-latest .mono { font-size: 0.65rem; letter-spacing: 0.18em; flex-shrink: 0; }
+.status-latest-msg {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 980px) {
+  .status-inner { grid-template-columns: 1fr; gap: 16px; }
+  .status-stats { grid-template-columns: repeat(2, 1fr); }
+  .status-latest { max-width: none; }
+}

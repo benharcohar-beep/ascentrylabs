@@ -85,6 +85,26 @@
   width: 100% !important;
   height: 100% !important;
 }
+/* Loading state — shown while the Three.js bundle streams in */
+.wireframe-core-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wireframe-core-pulse {
+  width: 60%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  border: 1px solid rgba(127, 209, 211, 0.35);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(127, 209, 211, 0.18), rgba(127, 209, 211, 0) 60%);
+  animation: core-loading-pulse 2.4s ease-in-out infinite;
+}
+@keyframes core-loading-pulse {
+  0%, 100% { transform: scale(0.94); opacity: 0.55; }
+  50% { transform: scale(1.04); opacity: 1; }
+}
+
 .wireframe-halo {
   position: absolute;
   inset: -10%;

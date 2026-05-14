@@ -58,6 +58,8 @@ export function CommandPalette({ open, onClose }: Props) {
     setQuery("");
     setActive(0);
     setTimeout(() => inputRef.current?.focus(), 50);
+    // Tell other floating dialogs to close so the palette owns focus.
+    window.dispatchEvent(new CustomEvent("ascentry:dialog-open", { detail: { source: "command-palette" } }));
   }, [open]);
 
   useEffect(() => {

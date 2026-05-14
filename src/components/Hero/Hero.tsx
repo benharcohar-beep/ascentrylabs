@@ -1,9 +1,25 @@
+import { lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import { ScrambleText } from "../ui/ScrambleText";
 import { MagneticButton } from "../ui/MagneticButton";
-import { WireframeCore } from "./WireframeCore";
 import { ArrowUpRight, ArrowRight } from "lucide-react";
 import "./hero.css";
+
+// Three.js + R3F is ~800KB. Lazy-load it so first paint isn't blocked on
+// the WebGL canvas — the hero still has plenty of content to read while
+// the core warms up. The CoreFallback below holds the layout space.
+const WireframeCore = lazy(() =>
+  import("./WireframeCore").then((m) => ({ default: m.WireframeCore }))
+);
+
+function CoreFallback() {
+  return (
+    <div className="wireframe-core wireframe-core-loading">
+      <div className="wireframe-core-pulse" aria-hidden />
+      <div className="wireframe-halo" aria-hidden />
+    </div>
+  );
+}
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -52,7 +68,7 @@ export function Hero() {
               Free 30-min Consultation
               <ArrowUpRight size={16} className="arrow" />
             </MagneticButton>
-            <MagneticButton href="#services" className="btn btn-ghost" strength={0.25}>
+            <MagneticButton href="#services" className="btn btn-ghost">
               See how we help
               <ArrowRight size={16} className="arrow" />
             </MagneticButton>
@@ -76,7 +92,9 @@ export function Hero() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
         >
-          <WireframeCore />
+          <Suspense fallback={<CoreFallback />}>
+            <WireframeCore />
+          </Suspense>
         </motion.div>
       </div>
 
