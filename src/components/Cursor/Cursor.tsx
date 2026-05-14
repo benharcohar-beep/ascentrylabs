@@ -52,23 +52,29 @@ export function Cursor() {
       raf = requestAnimationFrame(tick);
     }
 
+    // Hide the cursor when the mouse genuinely leaves the document, not
+    // when window focus is lost — Chrome doesn't reliably fire `focus`
+    // when you switch back from DevTools, which previously left the
+    // cursor permanently invisible.
+    const onLeaveDoc = (e: MouseEvent) => {
+      // mouseleave on document fires when the cursor exits the window
+      if (!e.relatedTarget) {
+        if (dotRef.current) dotRef.current.style.opacity = "0";
+        if (ringRef.current) ringRef.current.style.opacity = "0";
+      }
+    };
+    const onEnterDoc = () => {
+      if (dotRef.current) dotRef.current.style.opacity = "1";
+      if (ringRef.current) ringRef.current.style.opacity = "1";
+    };
+
     window.addEventListener("mousemove", onMove, { passive: true });
     document.addEventListener("mouseover", onOver, { passive: true });
     window.addEventListener("mousedown", onDown);
     window.addEventListener("mouseup", onUp);
+    document.addEventListener("mouseleave", onLeaveDoc);
+    document.addEventListener("mouseenter", onEnterDoc);
     raf = requestAnimationFrame(tick);
-
-    // suppress on tab-out
-    const onBlur = () => {
-      if (dotRef.current) dotRef.current.style.opacity = "0";
-      if (ringRef.current) ringRef.current.style.opacity = "0";
-    };
-    const onFocus = () => {
-      if (dotRef.current) dotRef.current.style.opacity = "1";
-      if (ringRef.current) ringRef.current.style.opacity = "1";
-    };
-    window.addEventListener("blur", onBlur);
-    window.addEventListener("focus", onFocus);
 
     return () => {
       cancelAnimationFrame(raf);
@@ -76,8 +82,8 @@ export function Cursor() {
       document.removeEventListener("mouseover", onOver);
       window.removeEventListener("mousedown", onDown);
       window.removeEventListener("mouseup", onUp);
-      window.removeEventListener("blur", onBlur);
-      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("mouseleave", onLeaveDoc);
+      document.removeEventListener("mouseenter", onEnterDoc);
       document.body.classList.remove("has-custom-cursor");
     };
   }, []);
