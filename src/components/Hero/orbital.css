@@ -1,0 +1,134 @@
+.orbital-nav {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  /* Pseudo-3D parallax driven by JS via --ox / --oy */
+  transform: translate3d(var(--ox, 0px), var(--oy, 0px), 0);
+  transition: transform 0.4s var(--ease-out-quart);
+}
+
+.orbital-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.85;
+  filter: drop-shadow(0 0 6px rgba(127, 209, 211, 0.4));
+}
+
+.orbit {
+  position: absolute;
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: var(--fg-1);
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: color 0.25s var(--ease-out-quart), transform 0.3s var(--ease-out-quart);
+  animation: orbit-float 6s ease-in-out infinite;
+}
+
+.orbit-tl { top: 4%; left: 0; animation-delay: 0s; }
+.orbit-tr { top: 4%; right: 0; animation-delay: -1.5s; flex-direction: row-reverse; }
+.orbit-bl { bottom: 4%; left: 0; animation-delay: -3s; }
+.orbit-br { bottom: 4%; right: 0; animation-delay: -4.5s; flex-direction: row-reverse; }
+
+@keyframes orbit-float {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -4px; }
+}
+
+.orbit-marker {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.orbit-marker-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent), 0 0 16px rgba(127, 209, 211, 0.5);
+  transition: background 0.25s, box-shadow 0.25s, transform 0.25s;
+}
+.orbit-marker-ring {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(127, 209, 211, 0.4);
+  border-radius: 50%;
+  animation: orbit-ring-pulse 2.4s ease-in-out infinite;
+}
+@keyframes orbit-ring-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.6); opacity: 0; }
+}
+
+.orbit-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.1;
+  text-align: left;
+}
+.orbit-tr .orbit-text, .orbit-br .orbit-text { text-align: right; }
+
+.orbit-code {
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  color: var(--fg-3);
+  transition: color 0.25s;
+}
+.orbit-label {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--fg-1);
+  letter-spacing: -0.005em;
+  transition: color 0.25s, text-shadow 0.25s;
+}
+
+.orbit:hover {
+  color: var(--fg-0);
+}
+.orbit:hover .orbit-label {
+  color: var(--accent-hot);
+  text-shadow: 0 0 14px rgba(174, 245, 248, 0.6);
+}
+.orbit:hover .orbit-code {
+  color: var(--accent);
+}
+.orbit:hover .orbit-marker-dot {
+  background: var(--accent-hot);
+  transform: scale(1.4);
+  box-shadow: 0 0 14px var(--accent-hot), 0 0 28px var(--accent);
+}
+
+/* Mobile / narrow: stack labels under the core in a 2x2 grid */
+@media (max-width: 880px) {
+  .orbital-nav { position: relative; padding-top: 16px; height: auto; transform: none; }
+  .orbital-lines { display: none; }
+  .orbit {
+    position: static;
+    flex-direction: row !important;
+    justify-content: center;
+    text-align: center !important;
+  }
+  .orbit-text { text-align: left !important; }
+  .orbital-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 18px;
+    margin: 24px auto 0;
+    max-width: 360px;
+  }
+  .orbit { animation: none; }
+}

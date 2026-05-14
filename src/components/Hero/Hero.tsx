@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { ScrambleText } from "../ui/ScrambleText";
 import { MagneticButton } from "../ui/MagneticButton";
+import { OrbitalNav } from "./OrbitalNav";
 import { ArrowUpRight, ArrowRight } from "lucide-react";
 import "./hero.css";
 
@@ -79,12 +80,16 @@ export function Hero() {
           </p>
 
           <div className="hero-cta hero-reveal" style={{ animationDelay: "0.7s" }}>
-            <MagneticButton href="#consult" className="btn btn-primary">
+            <MagneticButton href="#consult" className="btn btn-primary btn-fx">
+              <span className="btn-bracket">[</span>
               Free 30-min Consultation
+              <span className="btn-bracket">]</span>
               <ArrowUpRight size={16} className="arrow" />
             </MagneticButton>
-            <MagneticButton href="#services" className="btn btn-ghost">
+            <MagneticButton href="#services" className="btn btn-ghost btn-fx">
+              <span className="btn-bracket">[</span>
               See how we help
+              <span className="btn-bracket">]</span>
               <ArrowRight size={16} className="arrow" />
             </MagneticButton>
           </div>
@@ -105,6 +110,7 @@ export function Hero() {
           <Suspense fallback={<CoreFallback />}>
             <WireframeCore />
           </Suspense>
+          <OrbitalNav />
         </div>
       </div>
 

@@ -7,6 +7,9 @@ type Props = {
   onOpenPalette: () => void;
 };
 
+// Stripped-down top nav — section links now live around the wireframe core
+// in OrbitalNav. The header keeps the logo, the Cmd+K affordance, the
+// primary CTA, and a mobile burger that still surfaces the section list.
 export function Nav({ onOpenPalette }: Props) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -30,12 +33,6 @@ export function Nav({ onOpenPalette }: Props) {
             <span className="nav-logo-text">Ascentry Labs</span>
           </a>
 
-          <nav className="nav-links" aria-label="Primary">
-            {NAV_LINKS.map((l) => (
-              <a key={l.href} href={l.href}>{l.label}</a>
-            ))}
-          </nav>
-
           <div className="nav-actions">
             <button
               className="nav-cmd"
@@ -46,8 +43,10 @@ export function Nav({ onOpenPalette }: Props) {
               <Command size={14} />
               <span className="mono">K</span>
             </button>
-            <a href="#consult" className="btn btn-primary nav-cta">
+            <a href="#consult" className="btn btn-primary btn-fx nav-cta">
+              <span className="btn-bracket">[</span>
               Schedule Consultation
+              <span className="btn-bracket">]</span>
               <span className="arrow">↗</span>
             </a>
             <button
@@ -69,8 +68,10 @@ export function Nav({ onOpenPalette }: Props) {
               {l.label}
             </a>
           ))}
-          <a href="#consult" className="btn btn-primary" onClick={() => setMobileOpen(false)}>
+          <a href="#consult" className="btn btn-primary btn-fx" onClick={() => setMobileOpen(false)}>
+            <span className="btn-bracket">[</span>
             Schedule Consultation
+            <span className="btn-bracket">]</span>
           </a>
         </div>
       )}

@@ -206,6 +206,117 @@ a { color: inherit; text-decoration: none; }
   border-color: var(--line-0);
 }
 
+/* ─── Futuristic button variant (.btn-fx) ─────────────────────────────
+   Adds: chamfered top-left/bottom-right corners via clip-path, an inner
+   accent outline drawn by a pseudo-element, a scanning line that sweeps
+   left→right on hover, and brackets that flare out from the label. */
+.btn-fx {
+  --cut: 11px;
+  border-radius: 0;
+  clip-path: polygon(
+    var(--cut) 0,
+    100% 0,
+    100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%,
+    0 100%,
+    0 var(--cut)
+  );
+  position: relative;
+  padding: 0.95rem 1.6rem;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  background: linear-gradient(135deg, rgba(127, 209, 211, 0.16), rgba(91, 157, 217, 0.10));
+  border: 1px solid rgba(127, 209, 211, 0.45);
+  overflow: hidden;
+}
+.btn-fx::before {
+  /* Inner cut-corner outline that hugs 4px inside the clip — gives a
+     "frame within a frame" sci-fi chrome look */
+  content: "";
+  position: absolute;
+  inset: 4px;
+  pointer-events: none;
+  border: 1px solid rgba(174, 245, 248, 0.18);
+  clip-path: polygon(
+    calc(var(--cut) - 4px) 0,
+    100% 0,
+    100% calc(100% - var(--cut) + 4px),
+    calc(100% - var(--cut) + 4px) 100%,
+    0 100%,
+    0 calc(var(--cut) - 4px)
+  );
+  transition: border-color 0.3s var(--ease-out-quart);
+}
+.btn-fx::after {
+  /* Scanning line that travels left→right on hover */
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -40%;
+  width: 35%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(174, 245, 248, 0.14),
+    rgba(174, 245, 248, 0.5),
+    rgba(174, 245, 248, 0.14),
+    transparent
+  );
+  transform: skewX(-18deg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.btn-fx:hover::after {
+  animation: btn-scan 0.9s cubic-bezier(0.4, 0.1, 0.1, 1);
+  opacity: 1;
+}
+@keyframes btn-scan {
+  0% { left: -40%; opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { left: 110%; opacity: 0; }
+}
+.btn-fx:hover {
+  border-color: var(--accent-hot);
+  box-shadow:
+    0 0 0 1px rgba(127, 209, 211, 0.25),
+    0 0 32px rgba(127, 209, 211, 0.35),
+    inset 0 0 24px rgba(127, 209, 211, 0.12);
+}
+.btn-fx:hover::before {
+  border-color: rgba(174, 245, 248, 0.55);
+}
+
+.btn-bracket {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  font-size: 0.78em;
+  opacity: 0.75;
+  transition: opacity 0.25s, transform 0.3s var(--ease-out-quart), color 0.25s;
+  display: inline-block;
+}
+.btn-fx:hover .btn-bracket {
+  opacity: 1;
+  color: var(--accent-hot);
+}
+.btn-fx:hover .btn-bracket:first-child {
+  transform: translateX(-3px);
+}
+.btn-fx:hover .btn-bracket:last-of-type {
+  transform: translateX(3px);
+}
+
+/* Ghost variant of the futuristic button */
+.btn-fx.btn-ghost {
+  background: rgba(245, 247, 255, 0.02);
+  border-color: var(--line-1);
+}
+.btn-fx.btn-ghost::before {
+  border-color: rgba(245, 247, 255, 0.06);
+}
+
 /* Glass panel */
 .glass {
   background: var(--glass-bg);

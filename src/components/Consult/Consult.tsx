@@ -135,9 +135,11 @@ export function Consult() {
                     />
                   </label>
 
-                  <MagneticButton className="btn btn-primary consult-submit">
+                  <MagneticButton className="btn btn-primary btn-fx consult-submit">
+                    <span className="btn-bracket">[</span>
                     <Send size={14} />
                     Send transmission
+                    <span className="btn-bracket">]</span>
                   </MagneticButton>
                 </form>
               )}
