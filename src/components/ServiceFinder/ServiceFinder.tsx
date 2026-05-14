@@ -78,22 +78,24 @@ type Props = { open: boolean; onClose: () => void };
 export function ServiceFinder({ open, onClose }: Props) {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<(string | null)[]>([null, null, null, null]);
-  const [mounted, setMounted] = useState(false);
-
-  // Mount on open, hold for exit transition on close
+  // Renders for the duration of the exit transition so the fade-out plays
+  // before the element is dropped from the DOM. We drive this purely from
+  // `open` instead of a separate setMounted in useEffect — the previous
+  // pattern caused a first-click race where the click landed before the
+  // second render's handlers were active.
+  const [keepMounted, setKeepMounted] = useState(open);
   useEffect(() => {
     if (open) {
-      setMounted(true);
-    } else if (mounted) {
-      const t = setTimeout(() => {
-        setMounted(false);
-        // Reset for next time
-        setStep(0);
-        setAnswers([null, null, null, null]);
-      }, 300);
-      return () => clearTimeout(t);
+      setKeepMounted(true);
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const t = setTimeout(() => {
+      setKeepMounted(false);
+      // Reset for next open
+      setStep(0);
+      setAnswers([null, null, null, null]);
+    }, 320);
+    return () => clearTimeout(t);
   }, [open]);
 
   // Body scroll lock + Esc + announce so other dialogs step aside
@@ -134,11 +136,15 @@ export function ServiceFinder({ open, onClose }: Props) {
   }, [answers, allAnswered]);
 
   function pickAnswer(id: string) {
-    const next = [...answers];
-    next[step] = id;
-    setAnswers(next);
-    // Auto-advance after a brief pause for visual confirmation
-    setTimeout(() => setStep((s) => Math.min(totalSteps, s + 1)), 280);
+    setAnswers((prev) => {
+      const next = [...prev];
+      next[step] = id;
+      return next;
+    });
+    // Advance immediately on click — no setTimeout. The "selected" state
+    // would only flash for ~280ms anyway, and removing the timer prevents
+    // race conditions where the next click lands before the timer fires.
+    setStep((s) => Math.min(totalSteps, s + 1));
   }
 
   function reset() {
@@ -146,7 +152,7 @@ export function ServiceFinder({ open, onClose }: Props) {
     setStep(0);
   }
 
-  if (!mounted) return null;
+  if (!keepMounted) return null;
 
   const q = QUESTIONS[step];
   const top = ranked[0]?.service;
