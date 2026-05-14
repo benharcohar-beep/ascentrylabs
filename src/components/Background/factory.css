@@ -1,0 +1,180 @@
+/* Wireframe robotic factory background. Fills the fixed background layer. */
+
+.factory {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* ─── Conveyor belt ─────────────────────────────────────────────── */
+.conveyor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6%;
+  height: 22px;
+  pointer-events: none;
+  opacity: 0.55;
+}
+.conveyor-belt {
+  position: absolute;
+  inset: 8px 0;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(127, 209, 211, 0.0) 0px,
+      rgba(127, 209, 211, 0.0) 14px,
+      rgba(127, 209, 211, 0.18) 14px,
+      rgba(127, 209, 211, 0.18) 16px
+    );
+  border-top: 1px solid rgba(127, 209, 211, 0.3);
+  border-bottom: 1px solid rgba(127, 209, 211, 0.3);
+  animation: belt-scroll 8s linear infinite;
+}
+@keyframes belt-scroll {
+  from { background-position-x: 0; }
+  to { background-position-x: -160px; }
+}
+.conveyor-part {
+  position: absolute;
+  bottom: 9px;
+  left: -24px;
+  width: 14px;
+  height: 10px;
+  background: linear-gradient(180deg, rgba(127, 209, 211, 0.25), rgba(127, 209, 211, 0.05));
+  border: 1px solid rgba(127, 209, 211, 0.55);
+  box-shadow: 0 0 10px rgba(127, 209, 211, 0.35);
+  animation: part-travel 20s linear infinite;
+}
+@keyframes part-travel {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(100vw + 60px)); }
+}
+
+/* ─── Arms ─────────────────────────────────────────────────────── */
+.factory-arms {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.arm {
+  position: absolute;
+  width: 200px;     /* base size; transform: scale() in inline style adjusts */
+  height: 320px;
+  filter: drop-shadow(0 0 18px rgba(127, 209, 211, 0.35));
+  opacity: 0.5;     /* arms are background — keep them subtle */
+  will-change: transform;
+}
+.arm-hue-blue { filter: drop-shadow(0 0 18px rgba(91, 157, 217, 0.35)); }
+.arm-hue-gold { filter: drop-shadow(0 0 18px rgba(255, 192, 0, 0.30)); opacity: 0.42; }
+
+/* Joint articulation animations — each rotates around its CSS
+   transform-origin defined inline on the <g>. The full pick/place cycle
+   length is configured per-arm via the --arm-cycle custom property.
+
+   Cycle phases (over 100% of the cycle):
+     0%  rest (slight forward tilt)
+     20% reach down (grab zone)
+     30% close gripper, hold
+     45% lift
+     60% rotate over to placement zone
+     75% open gripper, release
+     85% rest position again
+*/
+.arm-shoulder {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: shoulder-cycle var(--arm-cycle, 9s) ease-in-out infinite;
+  animation-delay: var(--arm-delay, 0s);
+}
+.arm-elbow {
+  transform-box: fill-box;
+  animation: elbow-cycle var(--arm-cycle, 9s) ease-in-out infinite;
+  animation-delay: var(--arm-delay, 0s);
+}
+.arm-wrist {
+  transform-box: fill-box;
+  animation: wrist-cycle var(--arm-cycle, 9s) ease-in-out infinite;
+  animation-delay: var(--arm-delay, 0s);
+}
+.arm-gripper-l {
+  transform-box: fill-box;
+  animation: gripper-l var(--arm-cycle, 9s) ease-in-out infinite;
+  animation-delay: var(--arm-delay, 0s);
+}
+.arm-gripper-r {
+  transform-box: fill-box;
+  animation: gripper-r var(--arm-cycle, 9s) ease-in-out infinite;
+  animation-delay: var(--arm-delay, 0s);
+}
+
+@keyframes shoulder-cycle {
+  0%   { transform: rotate(-8deg); }
+  20%  { transform: rotate(18deg); }   /* lean forward to grab */
+  30%  { transform: rotate(18deg); }   /* hold */
+  45%  { transform: rotate(-2deg); }   /* lift */
+  60%  { transform: rotate(-30deg); }  /* swing across to placement */
+  75%  { transform: rotate(-30deg); }  /* place */
+  85%  { transform: rotate(-8deg); }   /* return */
+  100% { transform: rotate(-8deg); }
+}
+@keyframes elbow-cycle {
+  0%   { transform: rotate(15deg); }
+  20%  { transform: rotate(60deg); }
+  30%  { transform: rotate(60deg); }
+  45%  { transform: rotate(20deg); }
+  60%  { transform: rotate(35deg); }
+  75%  { transform: rotate(35deg); }
+  85%  { transform: rotate(15deg); }
+  100% { transform: rotate(15deg); }
+}
+@keyframes wrist-cycle {
+  0%   { transform: rotate(0deg); }
+  30%  { transform: rotate(-25deg); }
+  60%  { transform: rotate(15deg); }
+  85%  { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
+}
+/* Gripper open/close — fingers spread wider when open */
+@keyframes gripper-l {
+  0%, 25%   { transform: rotate(-12deg); }
+  30%, 70%  { transform: rotate(0deg); }    /* closed (holding) */
+  75%, 100% { transform: rotate(-12deg); }  /* open (released) */
+}
+@keyframes gripper-r {
+  0%, 25%   { transform: rotate(12deg); }
+  30%, 70%  { transform: rotate(0deg); }
+  75%, 100% { transform: rotate(12deg); }
+}
+
+/* ─── Sparks ─────────────────────────────────────────────────────── */
+.factory-sparks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.factory-spark {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--spark-color, white) 0%, transparent 70%);
+  box-shadow: 0 0 18px var(--spark-color, white), 0 0 36px var(--spark-color, white);
+  pointer-events: none;
+  animation: spark-pop 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes spark-pop {
+  0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+  20%  { transform: translate(-50%, -50%) scale(1.6); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2.4); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arm-shoulder, .arm-elbow, .arm-wrist,
+  .arm-gripper-l, .arm-gripper-r,
+  .conveyor-belt, .conveyor-part,
+  .factory-spark { animation: none; }
+}
