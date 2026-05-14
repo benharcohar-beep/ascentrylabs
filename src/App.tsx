@@ -13,13 +13,15 @@ import { Footer } from "./components/Footer/Footer";
 import { CommandPalette } from "./components/CommandPalette/CommandPalette";
 import { BootSequence } from "./components/BootSequence/BootSequence";
 import { AskAscentry } from "./components/AskAscentry/AskAscentry";
+import { ServiceFinder } from "./components/ServiceFinder/ServiceFinder";
 import { useSmoothScroll } from "./hooks/useSmoothScroll";
 
 export default function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [finderOpen, setFinderOpen] = useState(false);
   useSmoothScroll();
 
-  // Cmd+K / Ctrl+K toggles the palette globally
+  // Cmd+K toggles the palette globally
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -29,6 +31,14 @@ export default function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Allow other components (Services CTA, Ask Ascentry chip) to open the
+  // ServiceFinder via a custom event without prop-drilling state down.
+  useEffect(() => {
+    const onOpen = () => setFinderOpen(true);
+    window.addEventListener("ascentry:open-finder", onOpen);
+    return () => window.removeEventListener("ascentry:open-finder", onOpen);
   }, []);
 
   return (
@@ -51,6 +61,7 @@ export default function App() {
       </div>
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       <AskAscentry />
+      <ServiceFinder open={finderOpen} onClose={() => setFinderOpen(false)} />
     </>
   );
 }

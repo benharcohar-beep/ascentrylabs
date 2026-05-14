@@ -1,8 +1,12 @@
 import { motion } from "framer-motion";
 import { SERVICES } from "../../data/services";
 import { TiltCard } from "../ui/TiltCard";
-import { Check } from "lucide-react";
+import { Check, Sparkles, ArrowUpRight } from "lucide-react";
 import "./services.css";
+
+function openFinder() {
+  window.dispatchEvent(new CustomEvent("ascentry:open-finder"));
+}
 
 export function Services() {
   return (
@@ -18,6 +22,18 @@ export function Services() {
           </div>
           <div className="section-num">[ S.01 — S.06 ]</div>
         </div>
+
+        <button className="finder-cta" onClick={openFinder} type="button">
+          <span className="finder-cta-icon"><Sparkles size={16} /></span>
+          <span className="finder-cta-body">
+            <span className="mono finder-cta-eyebrow">FIND WHAT FITS · 4 QUESTIONS</span>
+            <span className="finder-cta-label">Not sure which engagement to start with? Let me match you.</span>
+          </span>
+          <span className="finder-cta-arrow">
+            <ArrowUpRight size={16} />
+          </span>
+          <span className="finder-cta-scan" aria-hidden />
+        </button>
 
         <div className="services-grid">
           {SERVICES.map((s, i) => (

@@ -195,6 +195,17 @@
   background: rgba(127, 209, 211, 0.06);
 }
 
+.ask-quick-chip-primary {
+  border-color: rgba(127, 209, 211, 0.5);
+  background: rgba(127, 209, 211, 0.08);
+  color: var(--fg-0);
+}
+.ask-quick-chip-primary:hover {
+  border-color: var(--accent-hot);
+  background: rgba(127, 209, 211, 0.14);
+  box-shadow: 0 0 14px rgba(127, 209, 211, 0.3);
+}
+
 .ask-form {
   display: flex;
   gap: 8px;

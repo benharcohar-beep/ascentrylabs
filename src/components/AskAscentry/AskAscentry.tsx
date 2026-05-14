@@ -122,6 +122,10 @@ const QUICK_QUESTIONS = [
   "Who is Hunter?",
 ];
 
+// A reserved special chip — clicking it opens the ServiceFinder wizard
+// instead of asking the bot. Recognized by its label below.
+const SPECIAL_FINDER_LABEL = "Help me pick a service";
+
 const INITIAL_GREETING: Msg = {
   role: "bot",
   text: "Hi — I'm a small mock built into the site to give you the gist. Ask me anything about what Ascentry does.",
@@ -269,6 +273,15 @@ export function AskAscentry() {
 
             {messages.length === 1 && (
               <div className="ask-quick">
+                <button
+                  className="ask-quick-chip ask-quick-chip-primary"
+                  onClick={() => {
+                    setOpen(false);
+                    window.dispatchEvent(new CustomEvent("ascentry:open-finder"));
+                  }}
+                >
+                  ✨ {SPECIAL_FINDER_LABEL}
+                </button>
                 {QUICK_QUESTIONS.map((q) => (
                   <button key={q} className="ask-quick-chip" onClick={() => send(q)}>
                     {q}
