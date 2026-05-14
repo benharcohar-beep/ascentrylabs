@@ -15,7 +15,10 @@
   background: var(--glass-bg);
 }
 
-/* Floating animation — subtle vertical drift, staggered per card */
+/* Floating animation — subtle vertical drift, staggered per card.
+   Uses the standalone `translate` property (not `transform`) so it composites
+   independently from TiltCard's perspective+rotateX/Y on hover. Animating
+   `transform` here would have overridden the tilt entirely. */
 .float-card {
   animation: float-drift 7s ease-in-out infinite;
 }
@@ -26,8 +29,8 @@
 .services-grid > div:nth-child(6) .float-card { animation-delay: -6.3s; }
 
 @keyframes float-drift {
-  0%, 100% { transform: translateY(0) translateZ(0); }
-  50% { transform: translateY(-8px) translateZ(0); }
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
