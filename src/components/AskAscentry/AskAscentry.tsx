@@ -104,6 +104,52 @@ const QA: { match: RegExp; reply: Reply }[] = [
       cta: [{ label: "Book the consult", href: "#consult" }],
     },
   },
+  {
+    match: /(based|location|where.*(located|office|hq|headquarter)|remote|onsite|on-site|in person)/i,
+    reply: {
+      text:
+        "Remote-first by default — we work with clients across the U.S., U.K., and Europe. Hunter is U.S.-based and travels onsite for kickoffs, deep workshops, or anything that genuinely needs a room. Most engagements run smoothly over Zoom + a shared workspace.",
+      cta: [{ label: "Schedule a call", href: "#consult" }],
+    },
+  },
+  {
+    match: /(how long|timeline|when.*results|how soon|when.*see|time to value|when.*ready)/i,
+    reply: {
+      text:
+        "Depends on the engagement. A readiness assessment delivers a usable roadmap in 2–4 weeks. Strategy work lands in 4–10 weeks. Custom builds vary — typically a v1 in 6–12 weeks with measurable impact, then iteration from there. We'll set realistic milestones in the first call so nobody's waiting in the dark.",
+    },
+  },
+  {
+    match: /(nda|confidential|sign|legal|ip ownership|own.*ip|intellectual property)/i,
+    reply: {
+      text:
+        "Yes — NDAs available on request, signed before any sensitive conversation. For Custom Development you keep full IP ownership of anything we build for you (it's in the contract). For aerospace/defense work we already operate under existing confidentiality frameworks.",
+      cta: [{ label: "Schedule consult under NDA", href: "#consult" }],
+    },
+  },
+  {
+    match: /(client size|company size|how big|enterprise|smb|small business|fortune)/i,
+    reply: {
+      text:
+        "We've shipped for organizations from solo founders to Fortune 100 aerospace primes (Collins, United Technologies, NASA programs). The common thread isn't headcount — it's stakes. If being wrong about AI is expensive for you, we're a fit.",
+    },
+  },
+  {
+    match: /(reference|testimonial|past client|talk to.*(client|customer)|vouch)/i,
+    reply: {
+      text:
+        "Seven testimonials live on the page (a NASA astronaut, a Fortune 100 finance director, a Marquette professor, multiple aerospace execs — some on the record, some anonymized for confidentiality). For direct references during diligence, Hunter will connect you with relevant past clients on a call.",
+      cta: [{ label: "Read testimonials", href: "#testimonials" }],
+    },
+  },
+  {
+    match: /(fixed.?price|t\s*&\s*m|time and materials|pricing model|hourly|retainer|payment terms|how.*billed|how.*pay)/i,
+    reply: {
+      text:
+        "Most engagements are fixed-price for a defined scope (assessments, strategy, builds with clear deliverables). Retainers are monthly with a soft hour band — rolls over within reason, no nickel-and-diming. T&M only when scope genuinely can't be defined upfront, and even then we cap it.",
+      cta: [{ label: "Discuss your scope", href: "#consult" }],
+    },
+  },
 ];
 
 const FALLBACK: Reply = {
