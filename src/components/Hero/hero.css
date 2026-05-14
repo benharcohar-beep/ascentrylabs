@@ -106,7 +106,7 @@
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
-  max-height: 70vh;
+  max-height: 88vh;     /* bumped from 70vh — bigger hero core per Ben's ask */
   z-index: 1;
 }
 
@@ -151,6 +151,53 @@
   z-index: -1;
   filter: blur(20px);
 }
+
+/* HUD overlay — corner brackets + crosshair guides + mono readouts.
+   Renders inside .wireframe-core, on top of the canvas. Pure CSS. */
+.hud {
+  position: absolute;
+  inset: 8%;
+  pointer-events: none;
+  z-index: 2;
+}
+.hud-corner {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-color: rgba(127, 209, 211, 0.55);
+}
+.hud-corner.hud-tl { top: 0; left: 0; border-top: 1px solid; border-left: 1px solid; }
+.hud-corner.hud-tr { top: 0; right: 0; border-top: 1px solid; border-right: 1px solid; }
+.hud-corner.hud-bl { bottom: 0; left: 0; border-bottom: 1px solid; border-left: 1px solid; }
+.hud-corner.hud-br { bottom: 0; right: 0; border-bottom: 1px solid; border-right: 1px solid; }
+
+.hud-cross {
+  position: absolute;
+  background: linear-gradient(to right, transparent, rgba(127, 209, 211, 0.18) 40%, rgba(127, 209, 211, 0.18) 60%, transparent);
+}
+.hud-cross.hud-cross-h {
+  left: 0; right: 0;
+  top: 50%;
+  height: 1px;
+  transform: translateY(-50%);
+}
+.hud-cross.hud-cross-v {
+  top: 0; bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(to bottom, transparent, rgba(127, 209, 211, 0.18) 40%, rgba(127, 209, 211, 0.18) 60%, transparent);
+}
+
+.hud-readout {
+  position: absolute;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: rgba(127, 209, 211, 0.7);
+  text-shadow: 0 0 6px rgba(127, 209, 211, 0.4);
+}
+.hud-readout-tl { top: -18px; left: 0; }
+.hud-readout-br { bottom: -18px; right: 0; }
 
 .hero-scroll-hint {
   position: absolute;

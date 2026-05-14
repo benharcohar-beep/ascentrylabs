@@ -29,29 +29,34 @@
   will-change: transform;
 }
 
+/* Quieter nebulas for the mission-control mood — half the opacity of v1
+   (cosmic) so the circuit field reads cleanly on top */
 .nebula-a {
   width: 70vw;
   height: 70vw;
   top: -20vw;
   left: -10vw;
-  background: radial-gradient(circle at 50% 50%, rgba(56, 130, 200, 0.55), rgba(56, 130, 200, 0) 60%);
+  background: radial-gradient(circle at 50% 50%, rgba(56, 130, 200, 0.30), rgba(56, 130, 200, 0) 60%);
   animation: drift-a 70s ease-in-out infinite alternate;
+  opacity: 0.55;
 }
 .nebula-b {
   width: 60vw;
   height: 60vw;
   top: 30vh;
   right: -15vw;
-  background: radial-gradient(circle at 50% 50%, rgba(196, 122, 217, 0.40), rgba(196, 122, 217, 0) 65%);
+  background: radial-gradient(circle at 50% 50%, rgba(127, 209, 211, 0.22), rgba(127, 209, 211, 0) 65%);
   animation: drift-b 95s ease-in-out infinite alternate;
+  opacity: 0.5;
 }
 .nebula-c {
   width: 55vw;
   height: 55vw;
   bottom: -10vw;
   left: 20vw;
-  background: radial-gradient(circle at 50% 50%, rgba(127, 209, 211, 0.30), rgba(127, 209, 211, 0) 70%);
+  background: radial-gradient(circle at 50% 50%, rgba(127, 209, 211, 0.20), rgba(127, 209, 211, 0) 70%);
   animation: drift-c 110s ease-in-out infinite alternate;
+  opacity: 0.4;
 }
 
 @keyframes drift-a {
