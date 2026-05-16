@@ -3,7 +3,9 @@
   min-height: 100vh;
   display: flex;
   align-items: center;
-  padding: 140px 0 80px;
+  /* Extra bottom padding so the scroll hint sits clear of the hero meta
+     row above it (CLIENTS / SECTORS were colliding with "SCROLL"). */
+  padding: 140px 0 140px;
   overflow: hidden;
 }
 
@@ -93,6 +95,7 @@
   display: flex;
   gap: 2.5rem;
   margin-top: 2.4rem;
+  margin-bottom: 1.5rem;        /* breathing room above the scroll hint */
   padding-top: 2rem;
   border-top: 1px solid var(--line-0);
   flex-wrap: wrap;
@@ -188,7 +191,7 @@
 
 .hero-scroll-hint {
   position: absolute;
-  bottom: 32px;
+  bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -196,6 +199,13 @@
   align-items: center;
   gap: 8px;
   color: var(--fg-2);
+  /* Only show the scroll cue when there's vertical room beneath the
+     content above it — otherwise it stacks on top of hero-meta. */
+}
+/* Tuck the cue under a sentinel margin so it never visually collides
+   with the hero-meta on shorter viewports. */
+@media (max-height: 820px) {
+  .hero-scroll-hint { display: none; }
 }
 .hero-scroll-bar {
   display: block;
