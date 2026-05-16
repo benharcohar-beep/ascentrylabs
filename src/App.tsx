@@ -14,12 +14,13 @@ import { CommandPalette } from "./components/CommandPalette/CommandPalette";
 import { BootSequence } from "./components/BootSequence/BootSequence";
 import { AskAscentry } from "./components/AskAscentry/AskAscentry";
 import { ServiceFinder } from "./components/ServiceFinder/ServiceFinder";
-import { useSmoothScroll } from "./hooks/useSmoothScroll";
 
 export default function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [finderOpen, setFinderOpen] = useState(false);
-  useSmoothScroll();
+  // Smooth scrolling is handled by CSS `html { scroll-behavior: smooth }`
+  // in app.css — no JS library needed. Lenis was overshooting wheel
+  // input which felt out of control.
 
   // Cmd+K toggles the palette globally
   useEffect(() => {
