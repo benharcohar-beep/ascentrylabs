@@ -33,7 +33,7 @@ const PHASES: Phase[] = [
     num: "02",
     name: "Design",
     duration: "2–6 weeks",
-    desc: "We translate the opportunity into a concrete plan — architecture, sequence, owners, success metrics. Nothing gets built until we both agree on the shape of the end state.",
+    desc: "We translate the opportunity into a concrete plan - architecture, sequence, owners, success metrics. Nothing gets built until we both agree on the shape of the end state.",
     deliverables: [
       "Reference architecture for data + AI systems",
       "Phased execution roadmap with realistic timelines",
@@ -50,7 +50,7 @@ const PHASES: Phase[] = [
     deliverables: [
       "Working systems deployed against real data",
       "Documentation, runbooks, and trained operators",
-      "Production-grade handoff — you own the IP",
+      "Production-grade handoff - you own the IP",
     ],
     Icon: Cpu,
     color: "#5b9dd9",
@@ -59,7 +59,7 @@ const PHASES: Phase[] = [
     num: "04",
     name: "Run",
     duration: "Ongoing",
-    desc: "Most engagements continue as a retainer once systems are live — for course correction, scale-up, and continuous improvement. No lock-in: end the retainer any month with a 30-day notice.",
+    desc: "Most engagements continue as a retainer once systems are live - for course correction, scale-up, and continuous improvement. No lock-in: end the retainer any month with a 30-day notice.",
     deliverables: [
       "Monthly strategic reviews with leadership",
       "Hands-on support for the operators using the system",
@@ -79,10 +79,10 @@ export function ProcessPage() {
   return (
     <>
       <PageHeader
-        eyebrow="07 — How We Work"
+        eyebrow="07 - How We Work"
         title="From ambiguity to systems that ship."
         sub="Four phases. The first two are about figuring out what's actually worth building. The next two are about building it and making it stick."
-        rightLabel="[ P.01 — P.04 ]"
+        rightLabel="[ P.01 - P.04 ]"
       />
 
       <section className="section process">

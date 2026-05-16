@@ -9,7 +9,7 @@
   overflow: hidden;
 }
 
-/* CSS-only entrance reveals — robust to background-tab loads where
+/* CSS-only entrance reveals - robust to background-tab loads where
    framer-motion's rAF-driven animations would stall. fill-mode: both
    pins the final visible state so even paused animations resolve. */
 .hero-reveal {
@@ -32,7 +32,7 @@
 }
 
 /* When the page loaded hidden (background tab / headless), skip the
-   entrance — content appears immediately in its final state. */
+   entrance - content appears immediately in its final state. */
 .hero.no-anim .hero-reveal,
 .hero.no-anim .hero-reveal-fade {
   opacity: 1;
@@ -112,7 +112,7 @@
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
-  max-height: 88vh;     /* bumped from 70vh — bigger hero core per Ben's ask */
+  max-height: 88vh;     /* bumped from 70vh - bigger hero core per Ben's ask */
   z-index: 1;
 }
 
@@ -130,7 +130,7 @@
   -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 45%, rgba(0, 0, 0, 0.85) 65%, transparent 88%);
   mask-image: radial-gradient(ellipse at 50% 50%, #000 45%, rgba(0, 0, 0, 0.85) 65%, transparent 88%);
 }
-/* Loading state — shown while the Three.js bundle streams in */
+/* Loading state - shown while the Three.js bundle streams in */
 .wireframe-core-loading {
   display: flex;
   align-items: center;
@@ -162,7 +162,7 @@
   filter: blur(28px);
 }
 
-/* HUD overlay — soft crosshair guides only. Corner brackets and mono
+/* HUD overlay - soft crosshair guides only. Corner brackets and mono
    readouts removed because they collided with the orbital nav labels
    pinned to the same corners of the .wireframe-core area. */
 .hud {
@@ -200,7 +200,7 @@
   gap: 8px;
   color: var(--fg-2);
   /* Only show the scroll cue when there's vertical room beneath the
-     content above it — otherwise it stacks on top of hero-meta. */
+     content above it - otherwise it stacks on top of hero-meta. */
 }
 /* Tuck the cue under a sentinel margin so it never visually collides
    with the hero-meta on shorter viewports. */

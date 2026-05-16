@@ -11,7 +11,7 @@ export function TestimonialsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="05 — Signal"
+        eyebrow="05 - Signal"
         title="Words from people I've worked with."
         sub="From astronauts to enterprise execs to professors. Same throughline: turning ambiguity into systems that ship."
       />

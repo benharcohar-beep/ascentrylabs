@@ -18,7 +18,7 @@ export const CATEGORIES: Category[] = [
   { id: "ed", label: "Education", color: "#a8bbbf" },
 ];
 
-// Slugs are hard-coded in each entry — drives the /portfolio/:slug route
+// Slugs are hard-coded in each entry - drives the /portfolio/:slug route
 export function projectBySlug(slug: string): Project | undefined {
   return PROJECTS.find((p) => p.slug === slug);
 }

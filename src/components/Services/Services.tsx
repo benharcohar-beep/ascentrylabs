@@ -23,13 +23,13 @@ export function Services() {
       <div className="container">
         <div className="section-head">
           <div>
-            <div className="eyebrow">02 — Services</div>
+            <div className="eyebrow">02 - Services</div>
             <h2 className="section-title">Six ways we work together.</h2>
             <p className="section-sub">
-              From a single readiness sprint to a long-term technical partner. Pick a starting point — we shape the engagement to fit.
+              From a single readiness sprint to a long-term technical partner. Pick a starting point - we shape the engagement to fit.
             </p>
           </div>
-          <div className="section-num">[ S.01 — S.06 ]</div>
+          <div className="section-num">[ S.01 - S.06 ]</div>
         </div>
 
         <button className="finder-cta" onClick={openFinder} type="button">

@@ -80,7 +80,7 @@ function podWorldPosition(road: Road, t: number, out: THREE.Vector3) {
   return out;
 }
 
-// Single glowing pod — bright core + 2 halo shells + 4 trailing dots.
+// Single glowing pod - bright core + 2 halo shells + 4 trailing dots.
 // Sizes dialed down ~55% from the original so the swarm reads as
 // ambient activity rather than crowding the background.
 function PodMesh({ color, podRef }: { color: string; podRef: React.RefObject<THREE.Group | null> }) {
@@ -107,7 +107,7 @@ function PodTrail({ color, trailRefs }: {
   color: string;
   trailRefs: React.MutableRefObject<(THREE.Mesh | null)[]>;
 }) {
-  // Four trailing beads with decreasing opacity — quieter than before
+  // Four trailing beads with decreasing opacity - quieter than before
   const beads = [0, 1, 2, 3];
   const opacities = [0.30, 0.20, 0.12, 0.06];
   return (
@@ -129,7 +129,7 @@ function Network() {
   const roadGeo = useRoadGeometry();
   const intersections = useIntersectionGeometry();
 
-  // Build pod state — randomized speeds, hues, directions, start offsets
+  // Build pod state - randomized speeds, hues, directions, start offsets
   const pods = useRef<Pod[]>([]);
   if (pods.current.length === 0) {
     const built: Pod[] = [];
@@ -164,7 +164,7 @@ function Network() {
     pods.current.forEach((pod, i) => {
       // Advance along road
       pod.t += pod.speed * dt * pod.direction;
-      // Wrap with direction logic — loop endpoints
+      // Wrap with direction logic - loop endpoints
       if (pod.t > 1) {
         pod.t = pod.t - 1;
       } else if (pod.t < 0) {
@@ -199,7 +199,7 @@ function Network() {
         <lineBasicMaterial color={ACCENT} transparent opacity={0.32} />
       </lineSegments>
 
-      {/* Intersection markers — small diamonds (planes rotated 45° around Y) */}
+      {/* Intersection markers - small diamonds (planes rotated 45° around Y) */}
       {intersections.map(([x, y, z], i) => (
         <mesh key={i} position={[x, y, z]} rotation={[-Math.PI / 2, 0, Math.PI / 4]}>
           <planeGeometry args={[0.22, 0.22]} />

@@ -7,7 +7,7 @@ import "./background.css";
 //   - articulated 3D robotic arms (Three.js + R3F) on a wireframe floor
 //   - vignette + scanlines + grid overlay
 
-// Lazy-load the 3D factory — it pulls in Three.js (~235KB gzipped) which
+// Lazy-load the 3D factory - it pulls in Three.js (~235KB gzipped) which
 // is shared with WireframeCore so the second use is free. We render
 // nothing as the fallback (other background layers are enough) to avoid
 // any visual swap when the scene loads.

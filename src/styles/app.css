@@ -6,7 +6,7 @@
 
 main { display: block; }
 
-/* Page-transition fade — runs whenever the route changes because the
+/* Page-transition fade - runs whenever the route changes because the
    wrapping div gets a fresh React key, which remounts it and restarts
    this keyframe. */
 .page-transition {

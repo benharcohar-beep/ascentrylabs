@@ -1,4 +1,4 @@
-/* Service-finder CTA banner — sits between section head and the grid */
+/* Service-finder CTA banner - sits between section head and the grid */
 .finder-cta {
   --cut: 14px;
   position: relative;
@@ -115,7 +115,7 @@
   background: var(--glass-bg);
 }
 
-/* Floating animation — subtle vertical drift, staggered per card.
+/* Floating animation - subtle vertical drift, staggered per card.
    Uses the standalone `translate` property (not `transform`) so it composites
    independently from TiltCard's perspective+rotateX/Y on hover. Animating
    `transform` here would have overridden the tilt entirely. */

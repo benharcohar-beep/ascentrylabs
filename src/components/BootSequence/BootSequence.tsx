@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import "./boot.css";
 
 // A sub-2-second boot intro that fires once per session. Reads as a
-// mission-control sequence — terminal lines, a progress bar, then a
+// mission-control sequence - terminal lines, a progress bar, then a
 // graceful fade-out into the live page.
 //
 // Skippable with any key/click. Skipped entirely on:
@@ -30,7 +30,7 @@ export function BootSequence() {
   useEffect(() => {
     // Honor reduced motion + don't replay within a session
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    // Don't run boot if the tab is hidden on first paint — rAF is throttled
+    // Don't run boot if the tab is hidden on first paint - rAF is throttled
     // and the boot would stall on screen until the tab is foregrounded
     if (document.hidden) return;
     try {

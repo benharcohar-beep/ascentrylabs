@@ -2,7 +2,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useMemo } from "react";
 import * as THREE from "three";
 
-// Scroll progress — shared ref read by the R3F useFrame loop. We avoid
+// Scroll progress - shared ref read by the R3F useFrame loop. We avoid
 // React state so the scroll-driven transforms don't trigger re-renders.
 const scrollProgressRef = { current: 0 };
 
@@ -33,7 +33,7 @@ function useHeroScrollProgress() {
 // Mission-control orrery: three orthogonal wireframe rings rotating at
 // independent speeds, an inner geometric "core" doing slow counter-rotation,
 // a bright glowing center, and "data beads" orbiting along each ring at
-// their own pace. Reads as a holographic AI control hub — clean, technical,
+// their own pace. Reads as a holographic AI control hub - clean, technical,
 // in motion. Mouse parallax on the whole assembly.
 //
 // HTML overlay (in the parent .wireframe-core) adds corner brackets +
@@ -76,7 +76,7 @@ function Orrery() {
     const innerGrow = 1 + sp * 0.9;         // inner core scales up
     const glowGrow = 1 + sp * 1.2;          // bright core scales up
 
-    // Mouse parallax — gentle
+    // Mouse parallax - gentle
     const m = state.mouse;
     targetRot.current.x = m.y * 0.25;
     targetRot.current.y = m.x * 0.4;
@@ -87,7 +87,7 @@ function Orrery() {
       g.rotation.y += (targetRot.current.y - g.rotation.y) * 0.03;
       g.rotation.y += dt * 0.05 * rotBoost;
       g.rotation.z = Math.sin(time * 0.18) * 0.03;
-      // Multi-harmonic breathing — shrinks slightly as we scroll so the
+      // Multi-harmonic breathing - shrinks slightly as we scroll so the
       // expanding inner core has room to grow within the canvas
       const breath = 1 + Math.sin(time * 0.7) * 0.02 + Math.sin(time * 1.5) * 0.008;
       g.scale.setScalar(breath * (1 - sp * 0.15));
@@ -126,7 +126,7 @@ function Orrery() {
 
   return (
     <group ref={groupRef}>
-      {/* Ring 1 — XY plane (slight tilt) — cyan, primary */}
+      {/* Ring 1 - XY plane (slight tilt) - cyan, primary */}
       <group ref={ring1Ref} rotation={[0.4, 0, 0]}>
         <mesh>
           <torusGeometry args={[1.95, 0.008, 6, 96]} />
@@ -140,7 +140,7 @@ function Orrery() {
         </points>
       </group>
 
-      {/* Ring 2 — XZ plane (perpendicular, tilted other way) — blue */}
+      {/* Ring 2 - XZ plane (perpendicular, tilted other way) - blue */}
       <group ref={ring2Ref} rotation={[Math.PI / 2 + 0.2, 0, 0]}>
         <mesh>
           <torusGeometry args={[1.7, 0.007, 6, 96]} />
@@ -154,7 +154,7 @@ function Orrery() {
         </points>
       </group>
 
-      {/* Ring 3 — diagonal — gold accent */}
+      {/* Ring 3 - diagonal - gold accent */}
       <group ref={ring3Ref} rotation={[Math.PI / 4, Math.PI / 4, 0]}>
         <mesh>
           <torusGeometry args={[1.45, 0.006, 6, 96]} />
@@ -168,13 +168,13 @@ function Orrery() {
         </points>
       </group>
 
-      {/* Faint outer wireframe shell — gives the orrery something to "contain" */}
+      {/* Faint outer wireframe shell - gives the orrery something to "contain" */}
       <mesh>
         <icosahedronGeometry args={[2.3, 1]} />
         <meshBasicMaterial color="#5b9dd9" wireframe transparent opacity={0.10} />
       </mesh>
 
-      {/* Inner geometric core — slowly counter-rotating */}
+      {/* Inner geometric core - slowly counter-rotating */}
       <mesh ref={innerRef}>
         <icosahedronGeometry args={[0.55, 1]} />
         <meshBasicMaterial color="#7fd1d3" wireframe transparent opacity={0.7} />
@@ -212,7 +212,7 @@ export function WireframeCore() {
         <Orrery />
       </Canvas>
 
-      {/* HUD overlay — only the soft crosshair grid through the canvas.
+      {/* HUD overlay - only the soft crosshair grid through the canvas.
           Corner brackets + readouts removed because they collided with the
           orbital nav labels at the same corners. */}
       <div className="hud" aria-hidden>

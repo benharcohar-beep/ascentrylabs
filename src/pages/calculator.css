@@ -62,7 +62,7 @@
   font-size: 0.85rem;
 }
 
-/* Range input — custom styling so it matches the rest of the chrome */
+/* Range input - custom styling so it matches the rest of the chrome */
 .calc-field input[type="range"] {
   -webkit-appearance: none;
   appearance: none;

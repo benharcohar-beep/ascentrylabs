@@ -19,7 +19,7 @@ export function Portfolio() {
       <div className="container">
         <div className="section-head">
           <div>
-            <div className="eyebrow">03 — Portfolio</div>
+            <div className="eyebrow">03 - Portfolio</div>
             <h2 className="section-title">Selected work.</h2>
             <p className="section-sub">
               Spanning modeling, agentic systems, digital transformation, and education. Each project shipped under real conditions with real consequences. Click any card for the full case study.

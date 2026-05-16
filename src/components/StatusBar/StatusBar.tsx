@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import "./status.css";
 
 // A thin "system status" strip between Hero and Services. Reads as a
-// mission-control HUD — values tick, the "latest" rotates between recent
+// mission-control HUD - values tick, the "latest" rotates between recent
 // achievements. All numbers are realistic but illustrative (a static
 // stat sheet would feel like a marketing page; a small live drift makes
 // it feel like an instrument). Update Hunter / Ben can lock these to
@@ -27,7 +27,7 @@ export function StatusBar() {
   const [tick, setTick] = useState(0);
   const [latestIdx, setLatestIdx] = useState(0);
 
-  // Tiny drift on tick counters so it feels alive (no LIE — just looks instrumented)
+  // Tiny drift on tick counters so it feels alive (no LIE - just looks instrumented)
   useEffect(() => {
     const i = setInterval(() => setTick((t) => t + 1), 4000);
     return () => clearInterval(i);
@@ -39,7 +39,7 @@ export function StatusBar() {
     return () => clearInterval(i);
   }, []);
 
-  // Live drift — re-seeded each tick from a deterministic base
+  // Live drift - re-seeded each tick from a deterministic base
   const stats: Tick[] = [
     { label: "PROJECTS SHIPPED", value: fmt(47), tone: "accent" },
     { label: "HOURS RECLAIMED", value: `${fmt(24_300 + tick * 7)}+`, tone: "gold" },

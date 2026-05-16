@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import "./trusted.css";
 
-// "Trusted by" strip — a clean horizontal row of client/org names with a
+// "Trusted by" strip - a clean horizontal row of client/org names with a
 // subtle scan line. Pure text (no logos required) so it works without
 // hosting external brand assets, and it's intentionally minimal so it
 // reads as proof, not as advertising.

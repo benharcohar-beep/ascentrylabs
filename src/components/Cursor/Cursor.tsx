@@ -53,7 +53,7 @@ export function Cursor() {
     }
 
     // Hide the cursor when the mouse genuinely leaves the document, not
-    // when window focus is lost — Chrome doesn't reliably fire `focus`
+    // when window focus is lost - Chrome doesn't reliably fire `focus`
     // when you switch back from DevTools, which previously left the
     // cursor permanently invisible.
     const onLeaveDoc = (e: MouseEvent) => {

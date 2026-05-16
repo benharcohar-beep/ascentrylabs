@@ -11,10 +11,10 @@ export function ServicesPage() {
   return (
     <>
       <PageHeader
-        eyebrow="02 — Services"
+        eyebrow="02 - Services"
         title="Six ways we work together."
-        sub="From a single readiness sprint to a long-term technical partner. Pick a starting point — we shape the engagement to fit."
-        rightLabel="[ S.01 — S.06 ]"
+        sub="From a single readiness sprint to a long-term technical partner. Pick a starting point - we shape the engagement to fit."
+        rightLabel="[ S.01 - S.06 ]"
       />
       <Services />
       <ConsultCta />

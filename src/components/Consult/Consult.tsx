@@ -29,7 +29,7 @@ export function Consult() {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Placeholder behavior — open the user's mail client with a prefilled draft.
+    // Placeholder behavior - open the user's mail client with a prefilled draft.
     // Replace with Web3Forms / Formspree / your endpoint when ready.
     const subject = encodeURIComponent(`Consultation request from ${form.name || "Website"}`);
     const body = encodeURIComponent(
@@ -50,12 +50,12 @@ export function Consult() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.6 }}
           >
-            <div className="eyebrow">06 — Consult</div>
+            <div className="eyebrow">06 - Consult</div>
             <h2 className="section-title">
               Ready to bring your<br />company into the era of <span className="hero-accent">AI?</span>
             </h2>
             <p className="consult-lead">
-              Schedule a free 30-minute consultation. No slide deck, no pitch — just an honest conversation about
+              Schedule a free 30-minute consultation. No slide deck, no pitch - just an honest conversation about
               where you are and what's next.
             </p>
 
@@ -71,7 +71,7 @@ export function Consult() {
                 <Sparkles size={16} className="consult-trust-icon" />
                 <div>
                   <strong>Honest assessment</strong>
-                  <span className="dim mono">— EVEN IF "NO" IS THE ANSWER</span>
+                  <span className="dim mono">- EVEN IF "NO" IS THE ANSWER</span>
                 </div>
               </li>
               <li>
@@ -145,7 +145,7 @@ export function Consult() {
                       <p>
                         Hunter's calendar integration is being wired up. In the meantime, drop
                         a quick note via <button type="button" className="consult-book-soon-link" onClick={() => setTab("message")}>Send a message</button> or
-                        email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> — we
+                        email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> - we
                         reply within 24 hours.
                       </p>
                     </div>

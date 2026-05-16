@@ -71,7 +71,7 @@ export function CaseStudyPage() {
           <aside className="case-side">
             <div className="case-side-block">
               <div className="mono dim">DOMAIN</div>
-              <div className="case-side-v">{project.metrics[0]?.[1] ?? "—"}</div>
+              <div className="case-side-v">{project.metrics[0]?.[1] ?? "-"}</div>
             </div>
             {project.metrics.slice(1).map(([k, v]) => (
               <div key={k} className="case-side-block">

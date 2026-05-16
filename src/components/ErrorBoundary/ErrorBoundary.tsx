@@ -12,9 +12,9 @@ type State = { error: Error | null; errorInfo: ErrorInfo | null };
 // Catches render errors anywhere in the React tree below it and renders
 // a branded fallback instead of a blank white screen. Two instances in
 // the app:
-//   1. Outer one in main.tsx wraps everything — catches catastrophic
+//   1. Outer one in main.tsx wraps everything - catches catastrophic
 //      crashes (full mission-control failure screen).
-//   2. Inner one in App.tsx wraps just the <Routes> — catches page-level
+//   2. Inner one in App.tsx wraps just the <Routes> - catches page-level
 //      crashes while keeping nav + footer + chat alive (smaller card,
 //      "this page failed to load" with a back-to-home).
 export class ErrorBoundary extends Component<Props, State> {
@@ -84,7 +84,7 @@ function ErrorFallback({ error, scope, onReset, onReload, onGoHome }: FallbackPr
 
         <p className="eb-sub">
           {isPageScope
-            ? "The rest of the site is still operational. Try reloading this page or head back home — the wireframe core is steady."
+            ? "The rest of the site is still operational. Try reloading this page or head back home - the wireframe core is steady."
             : "An unexpected error took the site offline. Reload to retry, or go back to home. The error has been logged."}
         </p>
 

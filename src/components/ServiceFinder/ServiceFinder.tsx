@@ -32,7 +32,7 @@ const QUESTIONS: Question[] = [
     prompt: "Where are you in your AI journey?",
     sub: "Pick the closest description. We'll narrow down from here.",
     options: [
-      { id: "curious", label: "Curious — exploring what AI could do for us", weights: { ASSESSMENT: 3, EDUCATION: 1 } },
+      { id: "curious", label: "Curious - exploring what AI could do for us", weights: { ASSESSMENT: 3, EDUCATION: 1 } },
       { id: "ideas", label: "We have specific use cases in mind, but no plan yet", weights: { STRATEGY: 3, ASSESSMENT: 1 } },
       { id: "plan", label: "We have a plan and need help executing it", weights: { ADVISORY: 3, BUILD: 2 } },
       { id: "tool", label: "We need a custom tool built that doesn't exist off the shelf", weights: { BUILD: 3, STRATEGY: 1 } },
@@ -69,7 +69,7 @@ const QUESTIONS: Question[] = [
       { id: "oneoff", label: "One-off engagement (a day or two)", weights: { SPEAKING: 2, EDUCATION: 2, ASSESSMENT: 1 } },
       { id: "weeks", label: "A few focused weeks", weights: { ASSESSMENT: 3, EDUCATION: 1 } },
       { id: "months", label: "One to three months", weights: { STRATEGY: 3, BUILD: 1 } },
-      { id: "ongoing", label: "Ongoing — we'd value a long-term partner", weights: { ADVISORY: 3, BUILD: 2 } },
+      { id: "ongoing", label: "Ongoing - we'd value a long-term partner", weights: { ADVISORY: 3, BUILD: 2 } },
     ],
   },
 ];
@@ -81,7 +81,7 @@ export function ServiceFinder({ open, onClose }: Props) {
   const [answers, setAnswers] = useState<(string | null)[]>([null, null, null, null]);
   // Renders for the duration of the exit transition so the fade-out plays
   // before the element is dropped from the DOM. We drive this purely from
-  // `open` instead of a separate setMounted in useEffect — the previous
+  // `open` instead of a separate setMounted in useEffect - the previous
   // pattern caused a first-click race where the click landed before the
   // second render's handlers were active.
   const [keepMounted, setKeepMounted] = useState(open);
@@ -142,7 +142,7 @@ export function ServiceFinder({ open, onClose }: Props) {
       next[step] = id;
       return next;
     });
-    // Advance immediately on click — no setTimeout. The "selected" state
+    // Advance immediately on click - no setTimeout. The "selected" state
     // would only flash for ~280ms anyway, and removing the timer prevents
     // race conditions where the next click lands before the timer fires.
     setStep((s) => Math.min(totalSteps, s + 1));

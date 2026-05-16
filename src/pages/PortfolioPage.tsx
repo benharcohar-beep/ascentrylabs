@@ -11,7 +11,7 @@ export function PortfolioPage() {
   return (
     <>
       <PageHeader
-        eyebrow="03 — Portfolio"
+        eyebrow="03 - Portfolio"
         title="Selected work."
         sub="Spanning modeling, agentic systems, digital transformation, and education. Each project shipped under real conditions with real consequences. Click any card for the full case study."
       />

@@ -75,7 +75,7 @@ export function ScrambleText({
       const now = Date.now();
       if (now < startAt) return;
       if (document.hidden) {
-        // Tab not visible — jump straight to final to avoid showing mid-scramble
+        // Tab not visible - jump straight to final to avoid showing mid-scramble
         setOut(text);
         cleanup();
         return;

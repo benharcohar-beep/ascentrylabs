@@ -25,7 +25,7 @@ type Inputs = {
   teamSize: number;          // people
   manualHours: number;       // hours per person per week
   hourlyCost: number;        // fully-loaded $/hr per person
-  automationPct: number;     // 0..100 — % of manual hours that can be automated
+  automationPct: number;     // 0..100 - % of manual hours that can be automated
 };
 
 const DEFAULTS: Inputs = {
@@ -63,9 +63,9 @@ export function CalculatorPage() {
   return (
     <>
       <PageHeader
-        eyebrow="08 — Math"
+        eyebrow="08 - Math"
         title="What could AI be worth to your team?"
-        sub="Napkin-math estimator. Pull the sliders to your reality — we'll show you the order of magnitude. The honest number lives in a real discovery conversation."
+        sub="Napkin-math estimator. Pull the sliders to your reality - we'll show you the order of magnitude. The honest number lives in a real discovery conversation."
         rightLabel="[ ROI.01 ]"
       />
 
@@ -228,8 +228,8 @@ export function CalculatorPage() {
             <ul>
               <li>52-week year, no holiday discount.</li>
               <li>"Automation rate" is the share of those weekly manual hours an AI/automation engagement can realistically displace. 40–70% is typical for well-scoped projects.</li>
-              <li>"Fully-loaded hourly cost" should include benefits, overhead, and tooling — not just salary.</li>
-              <li>5-year figure is linear, not NPV-discounted — pad downward by ~10–15% for a more conservative view.</li>
+              <li>"Fully-loaded hourly cost" should include benefits, overhead, and tooling - not just salary.</li>
+              <li>5-year figure is linear, not NPV-discounted - pad downward by ~10–15% for a more conservative view.</li>
               <li>Engagement range scales loosely with team size; real quotes happen after a discovery call.</li>
             </ul>
           </footer>

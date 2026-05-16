@@ -10,7 +10,7 @@ type Props = {
 // Preserves any prefix (e.g. "$") and suffix (e.g. "B+", "+"). If the
 // value contains no digits (e.g. "ISS") we just render it as-is.
 //
-// IntersectionObserver gate keeps this cheap on long pages — only the
+// IntersectionObserver gate keeps this cheap on long pages - only the
 // stats that come into view actually animate, and only once.
 export function AnimatedNumber({ value, durationMs = 1500, className }: Props) {
   const [out, setOut] = useState(() => makeInitial(value));
@@ -49,7 +49,7 @@ export function AnimatedNumber({ value, durationMs = 1500, className }: Props) {
     let raf = 0;
     const tick = (t: number) => {
       const k = Math.min(1, (t - start) / durationMs);
-      // Ease-out cubic — fast start, smooth landing
+      // Ease-out cubic - fast start, smooth landing
       const eased = 1 - Math.pow(1 - k, 3);
       const n = Math.round(target * eased);
       setOut(`${prefix}${n}${suffix}`);

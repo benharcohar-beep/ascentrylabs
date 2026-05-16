@@ -1,9 +1,9 @@
 /* ═══════════════════════════════════════════════════════════════
-   Ascentry Labs — Global tokens, reset, typography
+   Ascentry Labs - Global tokens, reset, typography
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Color tokens — deep-space palette */
+  /* Color tokens - deep-space palette */
   --bg-0: #03030a;          /* deepest void */
   --bg-1: #07071a;          /* base background */
   --bg-2: #0d0d2a;          /* elevated panels */
@@ -18,10 +18,10 @@
   --line-1: rgba(245, 247, 255, 0.16);
   --line-2: rgba(245, 247, 255, 0.32);
 
-  /* Accents — the glow palette */
-  --accent: #7fd1d3;        /* cyan — primary */
+  /* Accents - the glow palette */
+  --accent: #7fd1d3;        /* cyan - primary */
   --accent-hot: #aef5f8;    /* cyan glow */
-  --gold: #ffc000;          /* gold — secondary */
+  --gold: #ffc000;          /* gold - secondary */
   --gold-hot: #ffe282;
   --violet: #c47ad9;
   --blue: #5b9dd9;
@@ -230,7 +230,7 @@ a { color: inherit; text-decoration: none; }
   overflow: hidden;
 }
 .btn-fx::before {
-  /* Inner cut-corner outline that hugs 4px inside the clip — gives a
+  /* Inner cut-corner outline that hugs 4px inside the clip - gives a
      "frame within a frame" sci-fi chrome look */
   content: "";
   position: absolute;
@@ -341,7 +341,7 @@ a { color: inherit; text-decoration: none; }
   opacity: 0.6;
 }
 
-/* Scrollbar — minimalist */
+/* Scrollbar - minimalist */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: var(--line-1); border-radius: 8px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--line-2); }

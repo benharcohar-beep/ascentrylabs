@@ -10,7 +10,7 @@ type Props = {
 };
 
 // Shared page header for the inner routes. Picks up where the home page
-// section-heads left off — but with a back-to-home affordance and a
+// section-heads left off - but with a back-to-home affordance and a
 // consistent visual rhythm at the top of each page.
 export function PageHeader({ eyebrow, title, sub, rightLabel }: Props) {
   return (

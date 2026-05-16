@@ -43,10 +43,10 @@ export function About() {
       <div className="container">
         <div className="section-head">
           <div>
-            <div className="eyebrow">04 — About</div>
+            <div className="eyebrow">04 - About</div>
             <h2 className="section-title">A part of the AI landscape<br />most people never see.</h2>
             <p className="section-sub">
-              Ascentry Labs is led by Hunter Sandidge — a builder who has spent his career operating where the
+              Ascentry Labs is led by Hunter Sandidge - a builder who has spent his career operating where the
               stakes are highest: spacesuits, factories, and balance sheets. We bring that same discipline to
               every engagement.
             </p>

@@ -7,9 +7,9 @@ import "./ask.css";
 
 type Msg = { role: "bot" | "user"; text: string; cta?: { label: string; href: string }[] };
 
-// A small mock "AI" — pattern-matches against the user's question and
+// A small mock "AI" - pattern-matches against the user's question and
 // returns a canned response in Ascentry's voice. Deliberately not wired
-// to a real LLM — that requires API keys + cost. The point is to show
+// to a real LLM - that requires API keys + cost. The point is to show
 // what's possible and route real conversations to a human.
 //
 // For each keyword cluster we return a tight, opinionated answer plus a
@@ -22,7 +22,7 @@ const QA: { match: RegExp; reply: Reply }[] = [
     match: /(what (do|does)|who are you|tell me about|about ascentry|what is ascentry)/i,
     reply: {
       text:
-        "Ascentry Labs is an AI & digital transformation consultancy. We do four things: assess where AI fits, design strategy, build the systems, and educate the people who'll use them. Founded by Hunter Sandidge — engineer behind life-support AI on the ISS and the next-gen NASA spacesuit copilot.",
+        "Ascentry Labs is an AI & digital transformation consultancy. We do four things: assess where AI fits, design strategy, build the systems, and educate the people who'll use them. Founded by Hunter Sandidge - engineer behind life-support AI on the ISS and the next-gen NASA spacesuit copilot.",
       cta: [
         { label: "See services", href: "/services" },
         { label: "See work", href: "/portfolio" },
@@ -33,7 +33,7 @@ const QA: { match: RegExp; reply: Reply }[] = [
     match: /(service|offer|engage|work with|hire)/i,
     reply: {
       text:
-        "Six engagement types: AI Readiness Assessment (2–4w), Digital Strategy (4–10w), Advisory retainer (monthly), Custom Development (project-based), Executive AI Education (half/full day), and Keynote Speaking. Pick a starting point — we shape the engagement to fit.",
+        "Six engagement types: AI Readiness Assessment (2–4w), Digital Strategy (4–10w), Advisory retainer (monthly), Custom Development (project-based), Executive AI Education (half/full day), and Keynote Speaking. Pick a starting point - we shape the engagement to fit.",
       cta: [
         { label: "Browse services", href: "/services" },
         { label: "Schedule a call", href: "/#consult" },
@@ -44,7 +44,7 @@ const QA: { match: RegExp; reply: Reply }[] = [
     match: /(cost|price|fee|budget|how much)/i,
     reply: {
       text:
-        "Pricing depends on scope. Assessments start in the low-five-figures, retainers and full builds scale from there. The 30-min consultation is free and we'll tell you honestly whether we can help — even if the answer is no.",
+        "Pricing depends on scope. Assessments start in the low-five-figures, retainers and full builds scale from there. The 30-min consultation is free and we'll tell you honestly whether we can help - even if the answer is no.",
       cta: [{ label: "Book free 30-min consult", href: "/#consult" }],
     },
   },
@@ -67,7 +67,7 @@ const QA: { match: RegExp; reply: Reply }[] = [
   {
     match: /(contact|email|reach|talk|call|book|consultation|consult|meet|speak)/i,
     reply: {
-      text: `Easiest path: book the free 30-min consult. No deck, no pitch — just an honest conversation. Or email Hunter directly at ${CONTACT_EMAIL}.`,
+      text: `Easiest path: book the free 30-min consult. No deck, no pitch - just an honest conversation. Or email Hunter directly at ${CONTACT_EMAIL}.`,
       cta: [
         { label: "Schedule consult", href: "/#consult" },
         { label: `Email ${CONTACT_EMAIL.split("@")[0]}`, href: `mailto:${CONTACT_EMAIL}` },
@@ -78,7 +78,7 @@ const QA: { match: RegExp; reply: Reply }[] = [
     match: /(nasa|space|spacesuit|astronaut|iss)/i,
     reply: {
       text:
-        "Yes — Ascentry has shipped real systems aboard the ISS (Leto, life-support analytics) and into NASA's xEVAS next-generation spacesuit program (Asteria copilot, adaptive thermal control). Aerospace and defense are where we cut our teeth.",
+        "Yes - Ascentry has shipped real systems aboard the ISS (Leto, life-support analytics) and into NASA's xEVAS next-generation spacesuit program (Asteria copilot, adaptive thermal control). Aerospace and defense are where we cut our teeth.",
       cta: [{ label: "See space work", href: "/portfolio" }],
     },
   },
@@ -86,7 +86,7 @@ const QA: { match: RegExp; reply: Reply }[] = [
     match: /(industry|sector|finance|defense|aerospace|manufacturing)/i,
     reply: {
       text:
-        "Aerospace, defense, finance, manufacturing, and academia. Common thread: high-stakes environments where being wrong is expensive — so the AI has to be honest, traceable, and operationally useful, not flashy.",
+        "Aerospace, defense, finance, manufacturing, and academia. Common thread: high-stakes environments where being wrong is expensive - so the AI has to be honest, traceable, and operationally useful, not flashy.",
     },
   },
   {
@@ -109,7 +109,7 @@ const QA: { match: RegExp; reply: Reply }[] = [
     match: /(based|location|where.*(located|office|hq|headquarter)|remote|onsite|on-site|in person)/i,
     reply: {
       text:
-        "Remote-first by default — we work with clients across the U.S., U.K., and Europe. Hunter is U.S.-based and travels onsite for kickoffs, deep workshops, or anything that genuinely needs a room. Most engagements run smoothly over Zoom + a shared workspace.",
+        "Remote-first by default - we work with clients across the U.S., U.K., and Europe. Hunter is U.S.-based and travels onsite for kickoffs, deep workshops, or anything that genuinely needs a room. Most engagements run smoothly over Zoom + a shared workspace.",
       cta: [{ label: "Schedule a call", href: "/#consult" }],
     },
   },
@@ -117,14 +117,14 @@ const QA: { match: RegExp; reply: Reply }[] = [
     match: /(how long|timeline|when.*results|how soon|when.*see|time to value|when.*ready)/i,
     reply: {
       text:
-        "Depends on the engagement. A readiness assessment delivers a usable roadmap in 2–4 weeks. Strategy work lands in 4–10 weeks. Custom builds vary — typically a v1 in 6–12 weeks with measurable impact, then iteration from there. We'll set realistic milestones in the first call so nobody's waiting in the dark.",
+        "Depends on the engagement. A readiness assessment delivers a usable roadmap in 2–4 weeks. Strategy work lands in 4–10 weeks. Custom builds vary - typically a v1 in 6–12 weeks with measurable impact, then iteration from there. We'll set realistic milestones in the first call so nobody's waiting in the dark.",
     },
   },
   {
     match: /(nda|confidential|sign|legal|ip ownership|own.*ip|intellectual property)/i,
     reply: {
       text:
-        "Yes — NDAs available on request, signed before any sensitive conversation. For Custom Development you keep full IP ownership of anything we build for you (it's in the contract). For aerospace/defense work we already operate under existing confidentiality frameworks.",
+        "Yes - NDAs available on request, signed before any sensitive conversation. For Custom Development you keep full IP ownership of anything we build for you (it's in the contract). For aerospace/defense work we already operate under existing confidentiality frameworks.",
       cta: [{ label: "Schedule consult under NDA", href: "/#consult" }],
     },
   },
@@ -132,14 +132,14 @@ const QA: { match: RegExp; reply: Reply }[] = [
     match: /(client size|company size|how big|enterprise|smb|small business|fortune)/i,
     reply: {
       text:
-        "We've shipped for organizations from solo founders to Fortune 100 aerospace primes (Collins, United Technologies, NASA programs). The common thread isn't headcount — it's stakes. If being wrong about AI is expensive for you, we're a fit.",
+        "We've shipped for organizations from solo founders to Fortune 100 aerospace primes (Collins, United Technologies, NASA programs). The common thread isn't headcount - it's stakes. If being wrong about AI is expensive for you, we're a fit.",
     },
   },
   {
     match: /(reference|testimonial|past client|talk to.*(client|customer)|vouch)/i,
     reply: {
       text:
-        "Seven testimonials live on the page (a NASA astronaut, a Fortune 100 finance director, a Marquette professor, multiple aerospace execs — some on the record, some anonymized for confidentiality). For direct references during diligence, Hunter will connect you with relevant past clients on a call.",
+        "Seven testimonials live on the page (a NASA astronaut, a Fortune 100 finance director, a Marquette professor, multiple aerospace execs - some on the record, some anonymized for confidentiality). For direct references during diligence, Hunter will connect you with relevant past clients on a call.",
       cta: [{ label: "Read testimonials", href: "/testimonials" }],
     },
   },
@@ -147,7 +147,7 @@ const QA: { match: RegExp; reply: Reply }[] = [
     match: /(fixed.?price|t\s*&\s*m|time and materials|pricing model|hourly|retainer|payment terms|how.*billed|how.*pay)/i,
     reply: {
       text:
-        "Most engagements are fixed-price for a defined scope (assessments, strategy, builds with clear deliverables). Retainers are monthly with a soft hour band — rolls over within reason, no nickel-and-diming. T&M only when scope genuinely can't be defined upfront, and even then we cap it.",
+        "Most engagements are fixed-price for a defined scope (assessments, strategy, builds with clear deliverables). Retainers are monthly with a soft hour band - rolls over within reason, no nickel-and-diming. T&M only when scope genuinely can't be defined upfront, and even then we cap it.",
       cta: [{ label: "Discuss your scope", href: "/#consult" }],
     },
   },
@@ -155,7 +155,7 @@ const QA: { match: RegExp; reply: Reply }[] = [
 
 const FALLBACK: Reply = {
   text:
-    "I'm a small on-page bot — for anything beyond the basics, the fastest path is a 30-min call with Hunter. He'll give you a real answer.",
+    "I'm a small on-page bot - for anything beyond the basics, the fastest path is a 30-min call with Hunter. He'll give you a real answer.",
   cta: [
     { label: "Book free consultation", href: "/#consult" },
     { label: `Email ${CONTACT_EMAIL.split("@")[0]}`, href: `mailto:${CONTACT_EMAIL}` },
@@ -169,13 +169,13 @@ const QUICK_QUESTIONS = [
   "Who is Hunter?",
 ];
 
-// A reserved special chip — clicking it opens the ServiceFinder wizard
+// A reserved special chip - clicking it opens the ServiceFinder wizard
 // instead of asking the bot. Recognized by its label below.
 const SPECIAL_FINDER_LABEL = "Help me pick a service";
 
 const INITIAL_GREETING: Msg = {
   role: "bot",
-  text: "Hi — I'm a small mock built into the site to give you the gist. Ask me anything about what Ascentry does.",
+  text: "Hi - I'm a small mock built into the site to give you the gist. Ask me anything about what Ascentry does.",
 };
 
 function answer(q: string): Reply {
@@ -257,7 +257,7 @@ export function AskAscentry() {
         onClick={() => {
           setOpen((o) => {
             if (!o) {
-              // Opening — close any other floating dialog
+              // Opening - close any other floating dialog
               window.dispatchEvent(new CustomEvent("ascentry:dialog-open", { detail: { source: "ask-ascentry" } }));
             }
             return !o;

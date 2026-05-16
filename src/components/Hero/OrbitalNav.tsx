@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import "./orbital.css";
 
 // Section navigation rendered AS satellites around the wireframe core.
-// Four labels — Services, Portfolio, About, Testimonials — sit at the
+// Four labels - Services, Portfolio, About, Testimonials - sit at the
 // corners of the core's box, each with a thin glowing line that points
 // toward the center. Click to smooth-scroll. On mouse-move we apply a
 // gentle 3D parallax tilt to the whole orbital group so the satellites

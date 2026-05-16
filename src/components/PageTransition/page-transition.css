@@ -14,7 +14,7 @@
   100% { opacity: 0; }
 }
 
-/* Bright scan bar — sweeps top→bottom */
+/* Bright scan bar - sweeps top→bottom */
 .pt-scan {
   position: absolute;
   left: 0;
@@ -36,7 +36,7 @@
   animation: pt-sweep 0.6s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
 }
 
-/* Trailing dim band — gives the scan some weight without dimming content */
+/* Trailing dim band - gives the scan some weight without dimming content */
 .pt-scan-trail {
   position: absolute;
   left: 0;

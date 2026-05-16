@@ -47,7 +47,7 @@ export function Testimonials() {
       <div className="container">
         <div className="section-head">
           <div>
-            <div className="eyebrow">05 — Signal</div>
+            <div className="eyebrow">05 - Signal</div>
             <h2 className="section-title">Words from people<br />I've worked with.</h2>
             <p className="section-sub">
               From astronauts to enterprise execs to professors. Same throughline: turning ambiguity into systems

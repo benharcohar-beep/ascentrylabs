@@ -3,11 +3,11 @@ import type { ReactNode, AnchorHTMLAttributes, ButtonHTMLAttributes } from "reac
 
 type CommonProps = {
   children: ReactNode;
-  /** 0..1 — how far the element shifts toward the cursor (default 0.18). Subtle is better. */
+  /** 0..1 - how far the element shifts toward the cursor (default 0.18). Subtle is better. */
   strength?: number;
-  /** px — engagement radius beyond the element's bounding box */
+  /** px - engagement radius beyond the element's bounding box */
   radius?: number;
-  /** px — hard cap on displacement in any direction so adjacent buttons can't overlap */
+  /** px - hard cap on displacement in any direction so adjacent buttons can't overlap */
   maxOffset?: number;
   className?: string;
 };
@@ -29,7 +29,7 @@ export function MagneticButton(props: Props) {
     const el = ref.current;
     if (!el) return;
 
-    // Skip on coarse pointer (touch) — magnetic adds nothing on touch and
+    // Skip on coarse pointer (touch) - magnetic adds nothing on touch and
     // can cause jank on tap.
     if (!window.matchMedia("(pointer: fine)").matches) return;
 

@@ -1,6 +1,6 @@
-/* Fixed 3D factory canvas — fills the full viewport, sits behind all
+/* Fixed 3D factory canvas - fills the full viewport, sits behind all
    content. We let the camera (in RoboticFactory3D.tsx) handle vertical
-   composition rather than cropping the canvas with CSS — cropping
+   composition rather than cropping the canvas with CSS - cropping
    created a hard edge that R3F's wrapper didn't actually move to the
    bottom anyway. */
 .factory3d {

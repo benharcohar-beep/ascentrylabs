@@ -1,4 +1,4 @@
-/* Fixed full-viewport background stack — sits behind all content (z-index 0).
+/* Fixed full-viewport background stack - sits behind all content (z-index 0).
    Content uses position:relative + z-index:1 to layer above. */
 
 .bg-root {
@@ -9,7 +9,7 @@
   pointer-events: none;
 }
 
-/* Deep base — slight gradient so the void isn't flat */
+/* Deep base - slight gradient so the void isn't flat */
 .bg-base {
   position: absolute;
   inset: 0;
@@ -19,7 +19,7 @@
     linear-gradient(180deg, #03030a 0%, #050615 100%);
 }
 
-/* Three drifting nebula clouds — radial gradients with subtle parallax */
+/* Three drifting nebula clouds - radial gradients with subtle parallax */
 .bg-nebula {
   position: absolute;
   border-radius: 50%;
@@ -29,7 +29,7 @@
   will-change: transform;
 }
 
-/* Quieter nebulas for the mission-control mood — half the opacity of v1
+/* Quieter nebulas for the mission-control mood - half the opacity of v1
    (cosmic) so the circuit field reads cleanly on top */
 .nebula-a {
   width: 70vw;
@@ -72,7 +72,7 @@
   100% { transform: translate(12vw, -6vh) scale(1.1); }
 }
 
-/* Mission-control grid overlay — very subtle */
+/* Mission-control grid overlay - very subtle */
 .bg-grid {
   position: absolute;
   inset: 0;

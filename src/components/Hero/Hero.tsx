@@ -31,7 +31,7 @@ export function Hero() {
   );
 
   // When a backgrounded tab returns to foreground, force-finish entrance
-  // animations by toggling a class — covers the edge case where rAF was
+  // animations by toggling a class - covers the edge case where rAF was
   // throttled before any frame fired.
   const [revealReady, setRevealReady] = useState(true);
   useEffect(() => {
@@ -75,9 +75,9 @@ export function Hero() {
           </p>
 
           <p className="hero-sub hero-reveal" style={{ animationDelay: "0.58s" }}>
-            Ascentry Labs closes that gap. Founded by <strong>Hunter Sandidge</strong> — the engineer behind the
+            Ascentry Labs closes that gap. Founded by <strong>Hunter Sandidge</strong> - the engineer behind the
             AI and analytics ecosystem that monitors life support on the International Space Station, father of the
-            AI copilot for the xEVAS spacesuit, and smart-factory and digital transformation lead at a Fortune&nbsp;100 —
+            AI copilot for the xEVAS spacesuit, and smart-factory and digital transformation lead at a Fortune&nbsp;100 -
             Ascentry Labs translates the noise around AI into systems that actually run your operation.
           </p>
 
