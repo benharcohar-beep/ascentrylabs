@@ -3,247 +3,218 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import "./factory3d.css";
 
-// A single central AI processing rig. One substantial wireframe hub in
-// the middle of the scene with four articulated arms radiating from it
-// at different angles. No conveyor, no orbs — arms do flowing
-// articulated motion (scanning / calibrating / sweeping) on their own
-// cycles. Whole machine in one accent color so it reads as a single
-// unified unit instead of a multi-hue assembly.
+// A single industrial 6-axis robotic arm. Inspired by classic Universal
+// Robots / KUKA designs — chunky joint housings, clean rectangular
+// segments, one accent color. The arm cycles slowly through a sequence
+// of poses (reach high → swing left → reach forward → fold up → rest)
+// so it always feels purposeful instead of restless.
+//
+// No conveyor, no orbs, no rings — one machine in the middle of the
+// scene, doing its job.
 
 const ACCENT = "#7fd1d3";
 
-type ArmConfig = {
-  id: string;
-  attachYaw: number;       // radians around hub Y
-  attachY: number;         // height on hub
-  phase: number;           // seconds offset
-  cycle: number;           // seconds per cycle
-};
+// Segment lengths (Three.js units)
+const BASE_HEIGHT = 0.35;
+const COLUMN_HEIGHT = 0.75;    // J1 housing
+const UPPER_ARM_LEN = 1.55;
+const FOREARM_LEN = 1.40;
+const WRIST_LEN = 0.30;
+const TOOL_LEN = 0.25;
 
-const ARMS: ArmConfig[] = [
-  { id: "A1", attachYaw: -0.95, attachY: 0.9, phase:  0.0, cycle: 7.5 },
-  { id: "A2", attachYaw: -0.32, attachY: 1.4, phase: -1.8, cycle: 8.5 },
-  { id: "A3", attachYaw:  0.32, attachY: 1.4, phase: -3.6, cycle: 7.0 },
-  { id: "A4", attachYaw:  0.95, attachY: 0.9, phase: -5.0, cycle: 8.0 },
-];
+// Visual rendering helpers ----------------------------------------------
 
-type Pose = { shoulder: number; elbow: number; wrist: number };
+function WireBox({ size, color = ACCENT, opacity = 0.7 }: { size: [number, number, number]; color?: string; opacity?: number }) {
+  return (
+    <>
+      <mesh>
+        <boxGeometry args={size} />
+        <meshBasicMaterial color={color} wireframe transparent opacity={opacity} />
+      </mesh>
+      <mesh>
+        <boxGeometry args={size} />
+        <meshBasicMaterial color={color} transparent opacity={opacity * 0.12} />
+      </mesh>
+    </>
+  );
+}
 
-// Flowing motion — sweep through smooth keyframes. No grip animation
-// because there's nothing to pick up. Reads as the machine sweeping,
-// scanning, calibrating.
-const KEYS = [
-  { p: 0.00, pose: { shoulder: -0.10, elbow: 1.20, wrist:  0.25 } },
-  { p: 0.25, pose: { shoulder:  0.40, elbow: 1.55, wrist: -0.30 } },
-  { p: 0.50, pose: { shoulder:  0.60, elbow: 0.85, wrist:  0.15 } },
-  { p: 0.75, pose: { shoulder:  0.20, elbow: 1.40, wrist: -0.25 } },
-  { p: 1.00, pose: { shoulder: -0.10, elbow: 1.20, wrist:  0.25 } },
+function WireCyl({ args, color = ACCENT, opacity = 0.7 }: { args: [number, number, number, number]; color?: string; opacity?: number }) {
+  return (
+    <>
+      <mesh>
+        <cylinderGeometry args={args} />
+        <meshBasicMaterial color={color} wireframe transparent opacity={opacity} />
+      </mesh>
+      <mesh>
+        <cylinderGeometry args={args} />
+        <meshBasicMaterial color={color} transparent opacity={opacity * 0.12} />
+      </mesh>
+    </>
+  );
+}
+
+function JointHub({ radius = 0.18, color = ACCENT }: { radius?: number; color?: string }) {
+  return (
+    <mesh>
+      <sphereGeometry args={[radius, 16, 16]} />
+      <meshBasicMaterial color={color} wireframe transparent opacity={0.78} />
+    </mesh>
+  );
+}
+
+// Cycle ------------------------------------------------------------------
+
+type Pose = { j1: number; j2: number; j3: number; j4: number; j5: number };
+
+// 6 keyframes the arm sweeps through. j1 = base yaw, j2 = shoulder pitch,
+// j3 = elbow pitch, j4 = wrist roll (around forearm axis), j5 = wrist pitch.
+// Smooth-step interpolation between adjacent keys.
+const POSES: { p: number; pose: Pose }[] = [
+  { p: 0.00, pose: { j1:  0.00, j2: -0.10, j3:  1.30, j4:  0.0,  j5:  0.20 } },  // rest
+  { p: 0.18, pose: { j1:  0.55, j2:  0.45, j3:  0.55, j4:  0.4,  j5: -0.10 } },  // reach up-right
+  { p: 0.34, pose: { j1:  0.55, j2:  0.45, j3:  0.55, j4: -0.6,  j5:  0.30 } },  // wrist articulate (inspect)
+  { p: 0.50, pose: { j1: -0.45, j2:  0.30, j3:  0.95, j4:  0.0,  j5: -0.20 } },  // swing left, reach forward
+  { p: 0.66, pose: { j1: -0.45, j2:  0.75, j3:  1.50, j4:  0.3,  j5: -0.40 } },  // reach down
+  { p: 0.82, pose: { j1:  0.00, j2: -0.45, j3:  0.30, j4:  0.0,  j5:  0.10 } },  // reach high overhead
+  { p: 1.00, pose: { j1:  0.00, j2: -0.10, j3:  1.30, j4:  0.0,  j5:  0.20 } },  // back to rest
 ];
 
 function poseFor(t: number, cycle: number): Pose {
   const k = ((t % cycle) + cycle) % cycle;
   const p = k / cycle;
-  let a = KEYS[0], b = KEYS[1];
-  for (let i = 0; i < KEYS.length - 1; i++) {
-    if (p >= KEYS[i].p && p <= KEYS[i + 1].p) { a = KEYS[i]; b = KEYS[i + 1]; break; }
+  let a = POSES[0], b = POSES[1];
+  for (let i = 0; i < POSES.length - 1; i++) {
+    if (p >= POSES[i].p && p <= POSES[i + 1].p) { a = POSES[i]; b = POSES[i + 1]; break; }
   }
   const span = b.p - a.p;
   const local = span > 0 ? (p - a.p) / span : 0;
   const e = local * local * (3 - 2 * local);
+  const lerp = (av: number, bv: number) => av + (bv - av) * e;
   return {
-    shoulder: a.pose.shoulder + (b.pose.shoulder - a.pose.shoulder) * e,
-    elbow:    a.pose.elbow    + (b.pose.elbow    - a.pose.elbow)    * e,
-    wrist:    a.pose.wrist    + (b.pose.wrist    - a.pose.wrist)    * e,
+    j1: lerp(a.pose.j1, b.pose.j1),
+    j2: lerp(a.pose.j2, b.pose.j2),
+    j3: lerp(a.pose.j3, b.pose.j3),
+    j4: lerp(a.pose.j4, b.pose.j4),
+    j5: lerp(a.pose.j5, b.pose.j5),
   };
 }
 
-// Central hub — single substantial machine body that slowly rotates
-// around Y, with internal pulse + counter-rotating ring accents.
-function Hub({ spinRef }: { spinRef: React.RefObject<THREE.Group | null> }) {
-  const innerRef = useRef<THREE.Mesh>(null);
-  const ringARef = useRef<THREE.Mesh>(null);
-  const ringBRef = useRef<THREE.Mesh>(null);
+const CYCLE_SECONDS = 14;
+
+function Robot() {
+  const t0 = useRef(0);
+  const j1Ref = useRef<THREE.Group>(null);
+  const j2Ref = useRef<THREE.Group>(null);
+  const j3Ref = useRef<THREE.Group>(null);
+  const j4Ref = useRef<THREE.Group>(null);
+  const j5Ref = useRef<THREE.Group>(null);
+  const tipGlowRef = useRef<THREE.Mesh>(null);
 
   useFrame((_, dt) => {
-    if (spinRef.current) spinRef.current.rotation.y += dt * 0.06;
-    if (innerRef.current) {
+    t0.current += dt;
+    const pose = poseFor(t0.current, CYCLE_SECONDS);
+    if (j1Ref.current) j1Ref.current.rotation.y = pose.j1;
+    if (j2Ref.current) j2Ref.current.rotation.x = pose.j2;
+    if (j3Ref.current) j3Ref.current.rotation.x = -pose.j3;
+    if (j4Ref.current) j4Ref.current.rotation.y = pose.j4;
+    if (j5Ref.current) j5Ref.current.rotation.x = pose.j5;
+    if (tipGlowRef.current) {
       const t = performance.now() * 0.001;
-      innerRef.current.scale.setScalar(1 + Math.sin(t * 1.2) * 0.08);
+      tipGlowRef.current.scale.setScalar(1 + Math.sin(t * 2.0) * 0.18);
     }
-    if (ringARef.current) ringARef.current.rotation.z += dt * 0.35;
-    if (ringBRef.current) ringBRef.current.rotation.z -= dt * 0.22;
   });
 
   return (
-    <group ref={spinRef}>
-      {/* Floor pedestal */}
-      <mesh position={[0, 0.06, 0]}>
-        <cylinderGeometry args={[1.0, 1.2, 0.12, 24]} />
-        <meshBasicMaterial color={ACCENT} wireframe transparent opacity={0.45} />
-      </mesh>
-      <mesh position={[0, 0.06, 0]}>
-        <cylinderGeometry args={[1.0, 1.2, 0.12, 24]} />
-        <meshBasicMaterial color={ACCENT} transparent opacity={0.06} />
-      </mesh>
+    <group position={[0, 0, 0]}>
+      {/* Floor plate — wide flat base mounting the robot */}
+      <group position={[0, BASE_HEIGHT / 2, 0]}>
+        <WireCyl args={[0.55, 0.65, BASE_HEIGHT, 24]} opacity={0.55} />
+      </group>
 
-      {/* Mid column */}
-      <mesh position={[0, 0.5, 0]}>
-        <cylinderGeometry args={[0.55, 0.7, 0.7, 16]} />
-        <meshBasicMaterial color={ACCENT} wireframe transparent opacity={0.55} />
-      </mesh>
-      <mesh position={[0, 0.5, 0]}>
-        <cylinderGeometry args={[0.55, 0.7, 0.7, 16]} />
-        <meshBasicMaterial color={ACCENT} transparent opacity={0.08} />
-      </mesh>
+      {/* J1 — base yaw rotation. Everything above this rotates with j1. */}
+      <group ref={j1Ref} position={[0, BASE_HEIGHT, 0]}>
+        {/* J1 column housing */}
+        <group position={[0, COLUMN_HEIGHT / 2, 0]}>
+          <WireCyl args={[0.30, 0.38, COLUMN_HEIGHT, 16]} opacity={0.6} />
+        </group>
 
-      {/* Upper turret */}
-      <mesh position={[0, 1.15, 0]}>
-        <cylinderGeometry args={[0.7, 0.55, 0.55, 16]} />
-        <meshBasicMaterial color={ACCENT} wireframe transparent opacity={0.6} />
-      </mesh>
-      <mesh position={[0, 1.15, 0]}>
-        <cylinderGeometry args={[0.7, 0.55, 0.55, 16]} />
-        <meshBasicMaterial color={ACCENT} transparent opacity={0.08} />
-      </mesh>
+        {/* Shoulder joint hub at top of column */}
+        <group position={[0, COLUMN_HEIGHT, 0]}>
+          <JointHub radius={0.26} />
 
-      {/* Two counter-rotating rings — both cyan to keep the rig monochrome */}
-      <mesh ref={ringARef} position={[0, 1.15, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.95, 0.018, 8, 48]} />
-        <meshBasicMaterial color={ACCENT} transparent opacity={0.7} />
-      </mesh>
-      <mesh ref={ringBRef} position={[0, 1.15, 0]} rotation={[Math.PI / 2, Math.PI / 6, 0]}>
-        <torusGeometry args={[1.15, 0.012, 8, 56]} />
-        <meshBasicMaterial color={ACCENT} transparent opacity={0.5} />
-      </mesh>
+          {/* J2 — shoulder pitch. Upper arm pivots around X here. */}
+          <group ref={j2Ref}>
+            {/* Upper arm — boxy segment going up from shoulder */}
+            <group position={[0, UPPER_ARM_LEN / 2, 0]}>
+              <WireBox size={[0.26, UPPER_ARM_LEN, 0.30]} />
+            </group>
 
-      {/* Antenna spire */}
-      <mesh position={[0, 1.7, 0]}>
-        <cylinderGeometry args={[0.02, 0.05, 0.55, 8]} />
-        <meshBasicMaterial color={ACCENT} transparent opacity={0.85} />
-      </mesh>
-      <mesh position={[0, 2.05, 0]}>
-        <sphereGeometry args={[0.08, 12, 12]} />
-        <meshBasicMaterial color={ACCENT} transparent opacity={0.95} />
-      </mesh>
+            {/* Elbow joint hub at top of upper arm */}
+            <group position={[0, UPPER_ARM_LEN, 0]}>
+              <JointHub radius={0.22} />
 
-      {/* Inner glow core — visible through the wireframes */}
-      <mesh ref={innerRef} position={[0, 0.85, 0]}>
-        <sphereGeometry args={[0.32, 20, 20]} />
-        <meshBasicMaterial color={ACCENT} transparent opacity={0.55} />
-      </mesh>
-    </group>
-  );
-}
-
-function Factory() {
-  const t0 = useRef(0);
-  const hubRef = useRef<THREE.Group>(null);
-
-  // Joint refs per arm
-  const jointRefs = useRef(
-    ARMS.map(() => ({
-      shoulder: { current: null as THREE.Group | null },
-      elbow:    { current: null as THREE.Group | null },
-      wrist:    { current: null as THREE.Group | null },
-    }))
-  );
-
-  useFrame(() => {
-    t0.current += 1 / 60;  // rough — actual dt comes from useFrame's args but constant-step keeps cycles stable
-    ARMS.forEach((cfg, idx) => {
-      const local = t0.current + cfg.phase;
-      const pose = poseFor(local, cfg.cycle);
-      const j = jointRefs.current[idx];
-      if (j.shoulder.current) j.shoulder.current.rotation.x = pose.shoulder;
-      if (j.elbow.current)    j.elbow.current.rotation.x = -pose.elbow;
-      if (j.wrist.current)    j.wrist.current.rotation.x = pose.wrist;
-    });
-  });
-
-  return (
-    <>
-      <Hub spinRef={hubRef} />
-
-      {/* Arms — all attached to the same hub, all the same accent color */}
-      {ARMS.map((cfg, i) => {
-        const refs = jointRefs.current[i];
-        const ax = Math.sin(cfg.attachYaw) * 0.55;
-        const az = Math.cos(cfg.attachYaw) * 0.55;
-        return (
-          <group key={cfg.id} position={[ax, cfg.attachY, az]} rotation={[0, cfg.attachYaw, 0]}>
-            {/* Shoulder hub mount */}
-            <mesh>
-              <sphereGeometry args={[0.20, 12, 12]} />
-              <meshBasicMaterial color={ACCENT} wireframe transparent opacity={0.75} />
-            </mesh>
-
-            <group ref={refs.shoulder}>
-              {/* Upper arm */}
-              <mesh position={[0, 0.55, 0]}>
-                <boxGeometry args={[0.22, 1.05, 0.22]} />
-                <meshBasicMaterial color={ACCENT} wireframe transparent opacity={0.7} />
-              </mesh>
-              <mesh position={[0, 0.55, 0]}>
-                <boxGeometry args={[0.22, 1.05, 0.22]} />
-                <meshBasicMaterial color={ACCENT} transparent opacity={0.08} />
-              </mesh>
-              <mesh position={[0, 1.1, 0]}>
-                <sphereGeometry args={[0.14, 12, 12]} />
-                <meshBasicMaterial color={ACCENT} wireframe transparent opacity={0.75} />
-              </mesh>
-
-              <group ref={refs.elbow} position={[0, 1.1, 0]}>
+              {/* J3 — elbow pitch. Forearm pivots around X here. */}
+              <group ref={j3Ref}>
                 {/* Forearm */}
-                <mesh position={[0, 0.5, 0]}>
-                  <boxGeometry args={[0.18, 1.0, 0.18]} />
-                  <meshBasicMaterial color={ACCENT} wireframe transparent opacity={0.7} />
-                </mesh>
-                <mesh position={[0, 0.5, 0]}>
-                  <boxGeometry args={[0.18, 1.0, 0.18]} />
-                  <meshBasicMaterial color={ACCENT} transparent opacity={0.08} />
-                </mesh>
-                <mesh position={[0, 1.0, 0]}>
-                  <sphereGeometry args={[0.11, 10, 10]} />
-                  <meshBasicMaterial color={ACCENT} wireframe transparent opacity={0.75} />
-                </mesh>
+                <group position={[0, FOREARM_LEN / 2, 0]}>
+                  <WireBox size={[0.22, FOREARM_LEN, 0.26]} />
+                </group>
 
-                <group ref={refs.wrist} position={[0, 1.0, 0]}>
-                  {/* Wrist tip — small accent piece (no gripper fingers now since
-                      there's nothing to grip) */}
-                  <mesh position={[0, 0.18, 0]}>
-                    <coneGeometry args={[0.12, 0.32, 12]} />
-                    <meshBasicMaterial color={ACCENT} wireframe transparent opacity={0.85} />
-                  </mesh>
-                  <mesh position={[0, 0.18, 0]}>
-                    <coneGeometry args={[0.12, 0.32, 12]} />
-                    <meshBasicMaterial color={ACCENT} transparent opacity={0.10} />
-                  </mesh>
-                  {/* Glow at the tip */}
-                  <mesh position={[0, 0.36, 0]}>
-                    <sphereGeometry args={[0.05, 10, 10]} />
-                    <meshBasicMaterial color={ACCENT} transparent opacity={0.95} />
-                  </mesh>
+                {/* Wrist joint hub at end of forearm */}
+                <group position={[0, FOREARM_LEN, 0]}>
+                  <JointHub radius={0.16} />
+
+                  {/* J4 — wrist roll (around forearm's axis, locally Y) */}
+                  <group ref={j4Ref}>
+                    {/* Wrist segment */}
+                    <group position={[0, WRIST_LEN / 2, 0]}>
+                      <WireCyl args={[0.12, 0.14, WRIST_LEN, 12]} opacity={0.7} />
+                    </group>
+
+                    {/* J5 — wrist pitch */}
+                    <group ref={j5Ref} position={[0, WRIST_LEN, 0]}>
+                      <JointHub radius={0.12} />
+                      {/* End-effector tool — a tapered tip */}
+                      <group position={[0, TOOL_LEN / 2, 0]}>
+                        <mesh>
+                          <coneGeometry args={[0.09, TOOL_LEN, 14]} />
+                          <meshBasicMaterial color={ACCENT} wireframe transparent opacity={0.82} />
+                        </mesh>
+                        <mesh>
+                          <coneGeometry args={[0.09, TOOL_LEN, 14]} />
+                          <meshBasicMaterial color={ACCENT} transparent opacity={0.10} />
+                        </mesh>
+                      </group>
+                      {/* Pulsing glow bead at the very tip */}
+                      <mesh ref={tipGlowRef} position={[0, TOOL_LEN + 0.06, 0]}>
+                        <sphereGeometry args={[0.055, 12, 12]} />
+                        <meshBasicMaterial color={ACCENT} transparent opacity={0.95} />
+                      </mesh>
+                    </group>
+                  </group>
                 </group>
               </group>
             </group>
           </group>
-        );
-      })}
-    </>
+        </group>
+      </group>
+    </group>
   );
 }
 
 function Scene() {
   const { camera } = useThree();
   useEffect(() => {
-    camera.position.set(0, 2.6, 9.0);
-    camera.lookAt(0, 1.4, 0);
+    // Slight three-quarter angle so the articulation reads in 3D, not flat-on.
+    camera.position.set(2.2, 2.4, 8.5);
+    camera.lookAt(0, 1.7, 0);
     if ("aspect" in camera) (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
   }, [camera]);
   return (
     <>
-      <fog attach="fog" args={["#03030a", 8, 26]} />
-      <Factory />
+      <fog attach="fog" args={["#03030a", 9, 24]} />
+      <Robot />
     </>
   );
 }
@@ -252,7 +223,7 @@ export function RoboticFactory3D() {
   return (
     <div className="factory3d" aria-hidden>
       <Canvas
-        camera={{ position: [0, 2.6, 9.0], fov: 38 }}
+        camera={{ position: [2.2, 2.4, 8.5], fov: 38 }}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         dpr={[1, 2]}
       >
