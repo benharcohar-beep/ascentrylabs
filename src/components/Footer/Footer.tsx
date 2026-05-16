@@ -28,6 +28,11 @@ export function Footer() {
             ))}
           </div>
           <div className="footer-col">
+            <h4 className="mono dim">TOOLS</h4>
+            <Link to="/process">How we work</Link>
+            <Link to="/calculator">ROI calculator</Link>
+          </div>
+          <div className="footer-col">
             <h4 className="mono dim">CONTACT</h4>
             <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
             <Link to="/#consult">Schedule consultation</Link>

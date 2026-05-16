@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ArrowRight, Mail, Calendar, Briefcase, Users, Star, Box, FileText, Layers, Phone, Send } from "lucide-react";
+import { Search, ArrowRight, Mail, Calendar, Briefcase, Users, Star, Box, FileText, Layers, Phone, Send, Map as MapIcon, Calculator } from "lucide-react";
 import { CONTACT_EMAIL } from "../../data/nav";
 import "./palette.css";
 
@@ -36,6 +36,8 @@ export function CommandPalette({ open, onClose }: Props) {
       { id: "portfolio", label: "Portfolio", hint: "Selected work", group: "Navigate", icon: <Layers size={16} />, action: go("/portfolio") },
       { id: "about", label: "About", hint: "Hunter Sandidge & Ascentry Labs", group: "Navigate", icon: <Users size={16} />, action: go("/about") },
       { id: "testimonials", label: "Testimonials", hint: "Words from people I've worked with", group: "Navigate", icon: <Star size={16} />, action: go("/testimonials") },
+      { id: "process", label: "How we work", hint: "Discover · Design · Build · Run", group: "Tools", icon: <MapIcon size={16} />, action: go("/process") },
+      { id: "calculator", label: "ROI calculator", hint: "Estimate annual savings", group: "Tools", icon: <Calculator size={16} />, action: go("/calculator") },
       { id: "consult", label: "Schedule consultation", hint: "Free 30-min call", group: "Actions", icon: <Calendar size={16} />, action: go("/#consult") },
       { id: "email", label: "Email Hunter directly", hint: CONTACT_EMAIL, group: "Actions", icon: <Mail size={16} />, action: () => { window.location.href = `mailto:${CONTACT_EMAIL}`; onClose(); } },
       { id: "case", label: "View case studies", hint: "Featured work in portfolio", group: "Actions", icon: <FileText size={16} />, action: go("/portfolio") },

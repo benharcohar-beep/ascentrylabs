@@ -27,7 +27,7 @@
 
 .footer-links {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 32px;
 }
 .footer-col {
@@ -76,8 +76,10 @@
   border-top: 1px solid var(--line-0);
 }
 
+@media (max-width: 1080px) {
+  .footer-links { grid-template-columns: 1fr 1fr; }
+}
 @media (max-width: 880px) {
   .footer-inner { grid-template-columns: 1fr; gap: 32px; }
-  .footer-links { grid-template-columns: 1fr 1fr; }
   .footer-bottom { flex-direction: column; gap: 12px; align-items: flex-start; }
 }

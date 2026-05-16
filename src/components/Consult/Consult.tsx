@@ -1,13 +1,19 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { MagneticButton } from "../ui/MagneticButton";
 import { CONTACT_EMAIL } from "../../data/nav";
-import { Mail, Send, ShieldCheck, Sparkles, ArrowUpRight } from "lucide-react";
+import { Mail, Send, ShieldCheck, Sparkles, ArrowUpRight, Calendar, MessageSquare } from "lucide-react";
+import { CalendlyEmbed } from "./CalendlyEmbed";
 import "./consult.css";
 
+// Hunter's Calendly URL — placeholder. Swap this for his real one and
+// the booking widget below becomes the live conversion path.
+const CALENDLY_URL = "https://calendly.com/hunter-ascentrylabs/30min";
+
 type FormState = { name: string; email: string; company: string; message: string };
+type Tab = "book" | "message";
 
 export function Consult() {
+  const [tab, setTab] = useState<Tab>("book");
   const [form, setForm] = useState<FormState>({ name: "", email: "", company: "", message: "" });
   const [submitted, setSubmitted] = useState(false);
 
@@ -17,7 +23,7 @@ export function Consult() {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Friendly placeholder behavior — open the user's mail client with a prefilled draft.
+    // Placeholder behavior — open the user's mail client with a prefilled draft.
     // Replace with Web3Forms / Formspree / your endpoint when ready.
     const subject = encodeURIComponent(`Consultation request from ${form.name || "Website"}`);
     const body = encodeURIComponent(
@@ -92,7 +98,40 @@ export function Consult() {
                 <span /><span /><span /><span />
               </div>
 
-              {submitted ? (
+              {/* Tab switcher: Book a time (Calendly) vs Send a message (form) */}
+              <div className="consult-tabs" role="tablist">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === "book"}
+                  className={`consult-tab ${tab === "book" ? "is-active" : ""}`}
+                  onClick={() => setTab("book")}
+                >
+                  <Calendar size={14} />
+                  Book a time
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === "message"}
+                  className={`consult-tab ${tab === "message" ? "is-active" : ""}`}
+                  onClick={() => { setTab("message"); setSubmitted(false); }}
+                >
+                  <MessageSquare size={14} />
+                  Send a message
+                </button>
+              </div>
+
+              {tab === "book" && (
+                <div className="consult-book">
+                  <div className="consult-book-meta mono dim">
+                    PICK A 30-MIN SLOT · NO PREP NEEDED
+                  </div>
+                  <CalendlyEmbed url={CALENDLY_URL} />
+                </div>
+              )}
+
+              {tab === "message" && (submitted ? (
                 <div className="consult-success">
                   <Send className="consult-success-icon" />
                   <h3>Message handed off.</h3>
@@ -135,14 +174,14 @@ export function Consult() {
                     />
                   </label>
 
-                  <MagneticButton className="btn btn-primary btn-fx consult-submit">
+                  <button type="submit" className="btn btn-primary btn-fx consult-submit">
                     <span className="btn-bracket">[</span>
                     <Send size={14} />
                     Send transmission
                     <span className="btn-bracket">]</span>
-                  </MagneticButton>
+                  </button>
                 </form>
-              )}
+              ))}
             </div>
           </motion.div>
         </div>

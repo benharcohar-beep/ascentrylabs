@@ -92,6 +92,58 @@
   margin-bottom: 1.4rem;
 }
 
+/* Tab switcher above the form/calendly content */
+.consult-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 22px;
+  background: rgba(3, 3, 10, 0.5);
+  border: 1px solid var(--line-0);
+  border-radius: 999px;
+}
+.consult-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--fg-2);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.25s var(--ease-out-quart), color 0.25s;
+}
+.consult-tab:hover { color: var(--fg-0); }
+.consult-tab.is-active {
+  background: linear-gradient(135deg, rgba(127, 209, 211, 0.16), rgba(91, 157, 217, 0.12));
+  color: var(--fg-0);
+  box-shadow: 0 0 0 1px rgba(127, 209, 211, 0.4), 0 0 18px rgba(127, 209, 211, 0.2);
+}
+
+.consult-book {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.consult-book-meta {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+}
+.calendly-wrap {
+  border: 1px solid var(--line-0);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(3, 3, 10, 0.4);
+}
+.calendly-wrap .calendly-inline-widget {
+  width: 100% !important;
+  border-radius: 12px;
+}
+
 .consult-form {
   display: flex;
   flex-direction: column;

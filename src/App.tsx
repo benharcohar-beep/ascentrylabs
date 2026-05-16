@@ -13,6 +13,8 @@ import { ServicesPage } from "./pages/ServicesPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
 import { AboutPage } from "./pages/AboutPage";
 import { TestimonialsPage } from "./pages/TestimonialsPage";
+import { ProcessPage } from "./pages/ProcessPage";
+import { CalculatorPage } from "./pages/CalculatorPage";
 
 export default function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -60,14 +62,20 @@ export default function App() {
       <div className="app-content">
         <Nav showSectionLinks={!isHome} />
         <main>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/services" element={<ServicesPage />} />
-            <Route path="/portfolio" element={<PortfolioPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/testimonials" element={<TestimonialsPage />} />
-            <Route path="*" element={<HomePage />} />
-          </Routes>
+          {/* key={location.pathname} forces React to remount the wrapper on
+              route changes, retriggering the CSS fade-in keyframe. */}
+          <div key={location.pathname} className="page-transition">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/services" element={<ServicesPage />} />
+              <Route path="/portfolio" element={<PortfolioPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/testimonials" element={<TestimonialsPage />} />
+              <Route path="/process" element={<ProcessPage />} />
+              <Route path="/calculator" element={<CalculatorPage />} />
+              <Route path="*" element={<HomePage />} />
+            </Routes>
+          </div>
         </main>
         <Footer />
       </div>

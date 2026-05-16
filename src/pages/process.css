@@ -1,0 +1,174 @@
+.process { padding-top: 40px; }
+
+.process-flow {
+  position: relative;
+  padding-left: 80px;
+}
+
+/* Vertical spine connecting all phases */
+.process-spine {
+  position: absolute;
+  left: 28px;
+  top: 28px;
+  bottom: 40px;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(127, 209, 211, 0.4) 5%,
+    rgba(127, 209, 211, 0.4) 95%,
+    transparent
+  );
+}
+
+.process-phase {
+  position: relative;
+  padding-bottom: 48px;
+}
+.process-phase:last-child { padding-bottom: 0; }
+
+/* Round node anchored to the spine for each phase */
+.process-node {
+  position: absolute;
+  left: -67px;
+  top: 30px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.process-node-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--phase-color, var(--accent));
+  box-shadow: 0 0 10px var(--phase-color, var(--accent)),
+              0 0 24px color-mix(in srgb, var(--phase-color, var(--accent)) 60%, transparent);
+  position: relative;
+  z-index: 2;
+}
+.process-node-ring {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--phase-color, var(--accent));
+  border-radius: 50%;
+  opacity: 0.4;
+  animation: process-ring-pulse 2.6s ease-in-out infinite;
+}
+@keyframes process-ring-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.7); opacity: 0; }
+}
+
+.process-card {
+  --cut: 14px;
+  position: relative;
+  padding: 28px 32px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-left: 2px solid var(--phase-color, var(--accent));
+  clip-path: polygon(
+    var(--cut) 0,
+    100% 0,
+    100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%,
+    0 100%,
+    0 var(--cut)
+  );
+}
+
+.process-card-corners span {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--phase-color, var(--accent));
+  pointer-events: none;
+  opacity: 0.55;
+}
+.process-card-corners span:nth-child(1) { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+.process-card-corners span:nth-child(2) { top: 10px; right: 10px; border-left: none; border-bottom: none; }
+.process-card-corners span:nth-child(3) { bottom: 10px; left: 10px; border-right: none; border-top: none; }
+.process-card-corners span:nth-child(4) { bottom: 10px; right: 10px; border-left: none; border-top: none; }
+
+.process-card-head {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--line-0);
+}
+.process-card-icon {
+  color: var(--phase-color, var(--accent));
+  filter: drop-shadow(0 0 14px var(--phase-color, var(--accent)));
+  display: inline-flex;
+}
+.process-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-left: auto;
+  text-align: right;
+}
+.process-num {
+  color: var(--phase-color, var(--accent));
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+}
+.process-duration {
+  color: var(--fg-2);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+}
+
+.process-name {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  color: var(--fg-0);
+  margin-bottom: 0.75rem;
+  line-height: 1.05;
+}
+.process-desc {
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--fg-1);
+  max-width: 64ch;
+  margin-bottom: 1.4rem;
+}
+
+.process-deliverables-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  margin-bottom: 10px;
+}
+.process-deliverables ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.process-deliverables li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.95rem;
+  color: var(--fg-1);
+}
+.process-deliverable-arrow {
+  color: var(--phase-color, var(--accent));
+  flex-shrink: 0;
+  margin-top: 5px;
+  filter: drop-shadow(0 0 6px var(--phase-color, var(--accent)));
+}
+
+@media (max-width: 720px) {
+  .process-flow { padding-left: 44px; }
+  .process-spine { left: 14px; }
+  .process-node { left: -39px; }
+  .process-card { padding: 22px 20px; }
+  .process-card-head { flex-wrap: wrap; gap: 12px; }
+  .process-card-meta { margin-left: 0; text-align: left; align-items: flex-start; flex-direction: row; gap: 14px; }
+}

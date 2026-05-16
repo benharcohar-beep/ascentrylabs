@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { TiltCard } from "../ui/TiltCard";
+import { AnimatedNumber } from "../ui/AnimatedNumber";
 import "./about.css";
 
 const HIGHLIGHTS = [
@@ -64,7 +65,7 @@ export function About() {
             >
               <TiltCard className="about-stat glass" intensity={5} style={{ color: h.color }}>
                 <div className="about-stat-num" style={{ color: h.color, textShadow: `0 0 32px ${h.color}` }}>
-                  {h.num}
+                  <AnimatedNumber value={h.num} durationMs={1800} />
                 </div>
                 <div className="about-stat-label">{h.label}</div>
               </TiltCard>
