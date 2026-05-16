@@ -1,13 +1,25 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import "./factory3d.css";
 
-// 3D wireframe factory floor in WebGL. Each arm runs a continuous
-// pick → lift → swing → place → return cycle AND owns its own crate,
-// which travels in from the conveyor approach, gets attached to the
-// gripper while held, releases at the placement zone, and fades out
-// before respawning on the next cycle.
+// AI processing line. Glowing energy orbs flow continuously along an
+// invisible horizontal conveyor in front of the arms. Each arm runs
+// its own pick → lift → swing → release cycle, claiming a passing orb
+// when its gripper closes and releasing it back downstream when the
+// gripper opens. Released orbs flash brighter for a moment (signalling
+// "processed") then continue traveling at conveyor speed.
+//
+// Reads as: data packets being inspected by an AI line. Cyan/blue/gold
+// orbs on a dark wireframe stage. Far more on-brand for an AI
+// consultancy than cardboard crates.
+
+type Hue = "cyan" | "blue" | "gold";
+const HUE_COLOR: Record<Hue, string> = {
+  cyan: "#7fd1d3",
+  blue: "#5b9dd9",
+  gold: "#ffc000",
+};
 
 type ArmConfig = {
   id: string;
@@ -16,38 +28,46 @@ type ArmConfig = {
   phase: number;
   cycle: number;
   baseYaw: number;
-  hue: "cyan" | "blue" | "gold";
+  hue: Hue;
+  pickX: number;     // world x where this arm picks orbs
 };
 
 const ARMS: ArmConfig[] = [
-  { id: "A1", position: [-7,   0, -1],  scale: 1.0,  phase: 0,    cycle: 9,  baseYaw: -0.2,  hue: "cyan" },
-  { id: "A2", position: [-3.6, 0,  0],  scale: 0.9,  phase: -2.4, cycle: 8,  baseYaw:  0.1,  hue: "blue" },
-  { id: "A3", position: [ 0,   0, -1],  scale: 1.1, phase: -4.6, cycle: 10, baseYaw: -0.05, hue: "cyan" },
-  { id: "A4", position: [ 3.6, 0,  0],  scale: 0.85, phase: -1.1, cycle: 9,  baseYaw:  0.18, hue: "gold" },
-  { id: "A5", position: [ 7,   0, -1],  scale: 1.0,  phase: -6,   cycle: 11, baseYaw: -0.15, hue: "cyan" },
+  { id: "A1", position: [-7,   0, -0.6], scale: 1.0,  phase: 0,    cycle: 7,  baseYaw: -0.1, hue: "cyan", pickX: -7   },
+  { id: "A2", position: [-3.6, 0,  0.0], scale: 0.9,  phase: -1.6, cycle: 6,  baseYaw:  0.05, hue: "blue", pickX: -3.6 },
+  { id: "A3", position: [ 0,   0, -0.6], scale: 1.1,  phase: -3.2, cycle: 7,  baseYaw:  0.0,  hue: "cyan", pickX:  0   },
+  { id: "A4", position: [ 3.6, 0,  0.0], scale: 0.85, phase: -4.4, cycle: 6,  baseYaw: -0.05, hue: "gold", pickX:  3.6 },
+  { id: "A5", position: [ 7,   0, -0.6], scale: 1.0,  phase: -5.5, cycle: 7,  baseYaw:  0.1,  hue: "cyan", pickX:  7   },
 ];
 
-const HUE_COLOR = {
-  cyan: "#7fd1d3",
-  blue: "#5b9dd9",
-  gold: "#ffc000",
-};
+// Conveyor parameters
+const CONVEYOR_Z = 1.45;
+const CONVEYOR_Y = 0.55;
+const CONVEYOR_X_MIN = -14;
+const CONVEYOR_X_MAX = 14;
+const ORB_SPEED = 0.9;             // units / second
+const NUM_ORBS = 14;
+const PICK_X_TOLERANCE = 0.7;      // arm grabs orbs within this x distance of pickX
+const PICK_Z_THRESHOLD = 1.0;      // arm only grabs orbs that are on the conveyor (z > this)
 
-type Pose = { baseYaw: number; shoulder: number; elbow: number; wrist: number; grip: number };
+type Pose = { shoulder: number; elbow: number; wrist: number; grip: number; baseYaw: number };
 
+// Cycle keyframes — pick down toward conveyor (z=+1.45), lift, swing
+// back over the arm to placement zone (negative z = behind), release.
+// "grip" 1.0 = open, 0.0 = fully closed.
 const KEYS = [
-  { p: 0.00, pose: { baseYaw: 0,    shoulder: -0.18, elbow: 1.15, wrist:  0.00, grip: 0.55 } },
-  { p: 0.18, pose: { baseYaw: 0,    shoulder:  0.55, elbow: 1.50, wrist: -0.35, grip: 0.55 } },
-  { p: 0.28, pose: { baseYaw: 0,    shoulder:  0.55, elbow: 1.50, wrist: -0.35, grip: 0.05 } },
-  { p: 0.42, pose: { baseYaw: 0,    shoulder:  0.10, elbow: 0.55, wrist: -0.10, grip: 0.05 } },
-  { p: 0.58, pose: { baseYaw: 1.05, shoulder: -0.05, elbow: 0.80, wrist:  0.25, grip: 0.05 } },
-  { p: 0.72, pose: { baseYaw: 1.05, shoulder:  0.40, elbow: 1.30, wrist:  0.25, grip: 0.05 } },
-  { p: 0.78, pose: { baseYaw: 1.05, shoulder:  0.40, elbow: 1.30, wrist:  0.25, grip: 0.55 } },
-  { p: 0.92, pose: { baseYaw: 0,    shoulder: -0.18, elbow: 1.15, wrist:  0.00, grip: 0.55 } },
-  { p: 1.00, pose: { baseYaw: 0,    shoulder: -0.18, elbow: 1.15, wrist:  0.00, grip: 0.55 } },
+  { p: 0.00, pose: { shoulder: -0.20, elbow: 1.10, wrist:  0.20, grip: 1.0, baseYaw:  0.05 } },
+  { p: 0.18, pose: { shoulder:  0.62, elbow: 1.55, wrist: -0.40, grip: 1.0, baseYaw:  0.05 } }, // reach down to conveyor
+  { p: 0.28, pose: { shoulder:  0.62, elbow: 1.55, wrist: -0.40, grip: 0.0, baseYaw:  0.05 } }, // close grip
+  { p: 0.42, pose: { shoulder:  0.10, elbow: 0.70, wrist: -0.15, grip: 0.0, baseYaw:  0.05 } }, // lift
+  { p: 0.58, pose: { shoulder:  0.30, elbow: 1.10, wrist:  0.15, grip: 0.0, baseYaw:  0.05 } }, // hold high
+  { p: 0.72, pose: { shoulder:  0.62, elbow: 1.55, wrist: -0.40, grip: 0.0, baseYaw:  0.05 } }, // back down to conveyor
+  { p: 0.78, pose: { shoulder:  0.62, elbow: 1.55, wrist: -0.40, grip: 1.0, baseYaw:  0.05 } }, // open grip, release
+  { p: 0.92, pose: { shoulder: -0.20, elbow: 1.10, wrist:  0.20, grip: 1.0, baseYaw:  0.05 } }, // return to rest
+  { p: 1.00, pose: { shoulder: -0.20, elbow: 1.10, wrist:  0.20, grip: 1.0, baseYaw:  0.05 } },
 ];
 
-function poseFor(t: number, cycle: number, baseYawBias: number): Pose {
+function poseFor(t: number, cycle: number): Pose {
   const k = ((t % cycle) + cycle) % cycle;
   const p = k / cycle;
   let a = KEYS[0], b = KEYS[1];
@@ -58,228 +78,302 @@ function poseFor(t: number, cycle: number, baseYawBias: number): Pose {
   const local = span > 0 ? (p - a.p) / span : 0;
   const e = local * local * (3 - 2 * local);
   return {
-    baseYaw:  baseYawBias + (a.pose.baseYaw  + (b.pose.baseYaw  - a.pose.baseYaw)  * e),
     shoulder: a.pose.shoulder + (b.pose.shoulder - a.pose.shoulder) * e,
     elbow:    a.pose.elbow    + (b.pose.elbow    - a.pose.elbow)    * e,
     wrist:    a.pose.wrist    + (b.pose.wrist    - a.pose.wrist)    * e,
     grip:     a.pose.grip     + (b.pose.grip     - a.pose.grip)     * e,
+    baseYaw:  a.pose.baseYaw  + (b.pose.baseYaw  - a.pose.baseYaw)  * e,
   };
 }
 
-// Returns the normalized cycle phase 0..1 for a given time
-function phaseFor(t: number, cycle: number): number {
-  const k = ((t % cycle) + cycle) % cycle;
-  return k / cycle;
-}
+// Shared mutable state for the whole scene — refs avoid React re-renders
+type OrbState = {
+  ownedByArm: string | null;
+  flashUntil: number;     // performance.now() until which the orb glows brighter
+  hue: Hue;
+};
 
-function ArmUnit({ cfg, t0 }: { cfg: ArmConfig; t0: React.MutableRefObject<number> }) {
-  const baseRef = useRef<THREE.Group>(null);
-  const shoulderRef = useRef<THREE.Group>(null);
-  const elbowRef = useRef<THREE.Group>(null);
-  const wristRef = useRef<THREE.Group>(null);
-  const fingerLRef = useRef<THREE.Group>(null);
-  const fingerRRef = useRef<THREE.Group>(null);
-  const grippedRef = useRef<THREE.Group>(null);     // node parented to wrist; the crate while held
-  const freeRef = useRef<THREE.Group>(null);        // node in world space; the crate while traveling / placed
-  const tmpVec = useRef(new THREE.Vector3());
-  const color = HUE_COLOR[cfg.hue];
+type ArmRuntime = {
+  cfg: ArmConfig;
+  wristRef: { current: THREE.Group | null };
+  heldOrbId: number | null;
+};
 
-  useFrame(() => {
-    const local = t0.current + cfg.phase;
-    const pose = poseFor(local, cfg.cycle, cfg.baseYaw);
-    const phase = phaseFor(local, cfg.cycle);
-
-    if (baseRef.current) baseRef.current.rotation.y = pose.baseYaw;
-    if (shoulderRef.current) shoulderRef.current.rotation.x = pose.shoulder;
-    if (elbowRef.current) elbowRef.current.rotation.x = -pose.elbow;
-    if (wristRef.current) wristRef.current.rotation.x = pose.wrist;
-    if (fingerLRef.current) fingerLRef.current.rotation.x = -pose.grip;
-    if (fingerRRef.current) fingerRRef.current.rotation.x =  pose.grip;
-
-    // Crate state machine driven by cycle phase:
-    //   0.00–0.18 : APPROACH — crate slides in from the right on the
-    //               conveyor toward the pick zone
-    //   0.18–0.28 : SETTLE — crate sits in pick zone while arm closes grip
-    //   0.28–0.78 : HELD — crate attached to gripper (parented under wrist)
-    //   0.78–0.92 : PLACED — crate sits in placement zone after release
-    //   0.92–1.00 : FADE — crate fades out, ready to respawn
-    const held = phase >= 0.28 && phase < 0.78;
-
-    if (grippedRef.current) {
-      grippedRef.current.visible = held;
-    }
-    if (freeRef.current) {
-      freeRef.current.visible = !held;
-
-      // Approach: from x=+2.5 (right of arm) to x=0 (pick zone) over phase 0..0.18
-      if (phase < 0.18) {
-        const k = phase / 0.18;
-        const x = 2.5 - 2.5 * k;
-        freeRef.current.position.set(x, 0.18, 1.4);
-        setOpacity(freeRef.current, 1);
-      } else if (phase < 0.28) {
-        // Settle in pick zone
-        freeRef.current.position.set(0, 0.18, 1.4);
-        setOpacity(freeRef.current, 1);
-      } else if (phase < 0.78) {
-        // Held — invisible (the grippedRef is shown instead)
-        setOpacity(freeRef.current, 0);
-      } else if (phase < 0.92) {
-        // Placed — sits at placement zone (behind the arm relative to camera)
-        freeRef.current.position.set(0, 0.18, -1.6);
-        setOpacity(freeRef.current, 1);
-      } else {
-        // Fade
-        const k = (phase - 0.92) / 0.08;
-        freeRef.current.position.set(0, 0.18, -1.6);
-        setOpacity(freeRef.current, 1 - k);
-      }
-    }
-
-    // Light up gripper while holding
-    if (grippedRef.current && held) {
-      // Position the held crate just below the wrist (gripper tip is ~0.34 below wrist origin)
-      grippedRef.current.position.set(0, -0.34, 0);
-    }
-    // suppress unused warning
-    void tmpVec;
-  });
-
+// Layered glowing sphere — bright core, colored shell, faint outer halo
+function EnergyOrb({ color, glow = 1 }: { color: string; glow?: number }) {
   return (
-    <group position={cfg.position} scale={cfg.scale}>
-      {/* Floor pedestal (static) */}
-      <mesh position={[0, 0.06, 0]}>
-        <cylinderGeometry args={[0.42, 0.5, 0.12, 16]} />
-        <meshBasicMaterial color={color} wireframe transparent opacity={0.55} />
+    <group>
+      {/* outermost halo */}
+      <mesh>
+        <sphereGeometry args={[0.32, 14, 14]} />
+        <meshBasicMaterial color={color} transparent opacity={0.10 * glow} depthWrite={false} />
       </mesh>
-      <mesh position={[0, 0.06, 0]}>
-        <cylinderGeometry args={[0.42, 0.5, 0.12, 16]} />
-        <meshBasicMaterial color={color} transparent opacity={0.08} />
+      {/* mid halo */}
+      <mesh>
+        <sphereGeometry args={[0.22, 16, 16]} />
+        <meshBasicMaterial color={color} transparent opacity={0.32 * glow} depthWrite={false} />
       </mesh>
-
-      {/* Crate while free (in world / arm-local space) */}
-      <group ref={freeRef}>
-        <Crate color="#aef5f8" />
-      </group>
-
-      {/* Base column — rotates in yaw */}
-      <group ref={baseRef} position={[0, 0.18, 0]}>
-        <mesh position={[0, 0.18, 0]}>
-          <cylinderGeometry args={[0.22, 0.28, 0.36, 12]} />
-          <meshBasicMaterial color={color} wireframe transparent opacity={0.65} />
-        </mesh>
-        <mesh position={[0, 0.38, 0]}>
-          <sphereGeometry args={[0.18, 12, 12]} />
-          <meshBasicMaterial color={color} wireframe transparent opacity={0.75} />
-        </mesh>
-
-        <group ref={shoulderRef} position={[0, 0.38, 0]}>
-          <mesh position={[0, 0.6, 0]}>
-            <boxGeometry args={[0.22, 1.2, 0.22]} />
-            <meshBasicMaterial color={color} wireframe transparent opacity={0.7} />
-          </mesh>
-          <mesh position={[0, 0.6, 0]}>
-            <boxGeometry args={[0.22, 1.2, 0.22]} />
-            <meshBasicMaterial color={color} transparent opacity={0.08} />
-          </mesh>
-          <mesh position={[0, 1.2, 0]}>
-            <sphereGeometry args={[0.14, 12, 12]} />
-            <meshBasicMaterial color={color} wireframe transparent opacity={0.75} />
-          </mesh>
-
-          <group ref={elbowRef} position={[0, 1.2, 0]}>
-            <mesh position={[0, 0.5, 0]}>
-              <boxGeometry args={[0.18, 1.0, 0.18]} />
-              <meshBasicMaterial color={color} wireframe transparent opacity={0.7} />
-            </mesh>
-            <mesh position={[0, 0.5, 0]}>
-              <boxGeometry args={[0.18, 1.0, 0.18]} />
-              <meshBasicMaterial color={color} transparent opacity={0.08} />
-            </mesh>
-            <mesh position={[0, 1.0, 0]}>
-              <sphereGeometry args={[0.11, 10, 10]} />
-              <meshBasicMaterial color={color} wireframe transparent opacity={0.75} />
-            </mesh>
-
-            <group ref={wristRef} position={[0, 1.0, 0]}>
-              <mesh position={[0, 0.14, 0]}>
-                <boxGeometry args={[0.22, 0.14, 0.22]} />
-                <meshBasicMaterial color={color} wireframe transparent opacity={0.8} />
-              </mesh>
-
-              <group ref={fingerLRef} position={[-0.07, 0.22, 0]}>
-                <mesh position={[0, 0.12, 0]}>
-                  <boxGeometry args={[0.06, 0.24, 0.08]} />
-                  <meshBasicMaterial color={color} wireframe transparent opacity={0.85} />
-                </mesh>
-              </group>
-              <group ref={fingerRRef} position={[0.07, 0.22, 0]}>
-                <mesh position={[0, 0.12, 0]}>
-                  <boxGeometry args={[0.06, 0.24, 0.08]} />
-                  <meshBasicMaterial color={color} wireframe transparent opacity={0.85} />
-                </mesh>
-              </group>
-
-              {/* Crate while held — parented under the wrist so it follows automatically */}
-              <group ref={grippedRef} position={[0, -0.34, 0]}>
-                <Crate color="#aef5f8" />
-              </group>
-            </group>
-          </group>
-        </group>
-      </group>
+      {/* colored shell */}
+      <mesh>
+        <sphereGeometry args={[0.15, 18, 18]} />
+        <meshBasicMaterial color={color} transparent opacity={0.75 * glow} />
+      </mesh>
+      {/* bright white core */}
+      <mesh>
+        <sphereGeometry args={[0.08, 16, 16]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={Math.min(1, 0.95 * glow)} />
+      </mesh>
     </group>
   );
 }
 
-// Helper: set opacity on every mesh material inside a group
-function setOpacity(group: THREE.Group, opacity: number) {
-  group.traverse((child) => {
-    if ((child as THREE.Mesh).isMesh) {
-      const mat = (child as THREE.Mesh).material as THREE.Material;
-      mat.opacity = opacity;
-      mat.transparent = true;
+function Factory() {
+  const t0 = useRef(0);
+
+  // Arms — refs to track which orb each is currently holding + pose targets
+  const armRuntimes = useRef<ArmRuntime[]>(
+    ARMS.map((cfg) => ({ cfg, wristRef: { current: null }, heldOrbId: null }))
+  );
+
+  // Orbs — mutable state. Each orb has a free-flowing position; index in
+  // this array matches index in the rendered orb meshes.
+  const orbs = useRef<OrbState[]>(
+    Array.from({ length: NUM_ORBS }, (_, i) => ({
+      ownedByArm: null,
+      flashUntil: 0,
+      hue: (["cyan", "blue", "gold"] as Hue[])[i % 3],
+    }))
+  );
+  const orbPositions = useRef<THREE.Vector3[]>(
+    Array.from({ length: NUM_ORBS }, (_, i) => {
+      const spacing = (CONVEYOR_X_MAX - CONVEYOR_X_MIN) / NUM_ORBS;
+      return new THREE.Vector3(CONVEYOR_X_MIN + i * spacing, CONVEYOR_Y, CONVEYOR_Z);
+    })
+  );
+  const orbRefs = useRef<(THREE.Group | null)[]>([]);
+
+  // Arm joint refs — one set per arm
+  const jointRefs = useRef(
+    ARMS.map(() => ({
+      base: { current: null as THREE.Group | null },
+      shoulder: { current: null as THREE.Group | null },
+      elbow: { current: null as THREE.Group | null },
+      wrist: { current: null as THREE.Group | null },
+      fingerL: { current: null as THREE.Group | null },
+      fingerR: { current: null as THREE.Group | null },
+    }))
+  );
+
+  // Tie wrist refs into the runtime so the orb-claim logic can reach them
+  useEffect(() => {
+    armRuntimes.current.forEach((rt, i) => {
+      rt.wristRef = jointRefs.current[i].wrist;
+    });
+  }, []);
+
+  const gripperTmp = useMemo(() => new THREE.Vector3(), []);
+
+  useFrame((_, dt) => {
+    t0.current += dt;
+    const now = performance.now();
+
+    // 1) Advance each arm's pose + handle orb pickup/release
+    armRuntimes.current.forEach((rt, idx) => {
+      const local = t0.current + rt.cfg.phase;
+      const pose = poseFor(local, rt.cfg.cycle);
+      const joints = jointRefs.current[idx];
+      if (joints.base.current) joints.base.current.rotation.y = pose.baseYaw + rt.cfg.baseYaw;
+      if (joints.shoulder.current) joints.shoulder.current.rotation.x = pose.shoulder;
+      if (joints.elbow.current) joints.elbow.current.rotation.x = -pose.elbow;
+      if (joints.wrist.current) joints.wrist.current.rotation.x = pose.wrist;
+      if (joints.fingerL.current) joints.fingerL.current.rotation.x = -0.5 * pose.grip;
+      if (joints.fingerR.current) joints.fingerR.current.rotation.x =  0.5 * pose.grip;
+
+      // Gripper closed → try to pick up a passing orb
+      if (pose.grip < 0.35) {
+        if (rt.heldOrbId === null) {
+          // Find a free orb in our pick zone
+          for (let oi = 0; oi < NUM_ORBS; oi++) {
+            const o = orbs.current[oi];
+            if (o.ownedByArm !== null) continue;
+            const pos = orbPositions.current[oi];
+            if (Math.abs(pos.x - rt.cfg.pickX) < PICK_X_TOLERANCE && pos.z > PICK_Z_THRESHOLD) {
+              o.ownedByArm = rt.cfg.id;
+              rt.heldOrbId = oi;
+              break;
+            }
+          }
+        }
+        // If holding an orb, snap it to the gripper's world position
+        if (rt.heldOrbId !== null && rt.wristRef.current) {
+          rt.wristRef.current.getWorldPosition(gripperTmp);
+          gripperTmp.y -= 0.34 * rt.cfg.scale;     // gripper tip offset (scaled)
+          orbPositions.current[rt.heldOrbId].copy(gripperTmp);
+        }
+      } else {
+        // Gripper opening / open → release any held orb, give it a flash
+        if (rt.heldOrbId !== null) {
+          orbs.current[rt.heldOrbId].ownedByArm = null;
+          orbs.current[rt.heldOrbId].flashUntil = now + 700;
+          rt.heldOrbId = null;
+        }
+      }
+    });
+
+    // 2) Update orb positions (free ones travel; held ones already snapped)
+    for (let oi = 0; oi < NUM_ORBS; oi++) {
+      const o = orbs.current[oi];
+      const pos = orbPositions.current[oi];
+      if (o.ownedByArm === null) {
+        pos.x += ORB_SPEED * dt;
+        if (pos.x > CONVEYOR_X_MAX) {
+          pos.x = CONVEYOR_X_MIN;
+        }
+        // Drift back to the conveyor y/z (in case the arm released away from it)
+        pos.y += (CONVEYOR_Y - pos.y) * Math.min(1, dt * 4);
+        pos.z += (CONVEYOR_Z - pos.z) * Math.min(1, dt * 4);
+      }
+      // Sync rendered mesh
+      const ref = orbRefs.current[oi];
+      if (ref) {
+        ref.position.copy(pos);
+        // Apply flash glow if recently released
+        const flashK = Math.max(0, Math.min(1, (o.flashUntil - now) / 700));
+        const glow = 1 + flashK * 0.8;
+        ref.scale.setScalar(1 + flashK * 0.25);
+        // Update opacity via material — child mesh order matches EnergyOrb
+        ref.children.forEach((child, ci) => {
+          const mat = (child as THREE.Mesh).material as THREE.MeshBasicMaterial;
+          if (!mat) return;
+          // Boost halo opacity during flash
+          const base = [0.10, 0.32, 0.75, 0.95][ci] ?? 0.5;
+          mat.opacity = Math.min(1, base * glow);
+        });
+      }
     }
   });
-}
 
-function Crate({ color }: { color: string }) {
   return (
     <>
-      <mesh>
-        <boxGeometry args={[0.32, 0.22, 0.28]} />
-        <meshBasicMaterial color={color} wireframe transparent opacity={0.85} />
-      </mesh>
-      <mesh>
-        <boxGeometry args={[0.32, 0.22, 0.28]} />
-        <meshBasicMaterial color={color} transparent opacity={0.12} />
-      </mesh>
+      {/* Orbs — rendered as a flat list of groups */}
+      {orbs.current.map((o, i) => (
+        <group key={i} ref={(el) => { orbRefs.current[i] = el; }}>
+          <EnergyOrb color={HUE_COLOR[o.hue]} />
+        </group>
+      ))}
+
+      {/* Arms */}
+      {ARMS.map((cfg, i) => {
+        const color = HUE_COLOR[cfg.hue];
+        const refs = jointRefs.current[i];
+        return (
+          <group key={cfg.id} position={cfg.position} scale={cfg.scale}>
+            {/* Floor pedestal */}
+            <mesh position={[0, 0.06, 0]}>
+              <cylinderGeometry args={[0.42, 0.5, 0.12, 16]} />
+              <meshBasicMaterial color={color} wireframe transparent opacity={0.55} />
+            </mesh>
+            <mesh position={[0, 0.06, 0]}>
+              <cylinderGeometry args={[0.42, 0.5, 0.12, 16]} />
+              <meshBasicMaterial color={color} transparent opacity={0.08} />
+            </mesh>
+            <group ref={refs.base} position={[0, 0.18, 0]}>
+              <mesh position={[0, 0.18, 0]}>
+                <cylinderGeometry args={[0.22, 0.28, 0.36, 12]} />
+                <meshBasicMaterial color={color} wireframe transparent opacity={0.65} />
+              </mesh>
+              <mesh position={[0, 0.38, 0]}>
+                <sphereGeometry args={[0.18, 12, 12]} />
+                <meshBasicMaterial color={color} wireframe transparent opacity={0.75} />
+              </mesh>
+              <group ref={refs.shoulder} position={[0, 0.38, 0]}>
+                <mesh position={[0, 0.6, 0]}>
+                  <boxGeometry args={[0.22, 1.2, 0.22]} />
+                  <meshBasicMaterial color={color} wireframe transparent opacity={0.7} />
+                </mesh>
+                <mesh position={[0, 0.6, 0]}>
+                  <boxGeometry args={[0.22, 1.2, 0.22]} />
+                  <meshBasicMaterial color={color} transparent opacity={0.08} />
+                </mesh>
+                <mesh position={[0, 1.2, 0]}>
+                  <sphereGeometry args={[0.14, 12, 12]} />
+                  <meshBasicMaterial color={color} wireframe transparent opacity={0.75} />
+                </mesh>
+                <group ref={refs.elbow} position={[0, 1.2, 0]}>
+                  <mesh position={[0, 0.5, 0]}>
+                    <boxGeometry args={[0.18, 1.0, 0.18]} />
+                    <meshBasicMaterial color={color} wireframe transparent opacity={0.7} />
+                  </mesh>
+                  <mesh position={[0, 0.5, 0]}>
+                    <boxGeometry args={[0.18, 1.0, 0.18]} />
+                    <meshBasicMaterial color={color} transparent opacity={0.08} />
+                  </mesh>
+                  <mesh position={[0, 1.0, 0]}>
+                    <sphereGeometry args={[0.11, 10, 10]} />
+                    <meshBasicMaterial color={color} wireframe transparent opacity={0.75} />
+                  </mesh>
+                  <group ref={refs.wrist} position={[0, 1.0, 0]}>
+                    <mesh position={[0, 0.14, 0]}>
+                      <boxGeometry args={[0.22, 0.14, 0.22]} />
+                      <meshBasicMaterial color={color} wireframe transparent opacity={0.8} />
+                    </mesh>
+                    <group ref={refs.fingerL} position={[-0.07, 0.22, 0]}>
+                      <mesh position={[0, 0.12, 0]}>
+                        <boxGeometry args={[0.06, 0.24, 0.08]} />
+                        <meshBasicMaterial color={color} wireframe transparent opacity={0.85} />
+                      </mesh>
+                    </group>
+                    <group ref={refs.fingerR} position={[0.07, 0.22, 0]}>
+                      <mesh position={[0, 0.12, 0]}>
+                        <boxGeometry args={[0.06, 0.24, 0.08]} />
+                        <meshBasicMaterial color={color} wireframe transparent opacity={0.85} />
+                      </mesh>
+                    </group>
+                  </group>
+                </group>
+              </group>
+            </group>
+          </group>
+        );
+      })}
+
+      {/* Faint conveyor trace line — gives the orbs a visible path without
+          re-introducing the heavy slab that caused the horizon stripe */}
+      <ConveyorLine />
     </>
+  );
+}
+
+function ConveyorLine() {
+  // Two thin parallel lines along the orbs' x track. Used only as a
+  // subtle path indicator so the eye groups the orbs as "on a line".
+  const geom = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    const verts = new Float32Array([
+      CONVEYOR_X_MIN, CONVEYOR_Y - 0.18, CONVEYOR_Z - 0.16, CONVEYOR_X_MAX, CONVEYOR_Y - 0.18, CONVEYOR_Z - 0.16,
+      CONVEYOR_X_MIN, CONVEYOR_Y - 0.18, CONVEYOR_Z + 0.16, CONVEYOR_X_MAX, CONVEYOR_Y - 0.18, CONVEYOR_Z + 0.16,
+    ]);
+    g.setAttribute("position", new THREE.BufferAttribute(verts, 3));
+    return g;
+  }, []);
+  return (
+    <lineSegments geometry={geom}>
+      <lineBasicMaterial color="#7fd1d3" transparent opacity={0.18} />
+    </lineSegments>
   );
 }
 
 function Scene() {
   const { camera } = useThree();
-  const t0 = useRef(0);
-
-  // Explicit camera position + lookAt — pushes the visual horizon higher
-  // in the frame so arms sit comfortably in the lower half of the viewport.
   useEffect(() => {
     camera.position.set(0, 2.4, 8.5);
     camera.lookAt(0, 1.6, 0);
-    if ("aspect" in camera) {
-      (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
-    }
+    if ("aspect" in camera) (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
   }, [camera]);
-
-  useFrame((_, dt) => { t0.current += dt; });
-
   return (
     <>
       <fog attach="fog" args={["#03030a", 8, 26]} />
-      {ARMS.map((a) => (
-        <ArmUnit key={a.id} cfg={a} t0={t0} />
-      ))}
+      <Factory />
     </>
   );
 }
