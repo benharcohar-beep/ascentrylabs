@@ -3,6 +3,7 @@ import { Background } from "./components/Background/Background";
 import { Cursor } from "./components/Cursor/Cursor";
 import { Nav } from "./components/Nav/Nav";
 import { Hero } from "./components/Hero/Hero";
+import { TrustedBy } from "./components/TrustedBy/TrustedBy";
 import { StatusBar } from "./components/StatusBar/StatusBar";
 import { Services } from "./components/Services/Services";
 import { Portfolio } from "./components/Portfolio/Portfolio";
@@ -51,6 +52,7 @@ export default function App() {
         <Nav />
         <main>
           <Hero />
+          <TrustedBy />
           <StatusBar />
           <Services />
           <Portfolio />

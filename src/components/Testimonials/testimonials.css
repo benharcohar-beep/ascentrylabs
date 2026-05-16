@@ -66,12 +66,33 @@
   opacity: 0.5;
 }
 
+/* Big decorative open-quote glyph behind the text */
+.tm-card::after {
+  content: "\201C";
+  position: absolute;
+  top: 6px;
+  right: 18px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 9rem;
+  line-height: 1;
+  color: var(--tm-accent, var(--accent));
+  opacity: 0.10;
+  pointer-events: none;
+  font-style: normal;
+}
+
 .tm-quote {
   font-size: 1rem;
   line-height: 1.65;
   color: var(--fg-0);
   flex: 1;
   font-style: italic;
+  /* Cap to 6 lines on the card. Full quotes still visible because cards
+     scroll horizontally, but a single card can't be a paragraph wall. */
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .tm-foot {

@@ -6,25 +6,49 @@
 }
 
 .about-stat {
-  padding: 28px;
+  padding: 32px 28px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
   text-align: left;
   background: var(--glass-bg);
   cursor: default;
+  min-height: 220px;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+/* Subtle aura inside the card that pulses on the stat color */
+.about-stat::after {
+  content: "";
+  position: absolute;
+  bottom: -40%;
+  right: -20%;
+  width: 80%;
+  height: 80%;
+  background: radial-gradient(circle, currentColor 0%, transparent 60%);
+  opacity: 0.10;
+  filter: blur(20px);
+  pointer-events: none;
+  z-index: 0;
 }
 .about-stat-num {
   font-family: var(--font-display);
-  font-size: clamp(2rem, 4vw, 3rem);
+  font-size: clamp(3rem, 7vw, 5.4rem);
   font-weight: 500;
-  line-height: 1;
-  letter-spacing: -0.02em;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  position: relative;
+  z-index: 1;
 }
 .about-stat-label {
-  font-size: 0.85rem;
+  font-size: 0.92rem;
   color: var(--fg-1);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  position: relative;
+  z-index: 1;
+  padding-top: 8px;
+  border-top: 1px solid var(--line-0);
 }
 
 .about-resume {

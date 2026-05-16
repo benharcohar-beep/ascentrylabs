@@ -1,8 +1,17 @@
 import { motion } from "framer-motion";
 import { SERVICES } from "../../data/services";
 import { TiltCard } from "../ui/TiltCard";
-import { Check, Sparkles, ArrowUpRight } from "lucide-react";
+import { Check, Sparkles, ArrowUpRight, Compass, Map, Users, Code2, GraduationCap, Mic } from "lucide-react";
 import "./services.css";
+
+const ICONS = {
+  compass: Compass,
+  map: Map,
+  users: Users,
+  code: Code2,
+  graduation: GraduationCap,
+  mic: Mic,
+} as const;
 
 function openFinder() {
   window.dispatchEvent(new CustomEvent("ascentry:open-finder"));
@@ -53,6 +62,12 @@ export function Services() {
                   <span className="mono service-cat">{s.cat}</span>
                   <span className="mono service-num">{String(i + 1).padStart(2, "0")}</span>
                 </header>
+                <div className="service-icon" aria-hidden>
+                  {(() => {
+                    const Icon = ICONS[s.icon];
+                    return <Icon size={48} strokeWidth={1.2} />;
+                  })()}
+                </div>
                 <h3 className="service-title">{s.title}</h3>
                 <p className="service-desc">{s.desc}</p>
                 <ul className="service-bullets">

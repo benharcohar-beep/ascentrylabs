@@ -5,6 +5,7 @@ export type Service = {
   bullets: string[];
   duration: string;
   color: string;
+  icon: "compass" | "map" | "users" | "code" | "graduation" | "mic";
 };
 
 export const SERVICES: Service[] = [
@@ -15,6 +16,7 @@ export const SERVICES: Service[] = [
     bullets: ["Stakeholder interviews", "Opportunity discovery and roadmap", "Prioritized next steps"],
     duration: "2–4 weeks",
     color: "#7fd1d3",
+    icon: "compass",
   },
   {
     cat: "STRATEGY",
@@ -23,6 +25,7 @@ export const SERVICES: Service[] = [
     bullets: ["Process mapping", "Architecture design", "Execution roadmap"],
     duration: "4–10 weeks",
     color: "#ffc000",
+    icon: "map",
   },
   {
     cat: "ADVISORY",
@@ -31,6 +34,7 @@ export const SERVICES: Service[] = [
     bullets: ["Assessments, strategy, and development", "Active partner or interim officer", "Use as needed"],
     duration: "Monthly retainer",
     color: "#5b9dd9",
+    icon: "users",
   },
   {
     cat: "BUILD",
@@ -39,6 +43,7 @@ export const SERVICES: Service[] = [
     bullets: ["You own the IP", "Built to solve your problem", "Production-grade handoff"],
     duration: "Project-based",
     color: "#c47ad9",
+    icon: "code",
   },
   {
     cat: "EDUCATION",
@@ -47,6 +52,7 @@ export const SERVICES: Service[] = [
     bullets: ["Half-day intensives", "Full-day deep dives", "Specific topics upon request"],
     duration: "Half-day to full-day",
     color: "#a8bbbf",
+    icon: "graduation",
   },
   {
     cat: "SPEAKING",
@@ -55,5 +61,6 @@ export const SERVICES: Service[] = [
     bullets: ["Conference keynotes", "Private corporate events", "Executive briefings"],
     duration: "45–90 min",
     color: "#3aa39f",
+    icon: "mic",
   },
 ];

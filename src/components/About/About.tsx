@@ -62,8 +62,8 @@ export function About() {
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 0.5, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
             >
-              <TiltCard className="about-stat glass" intensity={5}>
-                <div className="about-stat-num" style={{ color: h.color, textShadow: `0 0 24px ${h.color}` }}>
+              <TiltCard className="about-stat glass" intensity={5} style={{ color: h.color }}>
+                <div className="about-stat-num" style={{ color: h.color, textShadow: `0 0 32px ${h.color}` }}>
                   {h.num}
                 </div>
                 <div className="about-stat-label">{h.label}</div>

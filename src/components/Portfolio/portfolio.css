@@ -125,6 +125,13 @@
   line-height: 1.6;
   color: var(--fg-1);
   flex: 1;
+  /* Trim long descriptions to 3 lines on the card — full text is in the
+     case-study modal, so the card stays scannable instead of being a
+     wall of text. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .port-card-metrics {
