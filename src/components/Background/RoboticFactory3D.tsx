@@ -80,21 +80,23 @@ function podWorldPosition(road: Road, t: number, out: THREE.Vector3) {
 }
 
 // Single glowing pod — bright core + 2 halo shells + 4 trailing dots.
+// Sizes dialed down ~55% from the original so the swarm reads as
+// ambient activity rather than crowding the background.
 function PodMesh({ color, podRef }: { color: string; podRef: React.RefObject<THREE.Group | null> }) {
   return (
     <group ref={podRef}>
       {/* Pod head */}
       <mesh>
+        <sphereGeometry args={[0.04, 10, 10]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.9} />
+      </mesh>
+      <mesh>
         <sphereGeometry args={[0.07, 10, 10]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.95} />
+        <meshBasicMaterial color={color} transparent opacity={0.45} depthWrite={false} />
       </mesh>
       <mesh>
-        <sphereGeometry args={[0.12, 10, 10]} />
-        <meshBasicMaterial color={color} transparent opacity={0.55} depthWrite={false} />
-      </mesh>
-      <mesh>
-        <sphereGeometry args={[0.18, 10, 10]} />
-        <meshBasicMaterial color={color} transparent opacity={0.18} depthWrite={false} />
+        <sphereGeometry args={[0.11, 10, 10]} />
+        <meshBasicMaterial color={color} transparent opacity={0.12} depthWrite={false} />
       </mesh>
     </group>
   );
@@ -104,9 +106,9 @@ function PodTrail({ color, trailRefs }: {
   color: string;
   trailRefs: React.MutableRefObject<(THREE.Mesh | null)[]>;
 }) {
-  // Four trailing beads with decreasing opacity
+  // Four trailing beads with decreasing opacity — quieter than before
   const beads = [0, 1, 2, 3];
-  const opacities = [0.4, 0.28, 0.18, 0.10];
+  const opacities = [0.30, 0.20, 0.12, 0.06];
   return (
     <>
       {beads.map((i) => (
@@ -114,7 +116,7 @@ function PodTrail({ color, trailRefs }: {
           key={i}
           ref={(el) => { trailRefs.current[i] = el; }}
         >
-          <sphereGeometry args={[0.07 - i * 0.012, 8, 8]} />
+          <sphereGeometry args={[0.04 - i * 0.008, 8, 8]} />
           <meshBasicMaterial color={color} transparent opacity={opacities[i]} depthWrite={false} />
         </mesh>
       ))}
