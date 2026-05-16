@@ -1,5 +1,5 @@
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 import "./factory3d.css";
 
@@ -221,35 +221,12 @@ function Conveyor() {
   );
 }
 
-function Floor() {
-  // Procedural floor grid via shaderless geometry — a wide plane at y=0
-  // plus a sparse line grid pattern overlay.
-  const lines = useMemo(() => {
-    const verts: number[] = [];
-    const half = 14;
-    const step = 1;
-    // Lines parallel to X
-    for (let z = -half; z <= half; z += step) {
-      verts.push(-half, 0.01, z, half, 0.01, z);
-    }
-    // Lines parallel to Z
-    for (let x = -half; x <= half; x += step) {
-      verts.push(x, 0.01, -half, x, 0.01, half);
-    }
-    return new Float32Array(verts);
-  }, []);
-  // We removed the solid floor plane that was beneath these lines —
-  // viewed at the camera angle it created a visible horizon stripe.
-  // The wireframe grid alone reads as a floor without the artifact.
-  return (
-    <lineSegments>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[lines, 3]} />
-      </bufferGeometry>
-      <lineBasicMaterial color="#7fd1d3" transparent opacity={0.12} />
-    </lineSegments>
-  );
-}
+// Wireframe floor grid was removed — its near edge (closest to camera)
+// was inside the fog-near distance, so it rendered as a sharp horizontal
+// line cutting across the lower portion of the viewport. The CSS
+// .bg-grid overlay behind the canvas still provides the "floor grid"
+// vibe, and the arms have their own pedestal cylinders, so there's
+// no visual orphaning.
 
 function Scene() {
   const t0 = useRef(0);
@@ -257,7 +234,6 @@ function Scene() {
   return (
     <>
       <fog attach="fog" args={["#03030a", 8, 26]} />
-      <Floor />
       <Conveyor />
       {ARMS.map((a) => (
         <Arm key={a.id} cfg={a} t0={t0} />
