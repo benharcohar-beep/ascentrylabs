@@ -74,7 +74,8 @@ function useIntersectionGeometry() {
 
 function podWorldPosition(road: Road, t: number, out: THREE.Vector3) {
   out.x = road.ax + (road.bx - road.ax) * t;
-  out.y = 0.18;
+  // Sit ON the road line (y=0.01) rather than hovering above it
+  out.y = 0.02;
   out.z = road.az + (road.bz - road.az) * t;
   return out;
 }
