@@ -1,0 +1,24 @@
+/* Fixed 3D factory canvas — fills viewport, sits behind all content. */
+.factory3d {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  /* Anchor the camera/scene visually to the bottom half of the screen
+     by pushing the canvas down a touch — gives the arms "floor presence"
+     even on tall viewports. */
+  display: flex;
+  align-items: flex-end;
+}
+.factory3d canvas {
+  width: 100% !important;
+  height: 90% !important;
+  display: block;
+}
+
+@media (max-width: 700px) {
+  /* On phones the 3D scene gets cropped — keep it but reduce height so
+     the arms fit visually under hero text. */
+  .factory3d canvas { height: 70% !important; }
+}

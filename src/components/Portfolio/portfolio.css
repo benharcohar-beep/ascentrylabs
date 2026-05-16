@@ -46,7 +46,6 @@
   min-height: 360px;
 }
 .port-card-button {
-  appearance: none;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -61,6 +60,7 @@
   font: inherit;
   cursor: pointer;
   border-radius: inherit;
+  text-decoration: none;       /* override default <a> underline */
   transition: background 0.25s var(--ease-out-quart);
 }
 .port-card-button:hover {

@@ -15,6 +15,7 @@ import { AboutPage } from "./pages/AboutPage";
 import { TestimonialsPage } from "./pages/TestimonialsPage";
 import { ProcessPage } from "./pages/ProcessPage";
 import { CalculatorPage } from "./pages/CalculatorPage";
+import { CaseStudyPage } from "./pages/CaseStudyPage";
 
 export default function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -69,6 +70,7 @@ export default function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/services" element={<ServicesPage />} />
               <Route path="/portfolio" element={<PortfolioPage />} />
+              <Route path="/portfolio/:slug" element={<CaseStudyPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/testimonials" element={<TestimonialsPage />} />
               <Route path="/process" element={<ProcessPage />} />

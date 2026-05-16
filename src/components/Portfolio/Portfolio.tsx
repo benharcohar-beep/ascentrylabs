@@ -1,22 +1,18 @@
 import { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { CATEGORIES, PROJECTS } from "../../data/projects";
-import type { Project } from "../../data/projects";
 import { TiltCard } from "../ui/TiltCard";
-import { ProjectModal } from "./ProjectModal";
 import { ArrowUpRight } from "lucide-react";
 import "./portfolio.css";
 
 export function Portfolio() {
   const [activeCat, setActiveCat] = useState<string>("all");
-  const [openProject, setOpenProject] = useState<Project | null>(null);
 
   const filtered = useMemo(() => {
     if (activeCat === "all") return PROJECTS;
     return PROJECTS.filter((p) => p.cat === activeCat);
   }, [activeCat]);
-
-  const openCat = openProject ? CATEGORIES.find((c) => c.id === openProject.cat) ?? null : null;
 
   return (
     <section className="section portfolio" id="portfolio">
@@ -78,9 +74,9 @@ export function Portfolio() {
                     intensity={3}
                     style={{ ["--cat-color" as string]: cat.color }}
                   >
-                    <button
+                    <Link
+                      to={`/portfolio/${p.slug}`}
                       className="port-card-button"
-                      onClick={() => setOpenProject(p)}
                       aria-label={`Open case study: ${p.title}`}
                     >
                       <div className="port-card-top">
@@ -108,7 +104,7 @@ export function Portfolio() {
                           OPEN <ArrowUpRight size={12} />
                         </span>
                       </div>
-                    </button>
+                    </Link>
                   </TiltCard>
                 </motion.div>
               );
@@ -116,12 +112,6 @@ export function Portfolio() {
           </AnimatePresence>
         </motion.div>
       </div>
-
-      <ProjectModal
-        project={openProject}
-        category={openCat}
-        onClose={() => setOpenProject(null)}
-      />
     </section>
   );
 }

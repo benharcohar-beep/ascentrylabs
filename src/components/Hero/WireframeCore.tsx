@@ -1,6 +1,34 @@
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import * as THREE from "three";
+
+// Scroll progress — shared ref read by the R3F useFrame loop. We avoid
+// React state so the scroll-driven transforms don't trigger re-renders.
+const scrollProgressRef = { current: 0 };
+
+function useHeroScrollProgress() {
+  useEffect(() => {
+    const onScroll = () => {
+      // Track how far the user has scrolled out of the hero. Once the
+      // viewport top has scrolled past the bottom of the hero, progress
+      // hits 1 and stops driving transforms.
+      const hero = document.getElementById("top");
+      if (!hero) return;
+      const rect = hero.getBoundingClientRect();
+      const total = rect.height;
+      // -rect.top represents how much of the hero has scrolled past the top
+      const scrolledPast = Math.max(0, -rect.top);
+      scrollProgressRef.current = Math.min(1, scrolledPast / Math.max(1, total));
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
+}
 
 // Mission-control orrery: three orthogonal wireframe rings rotating at
 // independent speeds, an inner geometric "core" doing slow counter-rotation,
@@ -41,6 +69,12 @@ function Orrery() {
   useFrame((state, dt) => {
     t.current += dt;
     const time = t.current;
+    const sp = scrollProgressRef.current;  // 0..1 across the hero
+    // Scroll-driven boosts: rotation accelerates, rings spread, core grows
+    const rotBoost = 1 + sp * 4;            // 1× → 5× rotation speed
+    const ringSpread = sp * 0.6;            // tilts rings outward
+    const innerGrow = 1 + sp * 0.9;         // inner core scales up
+    const glowGrow = 1 + sp * 1.2;          // bright core scales up
 
     // Mouse parallax — gentle
     const m = state.mouse;
@@ -51,32 +85,42 @@ function Orrery() {
       const g = groupRef.current;
       g.rotation.x += (targetRot.current.x - g.rotation.x) * 0.03;
       g.rotation.y += (targetRot.current.y - g.rotation.y) * 0.03;
-      g.rotation.y += dt * 0.05;
+      g.rotation.y += dt * 0.05 * rotBoost;
       g.rotation.z = Math.sin(time * 0.18) * 0.03;
-      // Multi-harmonic breathing
+      // Multi-harmonic breathing — shrinks slightly as we scroll so the
+      // expanding inner core has room to grow within the canvas
       const breath = 1 + Math.sin(time * 0.7) * 0.02 + Math.sin(time * 1.5) * 0.008;
-      g.scale.setScalar(breath);
+      g.scale.setScalar(breath * (1 - sp * 0.15));
     }
 
-    // Each ring rotates around its tilted axis via the inner ring rotation
-    if (ring1Ref.current) ring1Ref.current.rotation.z += dt * 0.18;
-    if (ring2Ref.current) ring2Ref.current.rotation.z += dt * 0.13;
-    if (ring3Ref.current) ring3Ref.current.rotation.z -= dt * 0.10;
-    if (beads1Ref.current) beads1Ref.current.rotation.z += dt * 0.32;
-    if (beads2Ref.current) beads2Ref.current.rotation.z += dt * 0.22;
-    if (beads3Ref.current) beads3Ref.current.rotation.z -= dt * 0.27;
+    // Each ring rotates around its tilted axis; rotation accelerates with scroll
+    if (ring1Ref.current) {
+      ring1Ref.current.rotation.z += dt * 0.18 * rotBoost;
+      ring1Ref.current.rotation.x = 0.4 + ringSpread;
+    }
+    if (ring2Ref.current) {
+      ring2Ref.current.rotation.z += dt * 0.13 * rotBoost;
+      ring2Ref.current.rotation.x = Math.PI / 2 + 0.2 - ringSpread * 0.6;
+    }
+    if (ring3Ref.current) {
+      ring3Ref.current.rotation.z -= dt * 0.10 * rotBoost;
+      ring3Ref.current.rotation.x = Math.PI / 4 + ringSpread * 0.5;
+    }
+    if (beads1Ref.current) beads1Ref.current.rotation.z += dt * 0.32 * rotBoost;
+    if (beads2Ref.current) beads2Ref.current.rotation.z += dt * 0.22 * rotBoost;
+    if (beads3Ref.current) beads3Ref.current.rotation.z -= dt * 0.27 * rotBoost;
 
     if (innerRef.current) {
-      innerRef.current.rotation.x -= dt * 0.45;
-      innerRef.current.rotation.z += dt * 0.32;
-      innerRef.current.rotation.y += dt * 0.18;
+      innerRef.current.rotation.x -= dt * 0.45 * rotBoost;
+      innerRef.current.rotation.z += dt * 0.32 * rotBoost;
+      innerRef.current.rotation.y += dt * 0.18 * rotBoost;
       const inner = 1 + Math.sin(time * 0.7 + Math.PI) * 0.06;
-      innerRef.current.scale.setScalar(inner);
+      innerRef.current.scale.setScalar(inner * innerGrow);
     }
 
     if (glowRef.current) {
       const glow = 0.95 + Math.sin(time * 1.1) * 0.06;
-      glowRef.current.scale.setScalar(glow);
+      glowRef.current.scale.setScalar(glow * glowGrow);
     }
   });
 
@@ -156,6 +200,7 @@ function Lights() {
 }
 
 export function WireframeCore() {
+  useHeroScrollProgress();
   return (
     <div className="wireframe-core">
       <Canvas
