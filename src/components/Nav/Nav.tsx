@@ -1,16 +1,14 @@
 import { useEffect, useState } from "react";
 import { NAV_LINKS } from "../../data/nav";
-import { Command, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import "./nav.css";
 
-type Props = {
-  onOpenPalette: () => void;
-};
-
-// Stripped-down top nav — section links now live around the wireframe core
-// in OrbitalNav. The header keeps the logo, the Cmd+K affordance, the
-// primary CTA, and a mobile burger that still surfaces the section list.
-export function Nav({ onOpenPalette }: Props) {
+// Stripped-down top nav — section links live around the wireframe core
+// in OrbitalNav. The header keeps the logo, the primary CTA, and a
+// mobile burger that surfaces the section list.
+// (Cmd+K shortcut still opens the palette; we just don't surface the
+// "⌘K" button — it read as developer jargon to non-technical visitors.)
+export function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -34,15 +32,6 @@ export function Nav({ onOpenPalette }: Props) {
           </a>
 
           <div className="nav-actions">
-            <button
-              className="nav-cmd"
-              onClick={onOpenPalette}
-              aria-label="Open command palette"
-              title="Command palette (⌘K)"
-            >
-              <Command size={14} />
-              <span className="mono">K</span>
-            </button>
             <a href="#consult" className="btn btn-primary btn-fx nav-cta">
               <span className="btn-bracket">[</span>
               Schedule Consultation

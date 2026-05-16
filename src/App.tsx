@@ -48,7 +48,7 @@ export default function App() {
       <Background />
       <Cursor />
       <div className="app-content">
-        <Nav onOpenPalette={() => setPaletteOpen(true)} />
+        <Nav />
         <main>
           <Hero />
           <StatusBar />
