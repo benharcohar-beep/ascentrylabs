@@ -9,6 +9,7 @@ import { BootSequence } from "./components/BootSequence/BootSequence";
 import { AskAscentry } from "./components/AskAscentry/AskAscentry";
 import { ServiceFinder } from "./components/ServiceFinder/ServiceFinder";
 import { PageTransition } from "./components/PageTransition/PageTransition";
+import { ErrorBoundary } from "./components/ErrorBoundary/ErrorBoundary";
 import { HomePage } from "./pages/HomePage";
 import { ServicesPage } from "./pages/ServicesPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
@@ -65,19 +66,24 @@ export default function App() {
         <Nav showSectionLinks={!isHome} />
         <main>
           {/* key={location.pathname} forces React to remount the wrapper on
-              route changes, retriggering the CSS fade-in keyframe. */}
+              route changes, retriggering the CSS fade-in keyframe.
+              The inner ErrorBoundary catches per-page render errors so the
+              nav + footer + factory background stay alive while the user
+              picks another route. */}
           <div key={location.pathname} className="page-transition">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/services" element={<ServicesPage />} />
-              <Route path="/portfolio" element={<PortfolioPage />} />
-              <Route path="/portfolio/:slug" element={<CaseStudyPage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/testimonials" element={<TestimonialsPage />} />
-              <Route path="/process" element={<ProcessPage />} />
-              <Route path="/calculator" element={<CalculatorPage />} />
-              <Route path="*" element={<HomePage />} />
-            </Routes>
+            <ErrorBoundary scope="page">
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/services" element={<ServicesPage />} />
+                <Route path="/portfolio" element={<PortfolioPage />} />
+                <Route path="/portfolio/:slug" element={<CaseStudyPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/testimonials" element={<TestimonialsPage />} />
+                <Route path="/process" element={<ProcessPage />} />
+                <Route path="/calculator" element={<CalculatorPage />} />
+                <Route path="*" element={<HomePage />} />
+              </Routes>
+            </ErrorBoundary>
           </div>
         </main>
         <Footer />
