@@ -86,7 +86,6 @@ export function OrbitalNav() {
             <span className="orbit-marker-ring" />
           </span>
           <span className="orbit-text">
-            <span className="orbit-code mono">[ {o.code} ]</span>
             <span className="orbit-label">{o.label}</span>
           </span>
         </Link>
