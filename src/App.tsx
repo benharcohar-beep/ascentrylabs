@@ -8,6 +8,7 @@ import { CommandPalette } from "./components/CommandPalette/CommandPalette";
 import { BootSequence } from "./components/BootSequence/BootSequence";
 import { AskAscentry } from "./components/AskAscentry/AskAscentry";
 import { ServiceFinder } from "./components/ServiceFinder/ServiceFinder";
+import { PageTransition } from "./components/PageTransition/PageTransition";
 import { HomePage } from "./pages/HomePage";
 import { ServicesPage } from "./pages/ServicesPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
@@ -84,6 +85,7 @@ export default function App() {
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       <AskAscentry />
       <ServiceFinder open={finderOpen} onClose={() => setFinderOpen(false)} />
+      <PageTransition />
     </>
   );
 }

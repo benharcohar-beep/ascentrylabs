@@ -1,0 +1,126 @@
+.pt-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  pointer-events: none;
+  overflow: hidden;
+  /* The overlay itself fades out as the scan completes */
+  animation: pt-fade-out 0.7s linear forwards;
+}
+
+@keyframes pt-fade-out {
+  0%   { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Bright scan bar — sweeps top→bottom */
+.pt-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -6px;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(127, 209, 211, 0.5) 20%,
+    rgba(174, 245, 248, 1) 50%,
+    rgba(127, 209, 211, 0.5) 80%,
+    transparent
+  );
+  box-shadow:
+    0 0 8px rgba(127, 209, 211, 0.9),
+    0 0 24px rgba(127, 209, 211, 0.6),
+    0 0 60px rgba(127, 209, 211, 0.35);
+  animation: pt-sweep 0.6s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+/* Trailing dim band — gives the scan some weight without dimming content */
+.pt-scan-trail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -120px;
+  height: 120px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(127, 209, 211, 0.04) 60%,
+    rgba(127, 209, 211, 0.10) 95%,
+    transparent
+  );
+  animation: pt-sweep-trail 0.6s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+@keyframes pt-sweep {
+  0%   { transform: translateY(0); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translateY(110vh); opacity: 1; }
+}
+@keyframes pt-sweep-trail {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(110vh); }
+}
+
+/* Corner brackets that snap in at the very start of the transition */
+.pt-corner {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border-color: rgba(127, 209, 211, 0.85);
+  opacity: 0;
+  animation: pt-corner-flash 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.pt-tl { top: 24px; left: 24px; border-top: 1px solid; border-left: 1px solid; }
+.pt-tr { top: 24px; right: 24px; border-top: 1px solid; border-right: 1px solid; }
+.pt-bl { bottom: 24px; left: 24px; border-bottom: 1px solid; border-left: 1px solid; }
+.pt-br { bottom: 24px; right: 24px; border-bottom: 1px solid; border-right: 1px solid; }
+
+@keyframes pt-corner-flash {
+  0%   { opacity: 0; transform: scale(0.6); }
+  18%  { opacity: 1; transform: scale(1); }
+  80%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(1); }
+}
+
+/* Transmitting label in the top-right area */
+.pt-label {
+  position: absolute;
+  top: 36px;
+  right: 64px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.28em;
+  color: var(--accent-hot);
+  text-shadow: 0 0 10px rgba(174, 245, 248, 0.6);
+  opacity: 0;
+  animation: pt-label-flash 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.pt-label-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-hot);
+  box-shadow: 0 0 8px var(--accent-hot);
+  animation: pt-label-blink 0.18s steps(1, end) infinite;
+}
+@keyframes pt-label-flash {
+  0%   { opacity: 0; transform: translateX(8px); }
+  20%  { opacity: 1; transform: translateX(0); }
+  75%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes pt-label-blink {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.25; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pt-overlay, .pt-scan, .pt-scan-trail, .pt-corner, .pt-label, .pt-label-dot {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}
