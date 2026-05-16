@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import "./orbital.css";
 
 // Section navigation rendered AS satellites around the wireframe core.
@@ -16,10 +17,10 @@ type Orbit = {
 };
 
 const ORBITS: Orbit[] = [
-  { code: "S.02", label: "Services", href: "#services", position: "tl" },
-  { code: "P.03", label: "Portfolio", href: "#portfolio", position: "tr" },
-  { code: "A.04", label: "About", href: "#about", position: "bl" },
-  { code: "T.05", label: "Testimonials", href: "#testimonials", position: "br" },
+  { code: "S.02", label: "Services", href: "/services", position: "tl" },
+  { code: "P.03", label: "Portfolio", href: "/portfolio", position: "tr" },
+  { code: "A.04", label: "About", href: "/about", position: "bl" },
+  { code: "T.05", label: "Testimonials", href: "/testimonials", position: "br" },
 ];
 
 export function OrbitalNav() {
@@ -79,7 +80,7 @@ export function OrbitalNav() {
       </svg>
 
       {ORBITS.map((o) => (
-        <a key={o.href} href={o.href} className={`orbit orbit-${o.position}`}>
+        <Link key={o.href} to={o.href} className={`orbit orbit-${o.position}`}>
           <span className="orbit-marker" aria-hidden>
             <span className="orbit-marker-dot" />
             <span className="orbit-marker-ring" />
@@ -88,7 +89,7 @@ export function OrbitalNav() {
             <span className="orbit-code mono">[ {o.code} ]</span>
             <span className="orbit-label">{o.label}</span>
           </span>
-        </a>
+        </Link>
       ))}
     </nav>
   );

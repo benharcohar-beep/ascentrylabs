@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, X, Send, ArrowRight } from "lucide-react";
 import { CONTACT_EMAIL } from "../../data/nav";
@@ -23,8 +24,8 @@ const QA: { match: RegExp; reply: Reply }[] = [
       text:
         "Ascentry Labs is an AI & digital transformation consultancy. We do four things: assess where AI fits, design strategy, build the systems, and educate the people who'll use them. Founded by Hunter Sandidge — engineer behind life-support AI on the ISS and the next-gen NASA spacesuit copilot.",
       cta: [
-        { label: "See services", href: "#services" },
-        { label: "See work", href: "#portfolio" },
+        { label: "See services", href: "/services" },
+        { label: "See work", href: "/portfolio" },
       ],
     },
   },
@@ -34,8 +35,8 @@ const QA: { match: RegExp; reply: Reply }[] = [
       text:
         "Six engagement types: AI Readiness Assessment (2–4w), Digital Strategy (4–10w), Advisory retainer (monthly), Custom Development (project-based), Executive AI Education (half/full day), and Keynote Speaking. Pick a starting point — we shape the engagement to fit.",
       cta: [
-        { label: "Browse services", href: "#services" },
-        { label: "Schedule a call", href: "#consult" },
+        { label: "Browse services", href: "/services" },
+        { label: "Schedule a call", href: "/#consult" },
       ],
     },
   },
@@ -44,7 +45,7 @@ const QA: { match: RegExp; reply: Reply }[] = [
     reply: {
       text:
         "Pricing depends on scope. Assessments start in the low-five-figures, retainers and full builds scale from there. The 30-min consultation is free and we'll tell you honestly whether we can help — even if the answer is no.",
-      cta: [{ label: "Book free 30-min consult", href: "#consult" }],
+      cta: [{ label: "Book free 30-min consult", href: "/#consult" }],
     },
   },
   {
@@ -52,7 +53,7 @@ const QA: { match: RegExp; reply: Reply }[] = [
     reply: {
       text:
         "Hunter Sandidge: Founder & Principal. Built the ECLSS analytics platform on the ISS. Father of the AI copilot for the xEVAS spacesuit. Smart-factory and digital transformation lead at a Fortune 100. Top-rated applied-AI professor at Marquette/NMDSI.",
-      cta: [{ label: "Read more", href: "#about" }],
+      cta: [{ label: "Read more", href: "/about" }],
     },
   },
   {
@@ -60,7 +61,7 @@ const QA: { match: RegExp; reply: Reply }[] = [
     reply: {
       text:
         "Fifteen shipped projects across modeling, agentic systems, digital transformation, and education. Highlights: NASA's Asteria spacesuit copilot, Leto life-support intelligence on the ISS, FactrEye smart-factory at Collins Aerospace, and an enterprise pricing platform that cut time-to-first-price by 60%.",
-      cta: [{ label: "See the work", href: "#portfolio" }],
+      cta: [{ label: "See the work", href: "/portfolio" }],
     },
   },
   {
@@ -68,7 +69,7 @@ const QA: { match: RegExp; reply: Reply }[] = [
     reply: {
       text: `Easiest path: book the free 30-min consult. No deck, no pitch — just an honest conversation. Or email Hunter directly at ${CONTACT_EMAIL}.`,
       cta: [
-        { label: "Schedule consult", href: "#consult" },
+        { label: "Schedule consult", href: "/#consult" },
         { label: `Email ${CONTACT_EMAIL.split("@")[0]}`, href: `mailto:${CONTACT_EMAIL}` },
       ],
     },
@@ -78,7 +79,7 @@ const QA: { match: RegExp; reply: Reply }[] = [
     reply: {
       text:
         "Yes — Ascentry has shipped real systems aboard the ISS (Leto, life-support analytics) and into NASA's xEVAS next-generation spacesuit program (Asteria copilot, adaptive thermal control). Aerospace and defense are where we cut our teeth.",
-      cta: [{ label: "See space work", href: "#portfolio" }],
+      cta: [{ label: "See space work", href: "/portfolio" }],
     },
   },
   {
@@ -101,7 +102,7 @@ const QA: { match: RegExp; reply: Reply }[] = [
     reply: {
       text:
         "Start with the free 30-min consult. We'll talk through where you are, where you want to be, and whether AI is even the right answer. From there: typically a 2–4 week assessment to map opportunities and risks before any build.",
-      cta: [{ label: "Book the consult", href: "#consult" }],
+      cta: [{ label: "Book the consult", href: "/#consult" }],
     },
   },
   {
@@ -109,7 +110,7 @@ const QA: { match: RegExp; reply: Reply }[] = [
     reply: {
       text:
         "Remote-first by default — we work with clients across the U.S., U.K., and Europe. Hunter is U.S.-based and travels onsite for kickoffs, deep workshops, or anything that genuinely needs a room. Most engagements run smoothly over Zoom + a shared workspace.",
-      cta: [{ label: "Schedule a call", href: "#consult" }],
+      cta: [{ label: "Schedule a call", href: "/#consult" }],
     },
   },
   {
@@ -124,7 +125,7 @@ const QA: { match: RegExp; reply: Reply }[] = [
     reply: {
       text:
         "Yes — NDAs available on request, signed before any sensitive conversation. For Custom Development you keep full IP ownership of anything we build for you (it's in the contract). For aerospace/defense work we already operate under existing confidentiality frameworks.",
-      cta: [{ label: "Schedule consult under NDA", href: "#consult" }],
+      cta: [{ label: "Schedule consult under NDA", href: "/#consult" }],
     },
   },
   {
@@ -139,7 +140,7 @@ const QA: { match: RegExp; reply: Reply }[] = [
     reply: {
       text:
         "Seven testimonials live on the page (a NASA astronaut, a Fortune 100 finance director, a Marquette professor, multiple aerospace execs — some on the record, some anonymized for confidentiality). For direct references during diligence, Hunter will connect you with relevant past clients on a call.",
-      cta: [{ label: "Read testimonials", href: "#testimonials" }],
+      cta: [{ label: "Read testimonials", href: "/testimonials" }],
     },
   },
   {
@@ -147,7 +148,7 @@ const QA: { match: RegExp; reply: Reply }[] = [
     reply: {
       text:
         "Most engagements are fixed-price for a defined scope (assessments, strategy, builds with clear deliverables). Retainers are monthly with a soft hour band — rolls over within reason, no nickel-and-diming. T&M only when scope genuinely can't be defined upfront, and even then we cap it.",
-      cta: [{ label: "Discuss your scope", href: "#consult" }],
+      cta: [{ label: "Discuss your scope", href: "/#consult" }],
     },
   },
 ];
@@ -156,7 +157,7 @@ const FALLBACK: Reply = {
   text:
     "I'm a small on-page bot — for anything beyond the basics, the fastest path is a 30-min call with Hunter. He'll give you a real answer.",
   cta: [
-    { label: "Book free consultation", href: "#consult" },
+    { label: "Book free consultation", href: "/#consult" },
     { label: `Email ${CONTACT_EMAIL.split("@")[0]}`, href: `mailto:${CONTACT_EMAIL}` },
   ],
 };
@@ -298,11 +299,21 @@ export function AskAscentry() {
                     <p>{m.text}</p>
                     {m.cta && (
                       <div className="ask-msg-cta">
-                        {m.cta.map((c) => (
-                          <a key={c.label} href={c.href} className="ask-cta-link" onClick={() => c.href.startsWith("#") && setOpen(false)}>
-                            {c.label} <ArrowRight size={12} />
-                          </a>
-                        ))}
+                        {m.cta.map((c) => {
+                          const isInternal = c.href.startsWith("/");
+                          if (isInternal) {
+                            return (
+                              <Link key={c.label} to={c.href} className="ask-cta-link" onClick={() => setOpen(false)}>
+                                {c.label} <ArrowRight size={12} />
+                              </Link>
+                            );
+                          }
+                          return (
+                            <a key={c.label} href={c.href} className="ask-cta-link" onClick={() => setOpen(false)}>
+                              {c.label} <ArrowRight size={12} />
+                            </a>
+                          );
+                        })}
                       </div>
                     )}
                   </div>

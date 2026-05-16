@@ -1,27 +1,24 @@
 import { useEffect, useState } from "react";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { Background } from "./components/Background/Background";
 import { Cursor } from "./components/Cursor/Cursor";
 import { Nav } from "./components/Nav/Nav";
-import { Hero } from "./components/Hero/Hero";
-import { TrustedBy } from "./components/TrustedBy/TrustedBy";
-import { StatusBar } from "./components/StatusBar/StatusBar";
-import { Services } from "./components/Services/Services";
-import { Portfolio } from "./components/Portfolio/Portfolio";
-import { About } from "./components/About/About";
-import { Testimonials } from "./components/Testimonials/Testimonials";
-import { Consult } from "./components/Consult/Consult";
 import { Footer } from "./components/Footer/Footer";
 import { CommandPalette } from "./components/CommandPalette/CommandPalette";
 import { BootSequence } from "./components/BootSequence/BootSequence";
 import { AskAscentry } from "./components/AskAscentry/AskAscentry";
 import { ServiceFinder } from "./components/ServiceFinder/ServiceFinder";
+import { HomePage } from "./pages/HomePage";
+import { ServicesPage } from "./pages/ServicesPage";
+import { PortfolioPage } from "./pages/PortfolioPage";
+import { AboutPage } from "./pages/AboutPage";
+import { TestimonialsPage } from "./pages/TestimonialsPage";
 
 export default function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [finderOpen, setFinderOpen] = useState(false);
-  // Smooth scrolling is handled by CSS `html { scroll-behavior: smooth }`
-  // in app.css — no JS library needed. Lenis was overshooting wheel
-  // input which felt out of control.
+  const location = useLocation();
+  const isHome = location.pathname === "/";
 
   // Cmd+K toggles the palette globally
   useEffect(() => {
@@ -35,13 +32,25 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Allow other components (Services CTA, Ask Ascentry chip) to open the
-  // ServiceFinder via a custom event without prop-drilling state down.
+  // Other components open the ServiceFinder via a custom event
   useEffect(() => {
     const onOpen = () => setFinderOpen(true);
     window.addEventListener("ascentry:open-finder", onOpen);
     return () => window.removeEventListener("ascentry:open-finder", onOpen);
   }, []);
+
+  // Scroll restoration: any in-page hash navigation should bring the
+  // section into view smoothly. Without this, navigation between routes
+  // sometimes preserves the scroll position from the previous page.
+  useEffect(() => {
+    if (location.hash) {
+      const el = document.querySelector(location.hash);
+      if (el) {
+        setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+        return;
+      }
+    }
+  }, [location]);
 
   return (
     <>
@@ -49,16 +58,16 @@ export default function App() {
       <Background />
       <Cursor />
       <div className="app-content">
-        <Nav />
+        <Nav showSectionLinks={!isHome} />
         <main>
-          <Hero />
-          <TrustedBy />
-          <StatusBar />
-          <Services />
-          <Portfolio />
-          <About />
-          <Testimonials />
-          <Consult />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/services" element={<ServicesPage />} />
+            <Route path="/portfolio" element={<PortfolioPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/testimonials" element={<TestimonialsPage />} />
+            <Route path="*" element={<HomePage />} />
+          </Routes>
         </main>
         <Footer />
       </div>

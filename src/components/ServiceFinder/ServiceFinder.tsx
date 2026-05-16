@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowUpRight, Sparkles, X, RotateCw, Check } from "lucide-react";
 import { SERVICES } from "../../data/services";
 import "./finder.css";
@@ -260,8 +261,8 @@ export function ServiceFinder({ open, onClose }: Props) {
               )}
 
               <footer className="finder-result-foot">
-                <a
-                  href="#consult"
+                <Link
+                  to="/#consult"
                   className="btn btn-primary btn-fx"
                   onClick={onClose}
                 >
@@ -269,7 +270,7 @@ export function ServiceFinder({ open, onClose }: Props) {
                   Schedule a consultation about this
                   <span className="btn-bracket">]</span>
                   <ArrowUpRight size={14} />
-                </a>
+                </Link>
                 <button className="finder-reset" onClick={reset}>
                   <RotateCw size={14} />
                   Start over

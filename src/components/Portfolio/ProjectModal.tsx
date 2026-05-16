@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { X, ArrowUpRight } from "lucide-react";
 import type { Project, Category } from "../../data/projects";
 import "./modal.css";
@@ -132,10 +133,10 @@ export function ProjectModal({ project, category, onClose }: Props) {
               </section>
 
               <footer className="pmodal-foot">
-                <a href="#consult" className="btn btn-primary" onClick={onClose}>
+                <Link to="/#consult" className="btn btn-primary" onClick={onClose}>
                   Discuss a similar project
                   <ArrowUpRight size={14} />
-                </a>
+                </Link>
                 <span className="mono dim">ESC TO CLOSE</span>
               </footer>
             </>

@@ -46,7 +46,10 @@
   display: grid;
   grid-template-columns: 1.15fr 1fr;
   gap: 64px;
-  align-items: center;
+  /* align-items: start so the orbital nav top-row sits inline with the big
+     headline on the left instead of being vertically centered (which pushed
+     it well below the headline). */
+  align-items: start;
 }
 
 .hero-left { position: relative; z-index: 2; }

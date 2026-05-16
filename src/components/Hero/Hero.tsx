@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { ScrambleText } from "../ui/ScrambleText";
-import { MagneticButton } from "../ui/MagneticButton";
 import { OrbitalNav } from "./OrbitalNav";
 import { ArrowUpRight, ArrowRight } from "lucide-react";
 import "./hero.css";
@@ -21,6 +21,8 @@ function CoreFallback() {
 }
 
 export function Hero() {
+  // Reserved for future use (currently unused after switching to direct Link)
+  void useNavigate;
   // If the page is hidden on first render (background tab / headless),
   // skip entrance animations so content shows in its final state.
   // Real users with focused tabs get the staggered fade-up.
@@ -80,18 +82,18 @@ export function Hero() {
           </p>
 
           <div className="hero-cta hero-reveal" style={{ animationDelay: "0.7s" }}>
-            <MagneticButton href="#consult" className="btn btn-primary btn-fx">
+            <a href="#consult" className="btn btn-primary btn-fx">
               <span className="btn-bracket">[</span>
               Free 30-min Consultation
               <span className="btn-bracket">]</span>
               <ArrowUpRight size={16} className="arrow" />
-            </MagneticButton>
-            <MagneticButton href="#services" className="btn btn-ghost btn-fx">
+            </a>
+            <Link to="/services" className="btn btn-ghost btn-fx">
               <span className="btn-bracket">[</span>
               See how we help
               <span className="btn-bracket">]</span>
               <ArrowRight size={16} className="arrow" />
-            </MagneticButton>
+            </Link>
           </div>
 
           <div className="hero-meta hero-reveal" style={{ animationDelay: "0.82s" }}>
