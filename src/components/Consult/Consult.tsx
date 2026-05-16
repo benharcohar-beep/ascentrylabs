@@ -5,9 +5,15 @@ import { Mail, Send, ShieldCheck, Sparkles, ArrowUpRight, Calendar, MessageSquar
 import { CalendlyEmbed } from "./CalendlyEmbed";
 import "./consult.css";
 
-// Hunter's Calendly URL — placeholder. Swap this for his real one and
-// the booking widget below becomes the live conversion path.
+// Hunter's Calendly URL. Until a real one is set, render a clean
+// "coming soon" panel instead of Calendly's marketing/signup fallback
+// (which is what the widget shows when the URL doesn't resolve).
+//
+// To go live: replace this with Hunter's real Calendly link (e.g.
+// "https://calendly.com/<his-handle>/30min") and the booking widget
+// will load automatically.
 const CALENDLY_URL = "https://calendly.com/hunter-ascentrylabs/30min";
+const CALENDLY_IS_LIVE = false;  // flip to true once the URL above is real
 
 type FormState = { name: string; email: string; company: string; message: string };
 type Tab = "book" | "message";
@@ -127,7 +133,23 @@ export function Consult() {
                   <div className="consult-book-meta mono dim">
                     PICK A 30-MIN SLOT · NO PREP NEEDED
                   </div>
-                  <CalendlyEmbed url={CALENDLY_URL} />
+                  {CALENDLY_IS_LIVE ? (
+                    <CalendlyEmbed url={CALENDLY_URL} />
+                  ) : (
+                    <div className="consult-book-soon">
+                      <div className="consult-book-soon-corners" aria-hidden>
+                        <span /><span /><span /><span />
+                      </div>
+                      <Calendar size={36} className="consult-book-soon-icon" />
+                      <h4>Direct booking · coming online soon</h4>
+                      <p>
+                        Hunter's calendar integration is being wired up. In the meantime, drop
+                        a quick note via <button type="button" className="consult-book-soon-link" onClick={() => setTab("message")}>Send a message</button> or
+                        email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> — we
+                        reply within 24 hours.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 

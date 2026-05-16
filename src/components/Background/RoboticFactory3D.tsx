@@ -243,10 +243,17 @@ function Scene() {
 }
 
 export function RoboticFactory3D() {
+  // Camera composition tuned for full-viewport canvas:
+  //   - higher y (3.6) so we look down on the factory floor more
+  //   - lookAt offset DOWN (the Camera default looks at origin; we shift
+  //     the scene visually by raising the arms' rendering position via
+  //     a higher camera that tilts down further). Result: arms appear
+  //     in the bottom half of the viewport, fully visible, with empty
+  //     space above for hero/page content to breathe.
   return (
     <div className="factory3d" aria-hidden>
       <Canvas
-        camera={{ position: [0, 2.6, 7], fov: 38 }}
+        camera={{ position: [0, 3.6, 8.5], fov: 38 }}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         dpr={[1, 2]}
       >

@@ -1,24 +1,17 @@
-/* Fixed 3D factory canvas — fills viewport, sits behind all content. */
+/* Fixed 3D factory canvas — fills the full viewport, sits behind all
+   content. We let the camera (in RoboticFactory3D.tsx) handle vertical
+   composition rather than cropping the canvas with CSS — cropping
+   created a hard edge that R3F's wrapper didn't actually move to the
+   bottom anyway. */
 .factory3d {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  /* Anchor the camera/scene visually to the bottom half of the screen
-     by pushing the canvas down a touch — gives the arms "floor presence"
-     even on tall viewports. */
-  display: flex;
-  align-items: flex-end;
 }
-.factory3d canvas {
+.factory3d > div, .factory3d canvas {
   width: 100% !important;
-  height: 90% !important;
+  height: 100% !important;
   display: block;
-}
-
-@media (max-width: 700px) {
-  /* On phones the 3D scene gets cropped — keep it but reduce height so
-     the arms fit visually under hero text. */
-  .factory3d canvas { height: 70% !important; }
 }
