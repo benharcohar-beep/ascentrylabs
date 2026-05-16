@@ -190,7 +190,11 @@ function Arm({ cfg, t0 }: { cfg: ArmConfig; t0: React.MutableRefObject<number> }
 }
 
 function Conveyor() {
-  // A long box at y=0 with travelling crates. Crates loop via useFrame.
+  // Floating crates that travel along an implied belt path. We dropped
+  // the solid belt slab because, viewed edge-on at this camera angle, it
+  // appeared as a hard horizontal line cutting across the entire scene.
+  // The crates themselves still suggest a conveyor in motion without
+  // introducing the artifact.
   const cratesRef = useRef<THREE.Group>(null);
   const tRef = useRef(0);
   useFrame((_, dt) => {
@@ -205,16 +209,6 @@ function Conveyor() {
   });
   return (
     <group position={[0, 0, 2.4]}>
-      {/* Belt slab */}
-      <mesh position={[0, 0.05, 0]}>
-        <boxGeometry args={[24, 0.04, 0.7]} />
-        <meshBasicMaterial color="#7fd1d3" wireframe transparent opacity={0.35} />
-      </mesh>
-      <mesh position={[0, 0.05, 0]}>
-        <boxGeometry args={[24, 0.04, 0.7]} />
-        <meshBasicMaterial color="#7fd1d3" transparent opacity={0.05} />
-      </mesh>
-      {/* Crates */}
       <group ref={cratesRef}>
         {Array.from({ length: 6 }).map((_, i) => (
           <mesh key={i} position={[0, 0.18, 0]}>
@@ -244,19 +238,16 @@ function Floor() {
     }
     return new Float32Array(verts);
   }, []);
+  // We removed the solid floor plane that was beneath these lines —
+  // viewed at the camera angle it created a visible horizon stripe.
+  // The wireframe grid alone reads as a floor without the artifact.
   return (
-    <>
-      <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[40, 40]} />
-        <meshBasicMaterial color="#040616" transparent opacity={0.45} />
-      </mesh>
-      <lineSegments>
-        <bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[lines, 3]} />
-        </bufferGeometry>
-        <lineBasicMaterial color="#7fd1d3" transparent opacity={0.12} />
-      </lineSegments>
-    </>
+    <lineSegments>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[lines, 3]} />
+      </bufferGeometry>
+      <lineBasicMaterial color="#7fd1d3" transparent opacity={0.12} />
+    </lineSegments>
   );
 }
 
