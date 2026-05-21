@@ -30,9 +30,6 @@ export function BootSequence() {
   useEffect(() => {
     // Honor reduced motion + don't replay within a session
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    // Don't run boot if the tab is hidden on first paint - rAF is throttled
-    // and the boot would stall on screen until the tab is foregrounded
-    if (document.hidden) return;
     try {
       if (sessionStorage.getItem(SS_KEY)) return;
       sessionStorage.setItem(SS_KEY, "1");
@@ -49,17 +46,21 @@ export function BootSequence() {
       }, line.delay);
     });
 
-    // Drive the progress bar over the full duration
+    // Drive the progress bar via Date.now() + setInterval so it still
+    // completes correctly when the tab is in the background (rAF would
+    // throttle to ~1fps and leave the boot stuck on screen).
     const total = 1200;
-    const start = performance.now();
-    let raf = 0;
-    const tick = (t: number) => {
-      const p = Math.min(1, (t - start) / total);
+    const start = Date.now();
+    let interval = 0;
+    const tick = () => {
+      const p = Math.min(1, (Date.now() - start) / total);
       setProgress(p);
-      if (p < 1 && !skipRef.current) raf = requestAnimationFrame(tick);
-      else finish();
+      if (p >= 1 && !skipRef.current) {
+        clearInterval(interval);
+        finish();
+      }
     };
-    raf = requestAnimationFrame(tick);
+    interval = window.setInterval(tick, 50);
 
     function cleanupListeners() {
       window.removeEventListener("keydown", onKey);
@@ -81,7 +82,7 @@ export function BootSequence() {
     function skip() {
       if (skipRef.current) return;
       skipRef.current = true;
-      cancelAnimationFrame(raf);
+      clearInterval(interval);
       finish();
     }
 
@@ -91,7 +92,7 @@ export function BootSequence() {
     window.addEventListener("click", onClick);
 
     return () => {
-      cancelAnimationFrame(raf);
+      clearInterval(interval);
       cleanupListeners();
       document.body.classList.remove("boot-active");
     };

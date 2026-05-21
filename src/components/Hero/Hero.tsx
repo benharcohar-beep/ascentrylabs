@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { Link } from "react-router-dom";
 import { ScrambleText } from "../ui/ScrambleText";
 import { OrbitalNav } from "./OrbitalNav";
 import { ArrowUpRight, ArrowRight } from "lucide-react";
@@ -21,36 +21,14 @@ function CoreFallback() {
 }
 
 export function Hero() {
-  // Reserved for future use (currently unused after switching to direct Link)
-  void useNavigate;
-  // If the page is hidden on first render (background tab / headless),
-  // skip entrance animations so content shows in its final state.
-  // Real users with focused tabs get the staggered fade-up.
-  const [skipAnim] = useState(() =>
-    typeof document !== "undefined" && document.hidden
-  );
-
-  // When a backgrounded tab returns to foreground, force-finish entrance
-  // animations by toggling a class - covers the edge case where rAF was
-  // throttled before any frame fired.
-  const [revealReady, setRevealReady] = useState(true);
-  useEffect(() => {
-    if (!skipAnim) return;
-    setRevealReady(false);
-    const onVis = () => {
-      if (!document.hidden) {
-        setRevealReady(true);
-        document.removeEventListener("visibilitychange", onVis);
-      }
-    };
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
-  }, [skipAnim]);
-
-  const animClass = skipAnim ? "no-anim" : "";
+  // Hero entrances are pure CSS keyframes (.hero-reveal). CSS animations
+  // pause when the tab is hidden and resume on visibility - no JS
+  // safeguard needed. The previous `.no-anim` skip-on-hidden trick was
+  // over-aggressive: it permanently disabled the reveals if the tab
+  // happened to be hidden on first paint, even after the user came back.
 
   return (
-    <section className={`hero ${animClass} ${revealReady ? "" : "is-pre"}`} id="top">
+    <section className="hero" id="top">
       <div className="container hero-inner">
         <div className="hero-left">
           <div className="eyebrow hero-reveal" style={{ animationDelay: "0.1s" }}>

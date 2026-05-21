@@ -15,9 +15,9 @@ type Props = {
  * Glyph-decode reveal: text starts as scrambled chars and resolves to the
  * real string over `durationMs`. Robust to:
  *   - prefers-reduced-motion (skips, shows final text)
- *   - background tabs (rAF throttled): uses an interval fallback so the
- *     scramble still ticks (slowly) and a visibility listener that snaps
- *     to final text if the tab is hidden when the animation should run
+ *   - background tabs: timing uses Date.now() + setInterval fallback so
+ *     the scramble completes correctly even when rAF is throttled, and
+ *     it re-fires when the tab becomes visible again
  */
 export function ScrambleText({
   text,
@@ -33,7 +33,7 @@ export function ScrambleText({
   const cancelRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || document.hidden) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setOut(text);
       return;
     }
@@ -44,8 +44,21 @@ export function ScrambleText({
       cancelRef.current = runScramble();
     };
 
+    // If the tab is hidden right now, defer the start until it becomes
+    // visible (don't bail permanently — that left content stuck on placeholder).
+    const onVisStart = () => {
+      if (!document.hidden) {
+        document.removeEventListener("visibilitychange", onVisStart);
+        if (!triggerOnView) start();
+        // If triggerOnView is set, the IntersectionObserver below handles it
+      }
+    };
+    if (document.hidden) {
+      document.addEventListener("visibilitychange", onVisStart);
+    }
+
     if (!triggerOnView) {
-      start();
+      if (!document.hidden) start();
     } else {
       const el = ref.current;
       if (!el) return;
@@ -56,10 +69,14 @@ export function ScrambleText({
       io.observe(el);
       return () => {
         io.disconnect();
+        document.removeEventListener("visibilitychange", onVisStart);
         cancelRef.current?.();
       };
     }
-    return () => cancelRef.current?.();
+    return () => {
+      document.removeEventListener("visibilitychange", onVisStart);
+      cancelRef.current?.();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text]);
 
@@ -74,12 +91,6 @@ export function ScrambleText({
       if (cancelled) return;
       const now = Date.now();
       if (now < startAt) return;
-      if (document.hidden) {
-        // Tab not visible - jump straight to final to avoid showing mid-scramble
-        setOut(text);
-        cleanup();
-        return;
-      }
       const progress = Math.min(1, (now - startAt) / durationMs);
       const eased = progress * progress;
       const revealCount = Math.floor(eased * text.length);
@@ -103,23 +114,15 @@ export function ScrambleText({
     };
     raf = requestAnimationFrame(tick);
 
-    // Belt-and-braces interval (fires even in background tabs at min 1s)
+    // Belt-and-braces interval — fires even in background tabs (~1s min).
+    // Date.now()-based timing means progress is correct whether step is
+    // called every 16ms (foreground) or every 1000ms (background).
     interval = window.setInterval(step, 80);
-
-    // If the tab becomes hidden mid-anim, snap to final
-    const onVis = () => {
-      if (document.hidden) {
-        setOut(text);
-        cleanup();
-      }
-    };
-    document.addEventListener("visibilitychange", onVis);
 
     function cleanup() {
       cancelled = true;
       cancelAnimationFrame(raf);
       clearInterval(interval);
-      document.removeEventListener("visibilitychange", onVis);
     }
 
     return cleanup;
