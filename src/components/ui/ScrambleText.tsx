@@ -44,39 +44,34 @@ export function ScrambleText({
       cancelRef.current = runScramble();
     };
 
-    // If the tab is hidden right now, defer the start until it becomes
-    // visible (don't bail permanently — that left content stuck on placeholder).
-    const onVisStart = () => {
-      if (!document.hidden) {
-        document.removeEventListener("visibilitychange", onVisStart);
-        if (!triggerOnView) start();
-        // If triggerOnView is set, the IntersectionObserver below handles it
-      }
-    };
-    if (document.hidden) {
-      document.addEventListener("visibilitychange", onVisStart);
-    }
-
-    if (!triggerOnView) {
-      if (!document.hidden) start();
-    } else {
-      const el = ref.current;
-      if (!el) return;
-      const io = new IntersectionObserver(
-        (entries) => { if (entries[0].isIntersecting) start(); },
-        { threshold: 0.1 }
-      );
-      io.observe(el);
+    // Just start on mount. Date.now() + setInterval inside runScramble
+    // handles the hidden-tab case correctly — by the time the user comes
+    // back, the scramble has already resolved to final text (the wall
+    // clock advanced past endAt). For currently-visible tabs the rAF
+    // loop renders the full animation as expected.
+    //
+    // Used to gate this on IntersectionObserver (triggerOnView) but that
+    // never fires in genuinely hidden tabs, leaving content stuck on
+    // placeholder forever. All current usages are above-the-fold hero
+    // text where IO gating added no value anyway.
+    if (triggerOnView && document.hidden) {
+      // Defer the start until the tab becomes visible so the user
+      // actually sees the reveal animation play, instead of arriving
+      // to text that "already happened" while they weren't looking.
+      const onVis = () => {
+        if (!document.hidden) {
+          document.removeEventListener("visibilitychange", onVis);
+          start();
+        }
+      };
+      document.addEventListener("visibilitychange", onVis);
       return () => {
-        io.disconnect();
-        document.removeEventListener("visibilitychange", onVisStart);
+        document.removeEventListener("visibilitychange", onVis);
         cancelRef.current?.();
       };
     }
-    return () => {
-      document.removeEventListener("visibilitychange", onVisStart);
-      cancelRef.current?.();
-    };
+    start();
+    return () => cancelRef.current?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text]);
 
