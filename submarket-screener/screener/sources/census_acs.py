@@ -29,6 +29,13 @@ acquisitions VP will catch.
 - Median household income is a place-wide figure and says nothing about the
   income of renter households specifically, which is what actually underwrites
   a rent roll.
+- The API key is required. Census used to serve this data unauthenticated
+  below a daily quota, and on 12 May 2026 it made a key mandatory for every
+  request to the Data API. Without one the API answers HTTP 200 and an HTML
+  page titled "Missing Key", so a caller that only checks the status code
+  reads an error page as data. This module checks for the key up front and
+  reports the columns MISSING rather than probing vintages that cannot answer.
+  https://api.census.gov/data/missing_key.html
 """
 from __future__ import annotations
 
@@ -36,7 +43,9 @@ import json
 import math
 from datetime import date
 
-from ..cache import FetchError, require_key
+from dataclasses import dataclass
+
+from ..cache import FetchError, optional_key
 from ..context import Context
 from ..provenance import MetricSpec, Unit, Value, missing
 
@@ -143,8 +152,10 @@ def _explain_non_json(year: int, cache_key: str, text: str) -> str:
         )
     if "<title>missing key</title>" in lowered:
         return (
-            f"ACS {year}: no key reached the API. Check CENSUS_API_KEY is set in "
-            f".env, then rerun setup_keys.py. Get a free key at {KEY_SIGNUP}."
+            f"ACS {year}: the Census API received no key. Since 12 May 2026 a "
+            f"key is mandatory on every Data API request, so this is not a "
+            f"vintage problem and retrying other years will not help. "
+            f"{KEY_HELP} Then set it as CENSUS_API_KEY."
         )
     if "<html" in lowered[:400]:
         title = ""
@@ -168,7 +179,12 @@ def _query(ctx: Context, year: int, variables: list[str], geo_clause: dict, key:
     url = f"{BASE}/{year}/acs/acs5"
     params: dict[str, object] = {"get": ",".join(["NAME"] + variables)}
     params.update(geo_clause)
-    params["key"] = key
+    # The Census API serves this data unauthenticated up to a published daily
+    # quota per IP address. A key raises that quota, it does not unlock the
+    # data, so an absent key is not a reason to skip the largest pillar in the
+    # screen. The LIMITATIONS block at the top of this file has the detail.
+    if key:
+        params["key"] = key
     resp = ctx.cache.get(url, key=cache_key, params=params, ttl_days=90)
     text = resp.text.lstrip()
     if not text.startswith("["):
@@ -252,8 +268,51 @@ def find_latest_vintage(ctx: Context, key: str, max_back: int = 4) -> int:
     )
 
 
+@dataclass
+class AcsMaps:
+    """Two ACS vintages, indexed by GEOID, plus where and when they came from.
+
+    Both the Data API and the summary files produce this, and compute_metrics
+    only ever reads this, so the two routes cannot drift apart in their maths.
+    Variable names use the API's spelling (B01003_001E) whichever route filled
+    them, because that is the spelling the computation is written against.
+    """
+    latest: dict[str, dict[str, str]]
+    prior: dict[str, dict[str, str]]
+    latest_year: int
+    prior_year: int
+    latest_url: str
+    prior_url: str
+    retrieved_latest: str
+    retrieved_prior: str
+    prior_error: str
+    source_name: str
+
+
 def collect(ctx: Context, units: list[Unit]) -> dict[str, dict[str, Value]]:
-    key = require_key("CENSUS_API_KEY", KEY_HELP)
+    """ACS demand figures for every unit, from whichever route is available.
+
+    With CENSUS_API_KEY set, the Data API: a few kilobytes per market. Without
+    it, the table-based summary files on www2.census.gov: the same tables and
+    the same figures, as national flat files that need no key and are shared
+    across every market. The API is preferred only because it is lighter.
+    """
+    key = optional_key("CENSUS_API_KEY")
+    if key:
+        maps = fetch_api_maps(ctx, key)
+    else:
+        from . import census_acs_sf
+        ctx.log(
+            "ACS: no CENSUS_API_KEY, so reading the ACS summary files from "
+            "www2.census.gov instead of the Data API. Same tables, same figures, "
+            "no key, larger download."
+        )
+        maps = census_acs_sf.fetch_maps(ctx, units)
+    return compute_metrics(units, maps)
+
+
+def fetch_api_maps(ctx: Context, key: str) -> AcsMaps:
+    """The Data API route. Requires a key since 12 May 2026."""
     latest_year = find_latest_vintage(ctx, key)
     prior_year = latest_year - 5          # non-overlapping five-year samples
 
@@ -280,6 +339,29 @@ def collect(ctx: Context, units: list[Unit]) -> dict[str, dict[str, Value]]:
         except FetchError as exc:
             prior_error = str(exc)
             ctx.log(f"WARNING: prior ACS vintage {prior_year} failed for {tag}: {exc}")
+
+    return AcsMaps(
+        latest=latest_map, prior=prior_map,
+        latest_year=latest_year, prior_year=prior_year,
+        latest_url=latest_url, prior_url=prior_url,
+        retrieved_latest=retrieved_latest, retrieved_prior=retrieved_prior,
+        prior_error=prior_error, source_name=SOURCE_NAME,
+    )
+
+
+def compute_metrics(units: list[Unit], maps: AcsMaps) -> dict[str, dict[str, Value]]:
+    """Turn two vintages of raw ACS variables into the demand columns.
+
+    Every sentinel rule, the renter share, the age band sum, the CAGR and the
+    margin of error significance test live here and nowhere else, so the API
+    route and the summary file route cannot disagree.
+    """
+    latest_map, prior_map = maps.latest, maps.prior
+    latest_year, prior_year = maps.latest_year, maps.prior_year
+    latest_url, prior_url = maps.latest_url, maps.prior_url
+    retrieved_latest, retrieved_prior = maps.retrieved_latest, maps.retrieved_prior
+    prior_error = maps.prior_error
+    SOURCE_NAME = maps.source_name  # noqa: N806 - shadows the module constant on purpose
 
     latest_label = _vintage_label(latest_year)
     prior_label = _vintage_label(prior_year)

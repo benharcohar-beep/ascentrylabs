@@ -48,7 +48,7 @@ import json
 from datetime import date, datetime, timezone
 from typing import Any, Iterable
 
-from ..cache import CachedResponse, FetchError, require_key
+from ..cache import MissingCredential, CachedResponse, FetchError, require_key
 from ..context import Context
 from ..provenance import MetricSpec, Unit, Value, missing
 
@@ -662,17 +662,30 @@ def _fetch_fmr_for_county(
 def collect(ctx: Context, units: list[Unit]) -> dict[str, dict[str, Value]]:
     """Return {unit.geoid: {metric_key: Value}} for every unit passed in.
 
-    Raises MissingCredential when HUD_API_KEY is not set. The HUD key is free
-    and issued instantly, and the contract for this project is that a missing
-    key stops the run with instructions rather than quietly dropping a column.
+    Zillow ZORI needs no API key. HUD Fair Market Rents does, and it is only
+    the cross-check column, so the two fail independently: without HUD_API_KEY
+    the three FMR columns come through as MISSING with the signup instructions
+    attached, and the rent level and growth columns load as normal.
     """
     out: dict[str, dict[str, Value]] = {unit.geoid: {} for unit in units}
 
-    # The HUD key is checked FIRST, before any work. It used to be checked after
-    # the ZORI pass, which meant a missing key for the cross-check source threw
-    # away the primary rent data that needs no key at all, and handed the rent
-    # pillar's whole weight to the other pillars. Fail before, not after.
-    token = require_key("HUD_API_KEY", HUD_KEY_HELP)
+    # ZORI needs no key at all. HUD does, and HUD is only the cross-check
+    # column, so a missing HUD key must not cost us the primary rent data.
+    #
+    # This has now been wrong in both directions. It started as a check after
+    # the ZORI pass, which threw away work already done. I then moved it to the
+    # top, which failed even earlier and still took ZORI down with it. The
+    # actual answer is that the two sources have different requirements and
+    # should fail independently: without a HUD key the three FMR columns go
+    # MISSING and everything else runs.
+    token = ""
+    hud_credential_error = ""
+    try:
+        token = require_key("HUD_API_KEY", HUD_KEY_HELP)
+    except MissingCredential as exc:
+        hud_credential_error = str(exc)
+        ctx.log("rents: no HUD key, so the FMR cross-check columns will be "
+                "MISSING. Zillow rent data is unaffected and still loads.")
 
     # ---------------------------------------------------------------- ZORI
     weights_by_unit = {unit.geoid: _collapse_weights(unit.zctas) for unit in units}
@@ -860,7 +873,13 @@ def collect(ctx: Context, units: list[Unit]) -> dict[str, dict[str, Value]]:
             )
 
     # ----------------------------------------------------------------- FMR
-    # token was obtained at the top of this function, before any download.
+    if hud_credential_error:
+        for unit in units:
+            for key in ("fmr_2br", "fmr_year", "zori_vs_fmr_ratio"):
+                out[unit.geoid][key] = missing(
+                    hud_credential_error.splitlines()[0], source=SOURCE_NAME
+                )
+        return out
 
     fmr_by_county: dict[str, dict[str, Any]] = {}
     for unit in units:

@@ -29,7 +29,7 @@ from .cache import FetchError, MissingCredential
 from .context import Context
 from .metrics import registry
 from .provenance import Unit, Value, missing
-from .sources import census_gazetteer, census_relationship, geo
+from .sources import census_gazetteer, census_pep, census_relationship, geo
 
 
 def _unit_to_dict(unit: Unit) -> dict:
@@ -52,11 +52,30 @@ def _merge(target: dict[str, dict[str, Value]], new: dict[str, dict[str, Value]]
         target.setdefault(geoid, {}).update(values)
 
 
+# How long each optional source may spend downloading before its columns are
+# given up as MISSING. The point is that no single column can hold up the whole
+# screen. Schools gets the largest budget because the NCES district files are
+# by far the biggest download in the tool, and it is also the cheapest thing to
+# lose: the school proxy is 40% of a pillar worth 10%.
+SOURCE_BUDGET_SECONDS = {
+    # Without a key this reads the ACS summary files, which are national and
+    # run to a few hundred megabytes before filtering. It carries the largest
+    # pillar, so it gets the longest budget, but it still gets one.
+    "census_acs": 600,
+    "bls_jobs": 240,
+    "rents": 240,
+    "census_bps": 300,
+    "schools": 420,
+}
+
+
 def _run_source(ctx: Context, name: str, fn, units, failures: dict, **kwargs
                 ) -> dict[str, dict[str, Value]]:
     """Call one source module, turning any failure into MISSING cells."""
+    budget = SOURCE_BUDGET_SECONDS.get(name)
     try:
-        return fn(ctx, units, **kwargs)
+        with ctx.cache.budget(budget, label=name):
+            return fn(ctx, units, **kwargs)
     except MissingCredential as exc:
         ctx.log(f"SKIPPED {name}: {exc}")
         failures[name] = str(exc)
@@ -96,15 +115,31 @@ def build(ctx: Context) -> dict:
         f"{len(in_range)} of {len(universe)}"
     )
 
-    # ------------------------------------------------------------------- 3. ACS
+    # --------------------------------------------- 3. population, then ACS
+    # PEP first, deliberately. It needs no API key, so the shortlist can always
+    # be ranked by population even when ACS is unavailable, and the permits
+    # metric always has a denominator. ACS is still the better source where it
+    # loads, and its household figures take precedence for the shortlist.
+    pep_values = _run_source(ctx, "census_pep", census_pep.collect, in_range, failures)
+    pep_population = census_pep.population_by_geoid(pep_values)
+
     from .sources import census_acs
 
     acs_values = _run_source(ctx, "census_acs", census_acs.collect, in_range, failures)
 
     # -------------------------------------------------------------- 4. shortlist
     def population_of(unit: Unit) -> float:
+        """ACS population where available, otherwise the keyless estimate.
+
+        Ranking by population is the selection rule. Before PEP existed, a
+        missing Census key collapsed this to ranking by distance, which is a
+        different screen producing a different shortlist.
+        """
         v = acs_values.get(unit.geoid, {}).get("population")
-        return float(v.value) if v is not None and not v.is_missing else -1.0
+        if v is not None and not v.is_missing:
+            return float(v.value)
+        estimate = pep_population.get(unit.geoid)
+        return float(estimate) if estimate is not None else -1.0
 
     forced = set(market.always_include)
     excluded = set(market.always_exclude)
@@ -124,26 +159,30 @@ def build(ctx: Context) -> dict:
             shortlist.append(unit)
     shortlist.sort(key=population_of, reverse=True)
 
+    ranking_source = "ACS" if acs_values else "Census population estimates"
     shortlist_method = (
-        f"largest {market.target_submarkets} municipalities by ACS population, "
+        f"largest {market.target_submarkets} municipalities by "
+        f"{ranking_source} population, "
         f"above {market.min_population:,}, within "
         f"{market.max_distance_miles:.0f} miles of an employment centre"
     )
 
-    if not acs_values:
-        # The population rule cannot run without ACS. The fallback still honours
+    if not acs_values and not pep_population:
+        # Both population sources are gone, which takes two independent
+        # failures now that PEP backs ACS up. The fallback still honours
         # always_include and always_exclude, because silently screening an
         # excluded municipality is worse than screening nothing, and it is
         # recorded in the bundle so the outputs can say the rule changed.
         ctx.log(
-            "WARNING: ACS returned nothing, so the shortlist could not be ranked "
-            "by population. Falling back to the closest municipalities by "
-            "distance. The population floor cannot be applied."
+            "WARNING: neither ACS nor the Census population estimates returned "
+            "anything, so the shortlist could not be ranked by population. "
+            "Falling back to the closest municipalities by distance. The "
+            "population floor cannot be applied."
         )
         shortlist_method = (
-            f"FALLBACK, ACS unavailable: closest {market.target_submarkets} "
-            f"municipalities by straight-line distance. The population floor "
-            f"was NOT applied."
+            f"FALLBACK, no population source available: closest "
+            f"{market.target_submarkets} municipalities by straight-line "
+            f"distance. The population floor was NOT applied."
         )
         candidates = [u for u in in_range if u.geoid not in excluded]
         forced_units = [u for u in candidates if u.geoid in forced]
@@ -169,7 +208,9 @@ def build(ctx: Context) -> dict:
     provenance["zcta_crosswalk"] = census_relationship.attach_zctas(ctx, shortlist)
 
     values: dict[str, dict[str, Value]] = {}
-    _merge(values, {g: v for g, v in acs_values.items() if g in {u.geoid for u in shortlist}})
+    short_geoids = {u.geoid for u in shortlist}
+    _merge(values, {g: v for g, v in pep_values.items() if g in short_geoids})
+    _merge(values, {g: v for g, v in acs_values.items() if g in short_geoids})
     _merge(values, geo.collect(ctx, shortlist))
 
     households = {
@@ -184,7 +225,7 @@ def build(ctx: Context) -> dict:
     optional_sources = [
         ("bls_jobs", {}),
         ("rents", {}),
-        ("census_bps", {"households": households}),
+        ("census_bps", {"households": households, "population": pep_population}),
         ("schools", {}),
     ]
     for name, kwargs in optional_sources:

@@ -4,10 +4,15 @@
 # the button, wait a few minutes, download the results from the Artifacts
 # section at the bottom of the run page. No Python and no terminal needed.
 #
-# It needs three free API keys, added once at
-#   Settings > Secrets and variables > Actions > New repository secret
-# named CENSUS_API_KEY, BLS_API_KEY and HUD_API_KEY. GitHub masks secret values
-# in logs. Never put a key in a file in this repository: it is public.
+# No API key is needed. Census made a key mandatory on the Data API on
+# 12 May 2026, so without one the ACS figures are read from the summary files
+# on www2.census.gov instead: same release, no key, larger download.
+# CENSUS_API_KEY only makes that pull lighter. BLS_API_KEY adds county
+# unemployment and HUD_API_KEY adds the Fair Market Rent cross-check.
+#
+# Add them at Settings > Secrets and variables > Actions > New repository
+# secret. GitHub masks secret values in logs. Never put a key in a file in this
+# repository: it is public.
 
 name: Submarket screener data pull
 
@@ -21,20 +26,20 @@ on:
         type: choice
         options: [madison_wi, grand_rapids_mi, lexington_ky, savannah_ga, all]
       mode:
-        description: run = fetch and build outputs. diagnose = report what each source actually returns.
+        description: run = fetch and build outputs. diagnose = report what each source returns. probe = report what the ACS summary files look like.
         required: true
         default: run
         type: choice
-        options: [run, diagnose]
+        options: [run, diagnose, probe]
       refresh:
         description: Ignore the cache and download everything again
         required: false
         default: false
         type: boolean
       include_schools:
-        description: Also install geopandas for the school proxy columns (slower)
+        description: Install geopandas so the school proxy columns load (adds about a minute)
         required: false
-        default: false
+        default: true
         type: boolean
 
   # Monthly refresh, so the screen does not go stale. ACS, QCEW, ZORI and the
@@ -69,7 +74,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          if [ "${{ inputs.include_schools }}" = "true" ]; then
+          if [ "${{ inputs.include_schools }}" != "false" ]; then
             pip install -r requirements-optional.txt
           fi
 
@@ -98,11 +103,23 @@ jobs:
           HUD_API_KEY: ${{ secrets.HUD_API_KEY }}
         run: python diagnose.py 2>&1 | tee ../diagnose-log.txt
 
+      # Reads the layout of a published file set and prints it, so a source
+      # module can be written against what is actually there rather than
+      # against a guess. That is how the Building Permits reader was got right
+      # after two wrong attempts. Downloads only the first kilobyte of each file.
+      - name: Probe the ACS summary files
+        if: ${{ inputs.mode == 'probe' }}
+        run: python tools/probe_acs_summary_file.py 2>&1 | tee ../probe-log.txt
+
       # Not `set -e` guarded: a source that fails is a MISSING column, not a
       # failed run, and the outputs are still worth downloading. The log says
       # what failed and why.
+      #
+      # The condition is written as two "not"s rather than == 'run' because the
+      # monthly scheduled trigger passes no inputs at all, so an equality test
+      # would silently stop the schedule from ever running the screen.
       - name: Run the screen
-        if: ${{ inputs.mode != 'diagnose' }}
+        if: ${{ inputs.mode != 'diagnose' && inputs.mode != 'probe' }}
         env:
           CENSUS_API_KEY: ${{ secrets.CENSUS_API_KEY }}
           BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
@@ -118,6 +135,33 @@ jobs:
           fi
           python -m screener.cli run $TARGET $EXTRA 2>&1 | tee ../run-log.txt
           exit ${PIPESTATUS[0]}
+
+      # One percentage per submarket tells you something is missing but not
+      # what. This lists it column by column with the recorded reason, so the
+      # run log is enough to work out what to fix next.
+      # The scoring tab holds live Excel formulas so an interviewer can click a
+      # cell. That is only worth anything if they agree with the Python scorer,
+      # and they have disagreed before: N(range) returns #VALUE! over a range,
+      # which blanked every pillar score while the Python output looked fine.
+      # The test suite checks fixtures; this checks the real workbook.
+      - name: Verify the workbook formulas
+        if: ${{ always() && inputs.mode != 'probe' }}
+        run: |
+          pip install formulas >/dev/null 2>&1 || true
+          TARGET="--market ${{ inputs.market }}"
+          if [ "${{ inputs.market }}" = "all" ] || [ -z "${{ inputs.market }}" ]; then
+            TARGET="--all"
+          fi
+          python -m screener.cli verify $TARGET 2>&1 | tee ../verify-log.txt || true
+
+      - name: Column coverage
+        if: ${{ always() && inputs.mode != 'probe' }}
+        run: |
+          TARGET="--market ${{ inputs.market }}"
+          if [ "${{ inputs.market }}" = "all" ] || [ -z "${{ inputs.market }}" ]; then
+            TARGET="--all"
+          fi
+          python -m screener.cli coverage $TARGET 2>&1 | tee ../coverage-log.txt || true
         continue-on-error: true
 
       - name: Collect the log
@@ -125,6 +169,15 @@ jobs:
         run: |
           mkdir -p output
           cp ../run-log.txt output/ 2>/dev/null || true
+          cp ../coverage-log.txt output/ 2>/dev/null || true
+          cp ../probe-log.txt output/ 2>/dev/null || true
+          cp ../verify-log.txt output/ 2>/dev/null || true
+          # The run creates a row per shortlisted submarket in this file for
+          # the manual municipal attitude column. On a cloud run it is written
+          # inside the runner and thrown away with it, so nobody ever sees the
+          # file they are supposed to fill in. Ship it in the artifact: fill it
+          # in, commit it back to config/, and the next run scores it.
+          cp config/municipal_attitude.csv output/ 2>/dev/null || true
           cp ../diagnose-log.txt output/ 2>/dev/null || true
           ls -la output || true
 

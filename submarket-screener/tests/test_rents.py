@@ -392,13 +392,24 @@ def test_unrecognised_hud_payload_raises_rather_than_guessing(tmp_path):
     assert "basicdata" in str(excinfo.value)
 
 
-def test_missing_hud_key_raises_missingcredential_with_instructions(monkeypatch):
+def test_without_a_hud_key_zori_still_loads_and_only_fmr_goes_missing(monkeypatch):
+    """Zillow needs no key. HUD is only the cross-check, so it fails alone.
+
+    This was wrong twice: first the key was checked after the ZORI pass, which
+    threw away completed work, then it was checked before, which failed earlier
+    and still took ZORI with it. Rent is 25% of the weighting and almost none
+    of it depends on HUD.
+    """
     monkeypatch.delenv("HUD_API_KEY", raising=False)
-    with pytest.raises(MissingCredential) as excinfo:
-        rents.collect(make_ctx(FakeCache()), [UNIT_A])
-    message = str(excinfo.value)
-    assert "HUD_API_KEY" in message
-    assert "https://www.huduser.gov/portal/dataset/fmr-api.html" in message
+    out = rents.collect(make_ctx(FakeCache()), [UNIT_A])
+    values = out[UNIT_A.geoid]
+
+    assert values["zori_latest"].value is not None
+    assert values["zori_yoy"].value is not None
+
+    for key in ("fmr_2br", "fmr_year", "zori_vs_fmr_ratio"):
+        assert values[key].is_missing
+        assert "HUD_API_KEY" in values[key].missing_reason
 
 
 # --------------------------------------------------------------------------

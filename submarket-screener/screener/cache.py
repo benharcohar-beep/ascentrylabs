@@ -14,6 +14,7 @@ import hashlib
 import json
 import os
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -60,6 +61,45 @@ class Cache:
         self.request_timeout = request_timeout
         self.polite_delay = polite_delay
         self._last_request_at = 0.0
+        self._deadline: float | None = None
+
+    # ---------------------------------------------------------------- budget
+    @contextmanager
+    def budget(self, seconds: float | None, label: str = "this source"):
+        """Cap the wall-clock time one source may spend downloading.
+
+        request_timeout does not cover this. It is a per-socket timeout, so a
+        download that keeps trickling bytes never trips it, and a source that
+        pulls a very large file can hold up a run that is otherwise seconds
+        from finishing. One column is never worth that, so the budget turns an
+        overrun into a MISSING column with an honest reason attached and lets
+        the rest of the screen complete.
+
+        Nested budgets take the earlier deadline, so an inner one can tighten
+        an outer one but never extend past it.
+        """
+        previous = self._deadline
+        if seconds is not None:
+            proposed = time.monotonic() + seconds
+            self._deadline = proposed if previous is None else min(previous, proposed)
+        self._budget_label = label
+        self._budget_seconds = seconds
+        try:
+            yield
+        finally:
+            self._deadline = previous
+
+    def _check_deadline(self, url: str, downloaded: int | None = None) -> None:
+        if self._deadline is None or time.monotonic() <= self._deadline:
+            return
+        so_far = "" if downloaded is None else f" after {downloaded:,} bytes"
+        raise FetchError(
+            f"{getattr(self, '_budget_label', 'this source')} ran past its "
+            f"{getattr(self, '_budget_seconds', '?')} second download budget"
+            f"{so_far} on {url}. Nothing was guessed: the columns this source "
+            f"fills are reported MISSING and the rest of the screen completed. "
+            f"Raise the budget, or run once with a warm cache."
+        )
 
     # ------------------------------------------------------------------ paths
     def _entry_paths(self, key: str) -> tuple[Path, Path]:
@@ -154,6 +194,8 @@ class Cache:
         if gap < self.polite_delay:
             time.sleep(self.polite_delay - gap)
 
+        self._check_deadline(full_url)
+
         req_headers = {"User-Agent": USER_AGENT}
         if headers:
             req_headers.update(headers)
@@ -166,6 +208,7 @@ class Cache:
                 headers=req_headers,
                 json=json_body,
                 timeout=self.request_timeout,
+                stream=True,
             )
         except requests.RequestException as exc:
             raise FetchError(f"{type(exc).__name__} fetching {full_url}: {exc}") from exc
@@ -178,6 +221,25 @@ class Cache:
                 f"HTTP {resp.status_code} from {full_url} :: {snippet}"
             )
 
+        # Read the body in chunks so the budget can stop a download that is
+        # still arriving. Buffering it whole first would defeat the point: the
+        # oversized file is exactly the one that needs interrupting.
+        chunks: list[bytes] = []
+        downloaded = 0
+        try:
+            for chunk in resp.iter_content(chunk_size=1 << 16):
+                if not chunk:
+                    continue
+                chunks.append(chunk)
+                downloaded += len(chunk)
+                self._check_deadline(full_url, downloaded)
+        except requests.RequestException as exc:
+            raise FetchError(
+                f"{type(exc).__name__} while reading {full_url} after "
+                f"{downloaded:,} bytes: {exc}"
+            ) from exc
+        body = b"".join(chunks)
+
         if expect_content_type and expect_content_type not in resp.headers.get(
             "Content-Type", ""
         ):
@@ -188,21 +250,168 @@ class Cache:
             )
 
         retrieved_at = _utcnow_iso()
-        body_path.write_bytes(resp.content)
+        body_path.write_bytes(body)
         meta_path.write_text(
             json.dumps(
                 {
                     "key": key,
                     "url": full_url.split("&key=")[0].split("?key=")[0],
                     "status": resp.status_code,
-                    "bytes": len(resp.content),
+                    "bytes": len(body),
                     "content_type": resp.headers.get("Content-Type", ""),
                     "retrieved_at": retrieved_at,
                 },
                 indent=2,
             )
         )
-        return CachedResponse(resp.content, retrieved_at, full_url, False)
+        return CachedResponse(body, retrieved_at, full_url, False)
+
+
+    # -------------------------------------------------------- filtered fetch
+    def get_filtered_lines(
+        self,
+        url: str,
+        *,
+        key: str,
+        prefixes: tuple[str, ...],
+        ttl_days: int = 90,
+        max_bytes: int | None = None,
+    ) -> CachedResponse:
+        """Download a large line-oriented file, keep only matching lines.
+
+        The ACS summary file for one table is a national file: 18MB for total
+        population and 200MB for the age table. A market needs the couple of
+        thousand lines for one state. Caching the whole download to serve those
+        would make the offline demo carry hundreds of megabytes it never reads,
+        and on a CI runner it is re-uploaded on every run.
+
+        So this streams the body, keeps the header plus any line starting with
+        one of `prefixes`, and caches only that. The cached entry is a few
+        hundred kilobytes and is what the offline demo replays.
+
+        The budget applies as it does to get(), and a download stopped part way
+        is never cached, because a truncated extract would look exactly like a
+        state with fewer municipalities than it has.
+        """
+        body_path, meta_path = self._entry_paths(key)
+
+        if body_path.exists() and meta_path.exists() and not self.refresh:
+            try:
+                meta = json.loads(meta_path.read_text())
+            except json.JSONDecodeError:
+                meta = {}
+            retrieved_at = meta.get("retrieved_at", "")
+            fresh = True
+            if ttl_days is not None and retrieved_at:
+                try:
+                    stamp = datetime.strptime(retrieved_at, "%Y-%m-%dT%H:%M:%SZ").replace(
+                        tzinfo=timezone.utc
+                    )
+                    fresh = datetime.now(timezone.utc) - stamp < timedelta(days=ttl_days)
+                except ValueError:
+                    fresh = True
+            if fresh or self.offline:
+                return CachedResponse(
+                    body_path.read_bytes(), retrieved_at, meta.get("url", url), True
+                )
+
+        if self.offline:
+            raise FetchError(
+                f"offline mode and nothing cached for '{key}'. "
+                f"Run the fetch step once with a network connection."
+            )
+
+        self._check_deadline(url)
+
+        gap = time.monotonic() - self._last_request_at
+        if gap < self.polite_delay:
+            time.sleep(self.polite_delay - gap)
+
+        try:
+            resp = requests.get(
+                url,
+                headers={"User-Agent": USER_AGENT},
+                timeout=self.request_timeout,
+                stream=True,
+            )
+        except requests.RequestException as exc:
+            raise FetchError(f"{type(exc).__name__} fetching {url}: {exc}") from exc
+        finally:
+            self._last_request_at = time.monotonic()
+
+        if resp.status_code != 200:
+            snippet = resp.text[:200].replace("\n", " ")
+            raise FetchError(f"HTTP {resp.status_code} from {url} :: {snippet}")
+
+        # Match on bytes, not str. decode_unicode only decodes when the
+        # response declares a charset, and a .dat file is served as an octet
+        # stream with none, so iter_lines hands back bytes and comparing them
+        # against str prefixes raises TypeError halfway through a download.
+        # Encoding the prefixes once is cheaper than decoding every line, and
+        # the data is ASCII pipe-delimited either way.
+        wanted = tuple(prefix.encode("utf-8") for prefix in prefixes)
+
+        kept: list[bytes] = []
+        header_seen = False
+        downloaded = 0
+        try:
+            for line in resp.iter_lines(chunk_size=1 << 18):
+                if line is None:
+                    continue
+                if isinstance(line, str):       # a server that did declare one
+                    line = line.encode("utf-8")
+                downloaded += len(line) + 1
+                if not header_seen:
+                    # The first line is the column header and is always kept:
+                    # without it the extract cannot be parsed at all.
+                    kept.append(line)
+                    header_seen = True
+                    continue
+                if line.startswith(wanted):
+                    kept.append(line)
+                self._check_deadline(url, downloaded)
+                if max_bytes is not None and downloaded > max_bytes:
+                    raise FetchError(
+                        f"{url} is larger than the {max_bytes:,} byte ceiling set "
+                        f"for it ({downloaded:,} bytes read). Nothing was cached."
+                    )
+        except requests.RequestException as exc:
+            raise FetchError(
+                f"{type(exc).__name__} while reading {url} after "
+                f"{downloaded:,} bytes: {exc}"
+            ) from exc
+
+        body = b"\n".join(kept) + b"\n"
+        retrieved_at = _utcnow_iso()
+        body_path.write_bytes(body)
+        meta_path.write_text(
+            json.dumps(
+                {
+                    "key": key,
+                    "url": url,
+                    "status": resp.status_code,
+                    "bytes": len(body),
+                    "bytes_downloaded": downloaded,
+                    "lines_kept": len(kept),
+                    "filtered_to_prefixes": list(prefixes),
+                    "retrieved_at": retrieved_at,
+                },
+                indent=2,
+            )
+        )
+        return CachedResponse(body, retrieved_at, url, False)
+
+
+def optional_key(env_name: str) -> str:
+    """Read a credential that the caller can do without.
+
+    Some hosts serve the same data with or without a key, and only meter you
+    differently. The Census API is the case that matters here: it answers
+    unauthenticated requests up to a published daily quota per IP address, so
+    demanding a key would turn a working screen into no screen at all. Sources
+    that genuinely cannot run without a credential keep using require_key.
+    """
+    return os.environ.get(env_name, "").strip()
 
 
 def require_key(env_name: str, how_to_get: str) -> str:

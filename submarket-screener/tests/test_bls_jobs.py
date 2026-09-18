@@ -527,15 +527,31 @@ def test_collect_recovers_the_county_from_a_ten_digit_geoid():
     assert row["county_employment_latest"].value == 350000
 
 
-def test_collect_raises_missing_credential_without_a_key(monkeypatch):
+def test_without_a_key_qcew_still_loads_and_only_laus_goes_missing(monkeypatch):
+    """The two sources have different requirements and must fail separately.
+
+    QCEW is an open CSV and carries employment level and growth, which are the
+    columns that move the ranking. Only LAUS needs a key. Requiring the key up
+    front used to take QCEW down with it, which cost the whole jobs pillar over
+    a credential that half of it does not need.
+    """
     monkeypatch.delenv("BLS_API_KEY", raising=False)
     cache = FakeCache(happy_responses())
-    with pytest.raises(MissingCredential) as exc:
-        bls_jobs.collect(make_context(cache), make_units())
-    assert "BLS_API_KEY" in str(exc.value)
-    assert "registrationEngine" in str(exc.value)
-    # Nothing should have been downloaded before the check.
-    assert cache.calls == []
+    out = bls_jobs.collect(make_context(cache), make_units())
+
+    for values in out.values():
+        # QCEW columns are real.
+        assert values["county_emp_cagr_3y"].value is not None
+        assert values["county_employment_latest"].value is not None
+        # LAUS columns are MISSING, and say why.
+        for key in ("county_unemployment_rate", "county_labor_force"):
+            assert values[key].is_missing
+            assert "BLS_API_KEY" in values[key].missing_reason
+
+    # QCEW was actually fetched; no LAUS request was attempted.
+    urls = [call["url"] for call in cache.calls]
+    assert any("cew" in url for url in urls)
+    assert not any("timeseries" in url for url in urls)
 
 
 def test_collect_propagates_a_layout_change_instead_of_guessing():

@@ -16,11 +16,11 @@ Markets configured: **Madison WI**, **Grand Rapids MI**, **Lexington KY**,
 
 The whole pull runs in GitHub Actions, so you do not need Python or a terminal.
 
-1. Add the three free keys once, at **Settings > Secrets and variables >
-   Actions > New repository secret**, named `CENSUS_API_KEY`, `BLS_API_KEY`
-   and `HUD_API_KEY`. Copy each one straight from its signup email.
-2. Go to **Actions > Submarket screener data pull > Run workflow**, choose a
-   market, press the green button.
+1. Go to **Actions > Submarket screener data pull > Run workflow**, choose a
+   market, press the green button. No API key is needed to get a full result.
+2. Optionally add the free keys at **Settings > Secrets and variables >
+   Actions > New repository secret**. The key table below says what each one
+   is worth.
 3. When it finishes, scroll to **Artifacts** at the bottom of the run page and
    download the zip. It holds the workbook, the one-pager, `raw.json` and the
    full run log.
@@ -62,21 +62,61 @@ is written to `data/cache/`, and `report` and the Streamlit app read only
 `output/<market>/raw.json`. Once you have fetched once, the whole demo runs
 with the wifi off.
 
-## The three free API keys
+## The API keys
 
-| Key | What it unlocks | Where to get it |
+**None of them is required.** Every pillar loads without any key. Two optional
+free keys each add a few columns.
+
+| Key | What it adds | Where to get it |
 | --- | --- | --- |
-| `CENSUS_API_KEY` | ACS 5-year demographics | https://api.census.gov/data/key_signup.html (instant, click the activation link in the email) |
-| `BLS_API_KEY` | LAUS county unemployment | https://data.bls.gov/registrationEngine/ (instant, key by email) |
-| `HUD_API_KEY` | Fair Market Rents cross-check | https://www.huduser.gov/portal/dataset/fmr-api.html (free account, generate a token on your account page) |
+| `CENSUS_API_KEY` | The two ACS growth columns, 44 of the 108 points inside demand, and it makes the ACS pull a few kilobytes instead of a few hundred megabytes | https://api.census.gov/data/key_signup.html (instant, click the activation link in the email) |
+| `BLS_API_KEY` | County unemployment, 6% of the demand pillar | https://data.bls.gov/registrationEngine/ (instant, key by email) |
+| `HUD_API_KEY` | The Fair Market Rent cross-check columns, which are not scored | https://www.huduser.gov/portal/dataset/fmr-api.html (free account, generate a token on your account page) |
 
-Put them in `.env`, which is gitignored. Nothing else needs a key: the Census
-Gazetteer, the Census Building Permits Survey, BLS QCEW, Zillow ZORI and NCES
-are all open downloads.
+Put them in `.env`, which is gitignored, or add them as repository secrets to
+run in Actions.
 
-If a key is missing the run stops for that source with instructions, and every
-column it would have filled comes through as MISSING. It never substitutes an
-unauthenticated endpoint that returns different numbers.
+**On the Census key, because this one has a history.** Census used to serve the
+Data API unauthenticated below a daily quota. On 12 May 2026 it made a key
+mandatory on every request, and it signals a missing one with HTTP 200 and an
+HTML page titled "Missing Key", so anything checking only the status code reads
+an error page as data.
+
+That would have put the demand pillar behind a credential, except that the same
+estimates are also published as the **table-based summary files** on
+www2.census.gov, which need no key. So there are two routes to identical
+figures:
+
+| | Data API | Summary files |
+| --- | --- | --- |
+| Key | Required since 12 May 2026 | None |
+| Download | A few kilobytes per market | 18MB to 200MB per table, filtered to your state and cached |
+| Figures | The same release | The same release |
+
+With a key it takes the API because it is lighter. Without one it reads the
+summary files. Both fill the same structure and the arithmetic
+(`census_acs.compute_metrics`) runs once, so the two cannot drift apart. The
+column naming differs between them, `B25003_E003` against `B25003_003E`, and
+that translation is the one place a divergence could hide, so a test pins it.
+
+There is one thing the keyless route cannot do. Comparing population and
+household counts across two ACS releases needs the releases not to overlap, so
+a 2020-2024 figure has to be set against 2015-2019. The table-based summary
+files do not go back that far, and the Data API does. A closer vintage is not a
+substitute: two five-year samples that share years are correlated, which damps
+the measured change and invalidates the margin of error test this tool runs on
+it, so both growth columns are reported MISSING rather than filled with a
+number that would look ordinary and be wrong. That is 44 of the 108 points
+inside the demand pillar, and it is the one concrete reason to add the key.
+
+Everything else runs without a key either way: the Census Gazetteer, the
+Building Permits Survey, the Population Estimates Program, BLS QCEW, Zillow
+ZORI and the NCES district files.
+
+If a key is absent, the columns that need it come through as MISSING with the
+key named as the reason, and the rest of that source still loads. A missing key
+never takes down a source that does not need it, and the tool never substitutes
+a different endpoint that returns different numbers.
 
 ---
 
@@ -93,10 +133,12 @@ fifty municipalities cost the same as ten.
 
 **4. Pick the shortlist.** The `target_submarkets` largest survivors above
 `min_population`, plus anything in `always_include`, minus anything in
-`always_exclude`. Selection is rule-based and reproducible, not hand-picked. If
-ACS is unavailable the population rule cannot run and the tool falls back to the
-closest municipalities by distance; `always_include` and `always_exclude` are
-still honoured, and `raw.json` records which rule produced the set in
+`always_exclude`. Selection is rule-based and reproducible, not hand-picked.
+Population comes from ACS where it is available and from the Census Population
+Estimates Program otherwise, so losing one of them does not change the rule.
+Only if both are unavailable does the tool fall back to the closest
+municipalities by distance; `always_include` and `always_exclude` are still
+honoured, and `raw.json` records which rule produced the set in
 `shortlist_method` so the run is never silently different.
 
 **5. Pull the rest for the shortlist**: rents, permits, county jobs, the school

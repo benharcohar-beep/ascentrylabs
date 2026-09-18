@@ -25,10 +25,19 @@ from .config import CACHE_DIR, OUTPUT_DIR, list_markets, load_market, load_weigh
 from .context import Context
 from .metrics import validate_weights
 
+# No key is required to run the screen. Each one either raises a rate limit or
+# adds a few columns, and the tool says which columns went MISSING and why. The
+# fourth field is what you actually lose without it.
 KEY_STATUS = [
-    ("CENSUS_API_KEY", "Census ACS", "https://api.census.gov/data/key_signup.html"),
-    ("BLS_API_KEY", "BLS LAUS", "https://data.bls.gov/registrationEngine/"),
-    ("HUD_API_KEY", "HUD Fair Market Rents", "https://www.huduser.gov/portal/dataset/fmr-api.html"),
+    ("CENSUS_API_KEY", "Census ACS", "https://api.census.gov/data/key_signup.html",
+     "no columns. The Data API has needed a key since 12 May 2026, so without "
+     "one the same figures are read from the summary files instead: same "
+     "release, much larger download. A key only makes the pull lighter."),
+    ("BLS_API_KEY", "BLS LAUS", "https://data.bls.gov/registrationEngine/",
+     "the county unemployment columns. QCEW employment needs no key."),
+    ("HUD_API_KEY", "HUD Fair Market Rents",
+     "https://www.huduser.gov/portal/dataset/fmr-api.html",
+     "the FMR cross-check columns. Zillow rents need no key."),
 ]
 
 
@@ -52,12 +61,12 @@ def cmd_check(args) -> int:
         print(f"  {key:<18} {market.name:<28} "
               f"{len(market.counties)} counties, {market.geo_type.replace('_', ' ')}")
 
-    print("\nAPI keys (all free):")
-    missing_any = False
-    for env, label, url in KEY_STATUS:
+    print("\nAPI keys (all free, none required):")
+    absent = []
+    for env, label, url, cost in KEY_STATUS:
         present = bool(os.environ.get(env, "").strip())
         if not present:
-            missing_any = True
+            absent.append((env, cost))
         print(f"  [{'x' if present else ' '}] {env:<16} {label:<24} {url}")
 
     print("\nWeights:")
@@ -73,11 +82,11 @@ def cmd_check(args) -> int:
         return 1
     print("\nweights.yml is consistent with the metrics the source modules produce.")
 
-    if missing_any:
-        print("\nAt least one key is missing. Add them to submarket-screener/.env "
-              "and rerun. fetch will stop with instructions if it needs one it "
-              "does not have.")
-        return 2
+    if absent:
+        print("\nThe screen runs without these. What each one is costing you:")
+        for env, cost in absent:
+            print(f"  {env}: {cost}")
+        print("Add any of them to submarket-screener/.env and rerun.")
     return 0
 
 
@@ -131,6 +140,219 @@ def cmd_report(args) -> int:
     return 1 if failed else 0
 
 
+def cmd_coverage(args) -> int:
+    """Print, per column, how many submarkets actually got a figure.
+
+    The run already reports one coverage percentage per submarket, which tells
+    you that something is missing but not what. This lists every scored column
+    against the number of submarkets holding a real value for it, and groups
+    the missing ones by the reason recorded at the time. That turns "27%
+    coverage" into a list of specific things to go and fix.
+    """
+    weights = load_weights()
+    failed = 0
+    for key in _targets(args):
+        try:
+            bundle = assemble.load(key, OUTPUT_DIR)
+        except FileNotFoundError as exc:
+            print(f"  {exc}", file=sys.stderr)
+            failed += 1
+            continue
+
+        units = bundle["units"]
+        values = bundle["values"]
+        specs = bundle["specs"]
+        total = len(units)
+        print(f"\n{bundle['market']['name']}: column coverage across {total} submarkets")
+        print(f"  shortlist rule: {bundle.get('shortlist_method', 'unknown')}")
+
+        by_pillar: dict[str, list[str]] = {}
+        for name, spec in specs.items():
+            by_pillar.setdefault(spec.get("pillar") or "unassigned", []).append(name)
+
+        for pillar in list(weights.pillars) + [
+            p for p in sorted(by_pillar) if p not in weights.pillars
+        ]:
+            names = by_pillar.get(pillar)
+            if not names:
+                continue
+            print(f"\n  [{pillar}] weight {weights.pillars.get(pillar, 0)}")
+            for name in sorted(names):
+                spec = specs[name]
+                reasons: dict[str, int] = {}
+                present = 0
+                for unit in units:
+                    cell = values.get(unit["geoid"], {}).get(name)
+                    if cell is not None and cell.get("value") is not None:
+                        present += 1
+                    else:
+                        reason = (cell or {}).get("missing_reason") or "no cell was produced"
+                        reasons[reason.strip().splitlines()[0][:110]] = (
+                            reasons.get(reason.strip().splitlines()[0][:110], 0) + 1
+                        )
+                mark = "ok  " if present == total else ("PART" if present else "NONE")
+                scored = "" if spec.get("scored", True) else "  (not scored)"
+                weight = weights.metrics.get(name)
+                weight_txt = f" w={weight}" if weight is not None else ""
+                print(f"    {mark} {name:<34}{weight_txt:<7} {present}/{total}{scored}")
+                for reason, count in sorted(reasons.items(), key=lambda kv: -kv[1]):
+                    print(f"         {count:>3} missing: {reason}")
+
+        blocked = bundle.get("failures") or {}
+        if blocked:
+            print("\n  sources that returned nothing at all:")
+            for source, message in blocked.items():
+                print(f"    {source}: {str(message).strip().splitlines()[0][:150]}")
+    return 1 if failed else 0
+
+
+def cmd_verify(args) -> int:
+    """Recalculate the workbook's live formulas and compare against Python.
+
+    The scoring tab holds real Excel formulas so an interviewer can click a
+    cell and see the arithmetic. That is only worth anything if the formulas
+    agree with the Python scorer. They have disagreed before: N(range) returns
+    #VALUE! over a range, which blanked every pillar score and the whole
+    ranking tab while the Python output looked perfect.
+
+    One wrinkle, and it matters, because taking it the wrong way round would
+    mean breaking a correct workbook to satisfy a faulty oracle. The `formulas`
+    package does not implement PERCENTRANK.INC the way Excel does for tied
+    values. Excel returns the rank of the lowest tied entry; `formulas` returns
+    a mid-rank. For [0, 0, 0, 12.5, 30, 45.7] Excel gives 0 for each zero and
+    `formulas` gives 20. screener/score.py implements Excel's rule, so where a
+    column has ties the engine reads HIGHER than both Excel and Python, and
+    every total shifts with it.
+
+    Real data is full of ties: any municipality that permitted no multifamily
+    over the window sits at zero alongside the others. So a difference is only
+    a defect when the columns behind it have no ties. What is checked
+    unconditionally is that every formula evaluates to a number, which is the
+    class of failure that actually happened.
+    """
+    try:
+        import formulas  # noqa: PLC0415
+    except ImportError:
+        print("The 'formulas' package is not installed, so the workbook "
+              "formulas cannot be independently recalculated. Install it with: "
+              "pip install formulas", file=sys.stderr)
+        return 2
+
+    weights = load_weights()
+    problems = 0
+    for key in _targets(args):
+        try:
+            bundle = assemble.load(key, OUTPUT_DIR)
+        except FileNotFoundError as exc:
+            print(f"  {exc}", file=sys.stderr)
+            problems += 1
+            continue
+
+        ranked = score.score_market(bundle, weights)
+        path = OUTPUT_DIR / key / f"{key}_submarket_screen.xlsx"
+        if not path.exists():
+            print(f"  no workbook at {path}. Run report first.", file=sys.stderr)
+            problems += 1
+            continue
+
+        # Which scored columns hold tied values, and so cannot be compared
+        # against this engine.
+        tied: dict[str, int] = {}
+        specs, values, units = bundle["specs"], bundle["values"], bundle["units"]
+        for name, spec in specs.items():
+            if not spec.get("scored", True) or not weights.metrics.get(name):
+                continue
+            seen: list[float] = []
+            for unit in units:
+                cell = values.get(unit["geoid"], {}).get(name) or {}
+                raw = cell.get("value")
+                if raw is None:
+                    continue
+                try:
+                    seen.append(float(raw))
+                except (TypeError, ValueError):
+                    continue
+            duplicates = len(seen) - len(set(seen))
+            if duplicates:
+                tied[name] = duplicates
+
+        print(f"\n{bundle['market']['name']}: recalculating {path.name} with an "
+              f"independent engine")
+        model = formulas.ExcelModel().loads(str(path)).finish()
+        cells = {k.upper(): v for k, v in model.calculate().items()}
+        sheet = f"'[{path.name.upper()}]RANKING'!"
+
+        def cell(ref):
+            value = cells.get(sheet + ref)
+            try:
+                return value.value[0, 0]
+            except (AttributeError, IndexError, TypeError):
+                return value
+
+        # 1. The unconditional check. Ties do not affect it.
+        blank_or_error = []
+        for i, result in enumerate(ranked):
+            row = 6 + i
+            raw = cell(f"C{row}")
+            text = str(raw).strip()
+            if result.total is None:
+                continue
+            if text == "" or text.startswith("#") or raw is None:
+                blank_or_error.append((row, text or "blank"))
+        if blank_or_error:
+            print(f"  {len(blank_or_error)} of the {len(ranked)} total cells do not "
+                  f"evaluate to a number. This is the failure mode that matters: "
+                  f"the workbook would be empty where the one pager has figures.")
+            for row, what in blank_or_error[:5]:
+                print(f"    row {row}: {what}")
+            problems += 1
+        else:
+            print(f"  every one of the {len(ranked)} ranking total cells evaluates "
+                  f"to a number, no errors and no blanks.")
+
+        # 2. The comparison, valid only where nothing is tied.
+        differences = []
+        for i, result in enumerate(ranked):
+            row = 6 + i
+            name = str(cell(f"B{row}")).strip()
+            try:
+                total = float(cell(f"C{row}"))
+            except (TypeError, ValueError):
+                total = None
+            if name != result.name:
+                differences.append(f"row {row}: workbook {name!r}, Python "
+                                   f"{result.name!r}")
+            elif result.total is not None and (
+                    total is None or abs(total - result.total) > 0.05):
+                differences.append(f"{result.name}: workbook {total}, Python "
+                                   f"{result.total:.2f}")
+
+        if not differences:
+            print("  and every name and total matches the Python scorer exactly.")
+        elif tied:
+            worst = sorted(tied.items(), key=lambda kv: -kv[1])[:3]
+            print(f"  {len(differences)} rows differ from the Python scorer, which "
+                  f"is expected here and is not a workbook defect.")
+            print(f"  {len(tied)} scored columns contain tied values, for instance "
+                  + ", ".join(f"{n} ({d} repeats)" for n, d in worst) + ".")
+            print("  Excel ranks a tie at the lowest tied position and this engine "
+                  "uses a mid-rank, so it reads tied rows higher and every total "
+                  "moves with them. score.py implements Excel's rule, so the "
+                  "workbook is right and the engine is the approximation.")
+            print("  Example: for [0, 0, 0, 12.5, 30, 45.7] Excel scores each zero "
+                  "0 and this engine scores it 20.")
+            for line in differences[:4]:
+                print(f"    {line}")
+        else:
+            print(f"  {len(differences)} rows disagree with the Python scorer and NO "
+                  f"scored column has ties, so the engine's tie handling cannot "
+                  f"explain it. The workbook would contradict the one pager.")
+            for line in differences[:8]:
+                print(f"    {line}")
+            problems += 1
+    return 1 if problems else 0
+
+
 def cmd_run(args) -> int:
     rc = cmd_fetch(args)
     rc2 = cmd_report(args)
@@ -166,12 +388,17 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("check", help="show markets, keys and weight consistency")
     add_common(sub.add_parser("fetch", help="download and cache the data"), network=True)
     add_common(sub.add_parser("report", help="build the workbook and one pager"))
+    add_common(sub.add_parser(
+        "coverage", help="per column, how many submarkets got a figure and why not"))
+    add_common(sub.add_parser(
+        "verify", help="recalculate the workbook formulas and compare with Python"))
     add_common(sub.add_parser("run", help="fetch then report"), network=True)
 
     args = parser.parse_args(argv)
     return {
         "check": cmd_check, "fetch": cmd_fetch,
         "report": cmd_report, "run": cmd_run,
+        "coverage": cmd_coverage, "verify": cmd_verify,
     }[args.command](args)
 
 

@@ -489,6 +489,11 @@ class DistrictRecord:
     student_teacher_ratio: float | None = None
     frpl_note: str = ""
     ratio_note: str = ""
+    # The denominator for both of the above. CCD publishes the numerators in
+    # two other files, at two different levels of aggregation, so the district
+    # student count has to be carried out of the membership file rather than
+    # used and discarded.
+    total_students: float | None = None
 
 
 @dataclass
@@ -595,6 +600,112 @@ def parse_directory_file(
     return names, vintage
 
 
+# The CCD staff file (survey 059) is long format, one row per LEAID and staff
+# category, not a wide file with a TEACHERS column. Observed 2026-09-18 for
+# LEAID 5508520, Madison Metropolitan:
+#
+#   'Elementary Teachers'  '878.96'   'Category Set A'
+#   'Secondary Teachers'   '972.80'   'Category Set A'
+#   'Teachers'             '2114.93'  'Derived - Major Staffing Category'
+#   'No Category Codes'    '3999.43'  'Education Unit Total'
+#
+# So teacher FTE is the 'Teachers' row under the derived total, and NOT the
+# 'Education Unit Total' row, which is all staff including administrators and
+# aides. Reading that row instead would understate the pupil/teacher ratio by
+# roughly half and it would look entirely plausible.
+STAFF_TEACHERS_CATEGORY = "teachers"
+STAFF_DERIVED_TOTAL = "derived - major staffing category"
+_STAFF_CATEGORY_COLUMNS = ("STAFF",)
+_STAFF_COUNT_COLUMNS = ("STAFF_COUNT",)
+
+
+def parse_staff_file(data: bytes, *, label: str) -> dict[str, float]:
+    """Teacher FTE per district from the long format CCD staff file."""
+    rows, fieldnames = _read_csv_rows(data, label=label)
+    leaid_col = _find_column(fieldnames, _LEAID_CANDIDATES)
+    category_col = _find_column(fieldnames, _STAFF_CATEGORY_COLUMNS)
+    count_col = _find_column(fieldnames, _STAFF_COUNT_COLUMNS)
+    indicator_col = _find_column(fieldnames, _TOTAL_INDICATOR_CANDIDATES)
+    if not all([leaid_col, category_col, count_col]):
+        raise FetchError(
+            f"{label}: expected a long format staff file with district id, "
+            f"staff category and staff count columns. Found headers: "
+            f"{fieldnames[:25]}."
+        )
+
+    out: dict[str, float] = {}
+    for row in rows:
+        category = (row.get(category_col) or "").strip().lower()
+        if category != STAFF_TEACHERS_CATEGORY:
+            continue
+        if indicator_col:
+            indicator = (row.get(indicator_col) or "").strip().lower()
+            # 'Teachers' only ever carries the derived total, but pin it so a
+            # future file that repeats the label under another indicator cannot
+            # double count.
+            if indicator and indicator != STAFF_DERIVED_TOTAL:
+                continue
+        leaid = _clean_leaid(row.get(leaid_col))
+        value = _to_float(row.get(count_col))
+        if leaid and value is not None and value > 0:
+            out[leaid] = value
+    if not out:
+        raise FetchError(
+            f"{label}: no row had staff category {STAFF_TEACHERS_CATEGORY!r}. "
+            f"The category labels may have changed."
+        )
+    return out
+
+
+# The lunch file (survey 033) is published at SCHOOL level, so a district
+# figure is a sum over its schools. Observed rows for one school:
+#
+#   'Free and Reduced-price Lunch Table' | 'No Category Codes'            | 174 | 'Education Unit Total'
+#   'Free and Reduced-price Lunch Table' | 'Free lunch qualified'         | 174 | 'Category Set A'
+#   'Free and Reduced-price Lunch Table' | 'Reduced-price lunch qualified'|   0 | 'Category Set A'
+#   'Direct Certification'               | 'Not Applicable'               |     | 'Education Unit Total'
+#
+# The 'Education Unit Total' row of the lunch table is free plus reduced for
+# that school, so it is summed directly. The Direct Certification rows are a
+# different measure entirely and are excluded.
+LUNCH_TABLE_GROUP = "free and reduced-price lunch table"
+LUNCH_EDUCATION_UNIT_TOTAL = "education unit total"
+_DATA_GROUP_COLUMNS = ("DATA_GROUP",)
+_LUNCH_COUNT_COLUMNS = ("STUDENT_COUNT",)
+
+
+def parse_lunch_file(data: bytes, *, label: str) -> dict[str, float]:
+    """Free and reduced price lunch counts per district, summed from schools."""
+    rows, fieldnames = _read_csv_rows(data, label=label)
+    leaid_col = _find_column(fieldnames, _LEAID_CANDIDATES)
+    group_col = _find_column(fieldnames, _DATA_GROUP_COLUMNS)
+    count_col = _find_column(fieldnames, _LUNCH_COUNT_COLUMNS)
+    indicator_col = _find_column(fieldnames, _TOTAL_INDICATOR_CANDIDATES)
+    if not all([leaid_col, group_col, count_col, indicator_col]):
+        raise FetchError(
+            f"{label}: expected a school level lunch file with district id, "
+            f"data group, student count and total indicator columns. Found "
+            f"headers: {fieldnames[:25]}."
+        )
+
+    out: dict[str, float] = {}
+    for row in rows:
+        if (row.get(group_col) or "").strip().lower() != LUNCH_TABLE_GROUP:
+            continue
+        if (row.get(indicator_col) or "").strip().lower() != LUNCH_EDUCATION_UNIT_TOTAL:
+            continue
+        leaid = _clean_leaid(row.get(leaid_col))
+        value = _to_float(row.get(count_col))
+        if not leaid or value is None:
+            continue
+        out[leaid] = out.get(leaid, 0.0) + value
+    if not out:
+        raise FetchError(
+            f"{label}: no school rows matched data group {LUNCH_TABLE_GROUP!r}."
+        )
+    return out
+
+
 def parse_membership_file(
     data: bytes, *, label: str
 ) -> dict[str, DistrictRecord]:
@@ -675,6 +786,7 @@ def parse_membership_file(
     out: dict[str, DistrictRecord] = {}
     for leaid, bucket in raw.items():
         rec = DistrictRecord(leaid=leaid)
+        rec.total_students = bucket.get("total")
 
         # FRPL share. A supplied share wins over a count, because whoever
         # produced it knew which denominator they used.
@@ -767,21 +879,50 @@ def load_manual_reference(ctx: Any) -> DistrictReference | None:
     )
 
 
-def _first_csv_member(data: bytes, *, label: str) -> bytes:
-    """Pull the single data member out of a CCD zip."""
+# NCES wraps the CCD flat files one level deeper than you would expect. The
+# published archive holds two more archives, one CSV and one SAS, rather than
+# the data itself:
+#   ccd_lea_052_2122_l_1a_071722.zip
+#     ccd_lea_052_2122_l_1a_071722_CSV.zip  <- the data is in here
+#     ccd_lea_052_2122_l_1a_071722_SAS.zip
+# So the reader has to descend, and it has to prefer the CSV archive, because
+# the SAS one holds a .sas7bdat that nothing here can read.
+MAX_ZIP_DEPTH = 3
+
+
+def _first_csv_member(data: bytes, *, label: str, depth: int = 0) -> bytes:
+    """Pull the single data member out of a CCD zip, descending nested zips."""
     try:
         archive = zipfile.ZipFile(io.BytesIO(data))
     except zipfile.BadZipFile as exc:
         raise FetchError(f"{label}: downloaded bytes are not a zip archive ({exc}).") from exc
-    members = [
-        n for n in archive.namelist()
-        if n.lower().endswith((".csv", ".txt")) and not n.startswith("__MACOSX")
-    ]
-    if not members:
+
+    names = [n for n in archive.namelist() if not n.startswith("__MACOSX")]
+    members = [n for n in names if n.lower().endswith((".csv", ".txt"))]
+    if members:
+        return archive.read(sorted(members)[0])
+
+    nested = [n for n in names if n.lower().endswith(".zip")]
+    if nested and depth < MAX_ZIP_DEPTH:
+        # Prefer the CSV archive. Sorting alone would pick it over SAS by
+        # accident of the alphabet, which is not a reason to rely on.
+        nested.sort(key=lambda n: (0 if "csv" in n.lower() else 1, n))
+        errors = []
+        for name in nested:
+            try:
+                return _first_csv_member(
+                    archive.read(name), label=f"{label} > {name}", depth=depth + 1
+                )
+            except FetchError as exc:
+                errors.append(str(exc))
         raise FetchError(
-            f"{label}: zip contains no .csv or .txt member. Members: {archive.namelist()[:10]}."
+            f"{label}: none of the nested archives held a readable table. "
+            + " | ".join(errors[:3])
         )
-    return archive.read(sorted(members)[0])
+
+    raise FetchError(
+        f"{label}: zip contains no .csv or .txt member. Members: {names[:10]}."
+    )
 
 
 def _try_download(ctx: Any, urls: Iterable[str], *, key_prefix: str, label: str):
@@ -835,18 +976,59 @@ def download_reference(ctx: Any) -> DistrictReference:
     )
     if staff is not None:
         try:
-            staff_records = parse_membership_file(
+            teachers = parse_staff_file(
                 _first_csv_member(staff[0], label="CCD LEA staff zip"),
                 label="CCD LEA staff",
             )
-            for leaid, rec in staff_records.items():
-                if rec.student_teacher_ratio is not None and leaid in records:
-                    records[leaid].student_teacher_ratio = rec.student_teacher_ratio
-                    records[leaid].ratio_note = rec.ratio_note
+            filled = 0
+            for leaid, fte in teachers.items():
+                rec = records.get(leaid)
+                if rec is None or rec.total_students is None or fte <= 0:
+                    continue
+                rec.student_teacher_ratio = rec.total_students / fte
+                rec.ratio_note = (
+                    f"Students per teacher FTE: {rec.total_students:,.0f} students "
+                    f"over {fte:,.1f} teacher FTE, from the CCD staff file. Teacher "
+                    f"FTE is the derived 'Teachers' category, not total staff."
+                )
+                filled += 1
+            ctx.log(f"schools: teacher FTE matched for {filled:,} districts")
         except FetchError as exc:
             ctx.log(f"schools: staff file could not be parsed, ratio stays missing ({exc})")
     else:
         ctx.log("schools: no CCD staff file, student to teacher ratio will be missing.")
+
+    # FRPL is published at school level, so it needs its own file and a sum up
+    # to the district. Without it the composite runs on the ratio alone, which
+    # school_proxy_components records.
+    lunch = _try_download(
+        ctx, CCD_SCHOOL_LUNCH_URLS, key_prefix="ccd_sch_lunch", label="CCD school lunch"
+    )
+    if lunch is not None:
+        try:
+            frpl = parse_lunch_file(
+                _first_csv_member(lunch[0], label="CCD school lunch zip"),
+                label="CCD school lunch",
+            )
+            filled = 0
+            for leaid, count in frpl.items():
+                rec = records.get(leaid)
+                if rec is None or not rec.total_students:
+                    continue
+                rec.frpl_share = count / rec.total_students
+                rec.frpl_note = (
+                    f"{count:,.0f} students eligible for free or reduced price "
+                    f"lunch, summed from the district's schools in the CCD school "
+                    f"level file, over {rec.total_students:,.0f} students. Schools "
+                    f"that did not report drop out of the numerator, so this can "
+                    f"read low."
+                )
+                filled += 1
+            ctx.log(f"schools: lunch eligibility matched for {filled:,} districts")
+        except FetchError as exc:
+            ctx.log(f"schools: lunch file could not be parsed, FRPL stays missing ({exc})")
+    else:
+        ctx.log("schools: no CCD lunch file, free and reduced price lunch will be missing.")
 
     for leaid, name in names.items():
         records.setdefault(leaid, DistrictRecord(leaid=leaid))

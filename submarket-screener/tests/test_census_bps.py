@@ -276,7 +276,14 @@ def test_county_file_parses():
 
 def test_metric_keys_and_directions():
     keys = [m.key for m in census_bps.METRICS]
-    assert keys == ["permits_5plus_3y_per_1k_hh", "permits_total_3y_per_1k_hh"]
+    assert keys == [
+        "permits_5plus_3y_per_1k_hh",
+        "permits_total_3y_per_1k_hh",
+        # A population denominator for the same permits. Not a substitute for
+        # the household one, but it needs no API key, so the supply pillar
+        # survives an ACS outage.
+        "permits_5plus_3y_per_10k_pop",
+    ]
     assert all(m.pillar == "supply" for m in census_bps.METRICS)
     assert all(m.higher_is_better is False for m in census_bps.METRICS)
     ctx_keys = [c.key for c in census_bps.CONTEXT_COLUMNS]
@@ -306,6 +313,7 @@ def test_collect_returns_every_unit(wired):
         assert set(cells) == {
             "permits_5plus_3y_per_1k_hh",
             "permits_total_3y_per_1k_hh",
+            "permits_5plus_3y_per_10k_pop",
             "permits_5plus_3y",
             "permits_total_3y",
             "permits_years",
