@@ -12,7 +12,30 @@ Markets configured: **Madison WI**, **Grand Rapids MI**, **Lexington KY**,
 
 ---
 
-## Quick start
+## Running it without installing anything
+
+The whole pull runs in GitHub Actions, so you do not need Python or a terminal.
+
+1. Add the three free keys once, at **Settings > Secrets and variables >
+   Actions > New repository secret**, named `CENSUS_API_KEY`, `BLS_API_KEY`
+   and `HUD_API_KEY`. Copy each one straight from its signup email.
+2. Go to **Actions > Submarket screener data pull > Run workflow**, choose a
+   market, press the green button.
+3. When it finishes, scroll to **Artifacts** at the bottom of the run page and
+   download the zip. It holds the workbook, the one-pager, `raw.json` and the
+   full run log.
+
+The workflow also runs monthly on its own, so the screen does not go stale.
+
+Two things it will not do for you. The Streamlit app needs somewhere to run,
+so that is still local or Streamlit Community Cloud. And the municipal
+attitude column is your own research either way.
+
+**This repository is public.** Put keys in repository Secrets and nowhere else.
+GitHub masks a secret value in logs; it does not mask a fragment of one, which
+is why the diagnostic prints only key lengths when it runs in CI.
+
+## Quick start (local)
 
 ```bash
 cd submarket-screener

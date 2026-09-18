@@ -35,11 +35,23 @@ def section(title: str) -> None:
 
 
 def show_keys() -> None:
+    """Report whether each key is present, without exposing it.
+
+    On a public repository, GitHub Actions logs are world readable. GitHub
+    masks the exact secret value, but it does not mask a fragment of it, so
+    printing the first six characters of a key would publish them. In CI we
+    print the length and nothing else. The length alone is enough to catch the
+    usual mistakes: a truncated paste, or a JWT that lost its tail.
+    """
     section("1. KEYS")
+    in_ci = bool(os.environ.get("GITHUB_ACTIONS") or os.environ.get("CI"))
     for name in ("CENSUS_API_KEY", "BLS_API_KEY", "HUD_API_KEY"):
         value = os.environ.get(name, "")
         if not value:
             print(f"  {name:<16} NOT SET")
+        elif in_ci:
+            print(f"  {name:<16} set, {len(value)} characters "
+                  f"(value hidden: this log may be public)")
         else:
             print(f"  {name:<16} {len(value)} chars, "
                   f"starts '{value[:6]}', ends '{value[-4:]}'")
