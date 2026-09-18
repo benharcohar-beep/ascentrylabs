@@ -128,6 +128,47 @@ def dump_cached(fragment: str, title: str, lines: int = 6) -> None:
         print()
 
 
+def probe_hud() -> None:
+    section("6. HUD FAIR MARKET RENTS, RAW RESPONSE")
+    token = os.environ.get("HUD_API_KEY", "")
+    if not token:
+        print("  skipped, no key")
+        return
+    # Dane County, Wisconsin. The county entity id is the 5 digit FIPS plus
+    # 99999, which is the assumption that needs confirming.
+    entity = "5502599999"
+    headers = {"Authorization": f"Bearer {token}"}
+    for year in (2026, 2025):
+        url = f"https://www.huduser.gov/hudapi/public/fmr/data/{entity}"
+        try:
+            resp = requests.get(url, params={"year": year}, headers=headers, timeout=45)
+        except requests.RequestException as exc:
+            print(f"  FY{year}: NETWORK ERROR {type(exc).__name__}: {exc}")
+            continue
+        print(f"  FY{year}: HTTP {resp.status_code}")
+        body = resp.text.strip()
+        try:
+            parsed = json.loads(body)
+        except json.JSONDecodeError:
+            print(f"    non-JSON: {body[:300]}")
+            continue
+        # Print the shape, not the whole payload, so the report stays readable.
+        print(f"    top level keys: {list(parsed)[:10]}")
+        data = parsed.get("data")
+        if isinstance(data, dict):
+            print(f"    data keys: {list(data)[:12]}")
+            basic = data.get("basicdata")
+            print(f"    basicdata type: {type(basic).__name__}")
+            if isinstance(basic, dict):
+                print(f"    basicdata keys: {list(basic)[:12]}")
+            elif isinstance(basic, list) and basic:
+                print(f"    basicdata[0] keys: {list(basic[0])[:12]}")
+                print(f"    basicdata[0]: {json.dumps(basic[0])[:250]}")
+        else:
+            print(f"    data is {type(data).__name__}: {json.dumps(data)[:250]}")
+        print()
+
+
 def main() -> int:
     print("Submarket screener diagnostic")
     print(f"Python {sys.version.split()[0]}  requests {requests.__version__}")
@@ -135,6 +176,8 @@ def main() -> int:
     probe_census()
     probe_census_geography()
     dump_cached("econ/bps/Place", "4. CACHED BPS PLACE FILE, REAL LAYOUT", lines=6)
+    dump_cached("econ/bps/County", "5. CACHED BPS COUNTY FILE, REAL LAYOUT", lines=6)
+    probe_hud()
     print()
     print("Send this whole output back.")
     return 0

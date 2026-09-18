@@ -42,6 +42,7 @@ from ..provenance import MetricSpec, Unit, Value, missing
 
 SOURCE_NAME = "Census ACS 5-Year Estimates API"
 BASE = "https://api.census.gov/data"
+KEY_SIGNUP = "https://api.census.gov/data/key_signup.html"
 KEY_HELP = (
     "Request a free Census API key at "
     "https://api.census.gov/data/key_signup.html . It arrives by email in a "
@@ -123,6 +124,41 @@ def _clean(raw) -> float | None:
     return num
 
 
+def _explain_non_json(year: int, cache_key: str, text: str) -> str:
+    """Say what actually went wrong, not just that the body was not JSON.
+
+    The Census API answers a bad key with HTTP 200 and an HTML page, so a naive
+    reader reports "no release answered" and sends you hunting for a vintage
+    problem that does not exist. The page title says exactly what is wrong.
+    """
+    lowered = text.lower()
+    if "<title>invalid key</title>" in lowered:
+        return (
+            f"ACS {year}: the Census API rejected the key (its reply is an HTML "
+            f"page titled 'Invalid Key'). Two usual causes: the key was never "
+            f"activated, so open the signup email from the Census Data API "
+            f"Service and click the activation link in it; or the key was "
+            f"mistyped. Copy it straight from that email and rerun "
+            f"setup_keys.py. Nothing is wrong with the ACS vintage."
+        )
+    if "<title>missing key</title>" in lowered:
+        return (
+            f"ACS {year}: no key reached the API. Check CENSUS_API_KEY is set in "
+            f".env, then rerun setup_keys.py. Get a free key at {KEY_SIGNUP}."
+        )
+    if "<html" in lowered[:400]:
+        title = ""
+        if "<title>" in lowered:
+            start = lowered.index("<title>") + 7
+            title = text[start:start + 80].split("<")[0].strip()
+        return (
+            f"ACS {year} returned an HTML page instead of JSON for {cache_key}"
+            + (f", titled '{title}'" if title else "")
+            + f". First 200 characters: {text[:200]}"
+        )
+    return f"ACS {year} returned a non-JSON body for {cache_key}: {text[:200]}"
+
+
 def _vintage_label(year: int) -> str:
     return f"ACS {year - 4}-{year} 5-year"
 
@@ -136,9 +172,7 @@ def _query(ctx: Context, year: int, variables: list[str], geo_clause: dict, key:
     resp = ctx.cache.get(url, key=cache_key, params=params, ttl_days=90)
     text = resp.text.lstrip()
     if not text.startswith("["):
-        raise FetchError(
-            f"ACS {year} returned a non-JSON body for {cache_key}: {text[:200]}"
-        )
+        raise FetchError(_explain_non_json(year, cache_key, text))
     try:
         return json.loads(text), resp.retrieved_at
     except json.JSONDecodeError as exc:
@@ -199,9 +233,17 @@ def find_latest_vintage(ctx: Context, key: str, max_back: int = 4) -> int:
             return year
         except FetchError as exc:
             errors.append(f"{year}: {exc}")
+    joined = "\n  ".join(errors)
+    if all("rejected the key" in e for e in errors):
+        raise FetchError(
+            "The Census API rejected your key on every vintage, so this is a "
+            "key problem and not a vintage problem. Activate the key using the "
+            "link in the Census signup email, or recopy it from that email and "
+            "rerun setup_keys.py.\n  " + joined
+        )
     raise FetchError(
         "No ACS 5-year release answered in the last "
-        f"{max_back + 1} years.\n  " + "\n  ".join(errors)
+        f"{max_back + 1} years.\n  " + joined
     )
 
 

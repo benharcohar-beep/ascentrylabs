@@ -31,12 +31,14 @@ COUNTY_TEXT_SYNTHETIC = "\n".join(
         "Value,Bldgs,Units,Value,Bldgs,Units,Value,Bldgs,Units,Value,Bldgs,"
         "Units,Value,Bldgs,Units,Value,Bldgs,Units,Value",
         ",,,,,,REPORTED,REPORTED,REPORTED,REPORTED,REPORTED,REPORTED,REPORTED,"
-        "REPORTED,REPORTED,REPORTED,REPORTED,REPORTED,IMPUTED,IMPUTED,IMPUTED,"
-        "IMPUTED,IMPUTED,IMPUTED,IMPUTED,IMPUTED,IMPUTED,IMPUTED,IMPUTED,IMPUTED",
+        "REPORTED,REPORTED,REPORTED,REPORTED,REPORTED,PUBLISHED,PUBLISHED,"
+        "PUBLISHED,PUBLISHED,PUBLISHED,PUBLISHED,PUBLISHED,PUBLISHED,PUBLISHED,"
+        "PUBLISHED,PUBLISHED,PUBLISHED",
         "2412,55,025,2,3,SYNTHETIC COUNTY A,100,200,20000000,5,10,1000000,3,12,"
-        "1200000,40,300,45000000,0,0,0,0,0,0,0,0,0,0,0,0",
+        "1200000,40,300,45000000,100,200,20000000,5,10,1000000,3,12,1200000,"
+        "40,300,45000000",
         "2412,55,021,2,3,SYNTHETIC COUNTY C,20,20,4000000,0,0,0,0,0,0,2,50,"
-        "6000000,0,0,0,0,0,0,0,0,0,0,0,0",
+        "6000000,20,20,4000000,0,0,0,0,0,0,2,50,6000000",
     ]
 )
 
@@ -110,7 +112,15 @@ UNIT_ABSENT_D = Unit(
     county_fips="55025",
     county_name="Synthetic County A",
 )
-ALL_UNITS = [UNIT_CITY_A, UNIT_TOWN_B, UNIT_VILLAGE_C, UNIT_ABSENT_D]
+UNIT_VILLAGE_E = Unit(
+    geoid="5519999",
+    name="Synthetic Village E (in the file, never filed a month)",
+    geo_type="place",
+    state_fips="55",
+    county_fips="55025",
+)
+
+ALL_UNITS = [UNIT_CITY_A, UNIT_TOWN_B, UNIT_VILLAGE_C, UNIT_ABSENT_D, UNIT_VILLAGE_E]
 
 
 # ------------------------------------------------------------------ fixtures
@@ -167,8 +177,8 @@ def test_region_mapping_covers_the_shipped_markets():
 
 def test_multi_line_header_is_skipped(place_text):
     rows = census_bps.parse_place_file(place_text, "SYNTHETIC")
-    # Three header lines, five data rows.
-    assert len(rows) == 5
+    # Two header lines and a blank, then six data rows.
+    assert len(rows) == 6
     assert rows[0].place_name == "SYNTHETIC CITY A"
 
 
@@ -221,22 +231,30 @@ def test_field_count_mismatch_raises_fetch_error(place_text):
         census_bps.parse_place_file(broken, "SYNTHETIC_BROKEN")
     msg = str(excinfo.value)
     assert "SYNTHETIC_BROKEN" in msg
-    assert "37" in msg           # observed
-    assert "40" in msg           # expected
-    assert "28" in msg           # expected, reported block only
+    assert "38" in msg           # observed
+    assert "41" in msg           # expected, with the published block
+    assert "29" in msg           # expected, reported block only
 
 
-def test_older_vintage_without_imputed_block_is_tolerated():
-    """Some vintages ship the reported block only, so 28 fields, not 40."""
-    header = "Survey,6-Digit,County,Census,FIPS,FIPS,Pop"
+def test_older_vintage_without_published_block_is_tolerated():
+    """A vintage shipping the reported block only is 29 fields, not 41.
+
+    With nothing to compare against, the reported figure is all there is, and
+    the imputed portion is unknowable rather than zero. The parser carries the
+    reported block through as the published one and reports no imputation,
+    which is the only honest reading.
+    """
+    header = "Survey,State,6-Digit,County,Census Place,FIPS Place,FIPS MCD"
     row = (
-        "2012,900001,025,54000,21375,21375,45000,357,31540,,0,53590,2,3,55,"
+        "201212,55,900001,025,54000,21375,21375,45000,357,31540,,,53590,2,3,12,"
         "OLD VINTAGE CITY,20,20,4000000,0,0,0,0,0,0,2,60,7000000"
     )
     rows = census_bps.parse_place_file(header + "\n" + row, "SYNTHETIC_OLD")
     assert len(rows) == 1
     assert rows[0].reported_5plus == 60
-    assert rows[0].units_imputed == (0, 0, 0, 0)
+    assert rows[0].published_5plus == 60
+    assert rows[0].imputed_total == 0
+    assert rows[0].months_reported == 12
 
 
 def test_empty_file_raises_fetch_error():
@@ -342,11 +360,15 @@ def test_collect_computes_per_1k_when_households_supplied(wired):
 def test_collect_joins_a_county_subdivision_and_flags_imputation(wired):
     out = census_bps.collect(wired, ALL_UNITS)
     town_b = out[UNIT_TOWN_B.geoid]
-    assert town_b["permits_5plus_3y"].value == 150
-    assert town_b["permits_total_3y"].value == 180
+    # Town B files 10 of 12 months, so the published block exceeds the reported
+    # one. The published figure is what goes out: 55 units in 5+ structures a
+    # year over three years, not the 50 it actually filed.
+    assert town_b["permits_5plus_3y"].value == 165
+    assert town_b["permits_total_3y"].value == 201
     notes = town_b["permits_5plus_3y"].notes
     assert "imputed" in notes.lower()
-    assert "EXCLUDED" in notes
+    assert "includes them" in notes
+    assert "30 of 36 possible office months" in notes
 
 
 def test_collect_case_a_reported_zero_is_zero_not_missing(wired):
@@ -404,12 +426,12 @@ def test_collect_county_reconciliation_and_share(wired):
     out = census_bps.collect(wired, ALL_UNITS)
     # County 55025: 300 units in 5+ structures per year, three years.
     assert out[UNIT_CITY_A.geoid]["permits_county_5plus_3y"].value == 900
-    # Screened places in 55025 that matched: City A (450) and Town B (150).
+    # Screened places in 55025 that matched: City A (450) and Town B (165).
     share = out[UNIT_CITY_A.geoid]["permits_place_share_of_county"].value
-    assert share == pytest.approx(600 / 900)
+    assert share == pytest.approx(615 / 900)
     # Same value for every unit in the county, county level column.
     assert out[UNIT_TOWN_B.geoid]["permits_place_share_of_county"].value == pytest.approx(
-        600 / 900
+        615 / 900
     )
     # County 55021: 50 per year x 3, and Village C permitted nothing.
     assert out[UNIT_VILLAGE_C.geoid]["permits_county_5plus_3y"].value == 150
@@ -440,3 +462,49 @@ def test_collect_unmapped_state_is_missing(wired):
 
 def test_collect_with_no_units_returns_empty(wired):
     assert census_bps.collect(wired, []) == {}
+
+
+# ---------------------------------------------------------------------------
+# The fifth case: in the file, zero permits, and zero months reported.
+#
+# Only the Number of Months Reported column separates this from a genuine
+# reported zero. Without it, a jurisdiction whose permit office simply never
+# filed looks like the quietest, least supplied submarket in the market, and
+# because supply is scored low is good it climbs the ranking on the strength
+# of its own silence.
+# ---------------------------------------------------------------------------
+
+
+def test_months_reported_is_parsed(place_text):
+    rows = census_bps.parse_place_file(place_text, "SYNTHETIC")
+    by_name = {r.place_name: r for r in rows}
+    assert by_name["SYNTHETIC CITY A"].months_reported == 12
+    assert by_name["SYNTHETIC TOWN B"].months_reported == 10
+    assert by_name["SYNTHETIC VILLAGE E"].months_reported == 0
+
+
+def test_a_jurisdiction_that_never_filed_is_missing_not_a_reported_zero(wired):
+    out = census_bps.collect(wired, ALL_UNITS, households={"5519999": 1000.0})
+    village_e = out[UNIT_VILLAGE_E.geoid]
+
+    # The raw count is still published as context, because it is what the file
+    # says, with a note explaining what it does and does not mean.
+    assert village_e["permits_5plus_3y"].value == 0
+    assert "absence of reporting" in village_e["permits_5plus_3y"].notes
+
+    # But the scored metrics refuse to treat that zero as a supply measurement,
+    # even though a household base was supplied.
+    for key in ("permits_5plus_3y_per_1k_hh", "permits_total_3y_per_1k_hh"):
+        cell = village_e[key]
+        assert cell.is_missing, f"{key} should not be scored"
+        assert "silence" in cell.missing_reason
+
+
+def test_a_full_reporter_with_zero_permits_is_still_a_real_zero(wired):
+    """The contrast case. Village C filed all twelve months and built nothing."""
+    out = census_bps.collect(wired, ALL_UNITS, households={"5512345": 1000.0})
+    village_c = out[UNIT_VILLAGE_C.geoid]
+    assert village_c["permits_5plus_3y"].value == 0
+    assert village_c["permits_5plus_3y"].is_missing is False
+    assert "reported zero" in village_c["permits_5plus_3y"].notes
+    assert village_c["permits_5plus_3y_per_1k_hh"].value == 0.0

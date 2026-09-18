@@ -265,26 +265,39 @@ STATE_FIPS_TO_REGION: dict[str, tuple[str, str]] = {
 # count does not match we raise FetchError rather than risk reading the "Value"
 # column as if it were the "Units" column.
 
-# Place file, fields 0 to 15, in order.
+# Place file, fields 0 to 16, in order. VERIFIED against the real published
+# header of mw2312y.txt and mw2512y.txt, which reads:
+#
+#   Survey,State,6-Digit,County,Census Place,FIPS Place,FIPS MCD,Pop,CSA,CBSA,
+#   Footnote,Central,Zip,Region,Division,Number of,Place,,1-unit,,,2-units,...
+#   Date,Code,ID,Code,Code,Code,Code,  ,Code,Code,Code,City,Code,Code,Code,
+#   Months Rep,Name,Bldgs,Units,Value,...
+#
+# An earlier version of this list was written from documentation and had two
+# errors: it put state FIPS at index 14 and had no "Number of Months Reported"
+# column at all, which shifted the place name and every value after it. The
+# field count check caught that and refused to parse, which is exactly what it
+# is for.
 PLACE_PREFIX_FIELDS: list[str] = [
-    "survey_date",        # 0  yymm of the survey period, e.g. 2412
-    "six_digit_id",       # 1  Census internal permit office id
-    "county_code3",       # 2  3 digit county FIPS within the state
-    "census_place_code",  # 3  Census (not FIPS) place code
-    "fips_place_code",    # 4  FIPS place code, join key for geo_type "place"
-    "fips_mcd_code",      # 5  FIPS MCD code, join key for "county_subdivision"
-    "pop",                # 6  population of the permit issuing place
-    "csa_code",           # 7
-    "cbsa_code",          # 8
-    "footnote_code",      # 9
-    "central_city_flag",  # 10
-    "zip_code",           # 11
-    "region_code",        # 12
-    "division_code",      # 13
-    "state_fips",         # 14 2 digit state FIPS
-    "place_name",         # 15 name of the permit issuing place
+    "survey_date",        # 0  yyyymm of the survey period, e.g. 202512
+    "state_fips",         # 1  2 digit state FIPS
+    "six_digit_id",       # 2  Census internal permit office id
+    "county_code3",       # 3  3 digit county FIPS within the state
+    "census_place_code",  # 4  Census (not FIPS) place code
+    "fips_place_code",    # 5  FIPS place code, join key for geo_type "place"
+    "fips_mcd_code",      # 6  FIPS MCD code, join key for "county_subdivision"
+    "pop",                # 7  population of the permit issuing place
+    "csa_code",           # 8
+    "cbsa_code",          # 9
+    "footnote_code",      # 10
+    "central_city_flag",  # 11
+    "zip_code",           # 12
+    "region_code",        # 13
+    "division_code",      # 14
+    "months_reported",    # 15 how many of the 12 months this office reported
+    "place_name",         # 16 name of the permit issuing place
 ]
-PLACE_PREFIX_LEN = len(PLACE_PREFIX_FIELDS)  # 16
+PLACE_PREFIX_LEN = len(PLACE_PREFIX_FIELDS)  # 17
 
 # After the prefix comes the value block. For each structure size class, in
 # this order, a triple of (Bldgs, Units, Value in dollars):
@@ -293,12 +306,18 @@ TRIPLE_LEN = 3               # Bldgs, Units, Value
 UNITS_OFFSET_IN_TRIPLE = 1   # we want the middle member of each triple
 BLOCK_LEN = len(STRUCTURE_SIZE_CLASSES) * TRIPLE_LEN  # 12
 
-# The four triples appear twice: once REPORTED, once IMPUTED (the Census
-# Bureau's estimate for permit offices that did not report every month). Older
-# vintages of these files ship the reported block only, so both widths are
-# accepted.
-PLACE_FIELDS_REPORTED_ONLY = PLACE_PREFIX_LEN + BLOCK_LEN          # 28
-PLACE_FIELDS_WITH_IMPUTED = PLACE_PREFIX_LEN + 2 * BLOCK_LEN       # 40
+# The four triples appear twice. The header calls the second set "1-unit rep,
+# 2-units rep, ..." and the real data settles what that means: Addison village
+# in the 2025 file reports 12 of 12 months and its two blocks are identical.
+# So the second block is the PUBLISHED total, reported plus whatever the Census
+# imputed for months an office did not report, and it equals the first block
+# whenever an office reported all twelve months. It is therefore the headline
+# figure, and the difference between the two blocks is the imputed portion.
+#
+# This matters. Treating the second block as "imputed only" and adding it to
+# the first would double count every fully reporting jurisdiction.
+PLACE_FIELDS_REPORTED_ONLY = PLACE_PREFIX_LEN + BLOCK_LEN          # 29
+PLACE_FIELDS_WITH_IMPUTED = PLACE_PREFIX_LEN + 2 * BLOCK_LEN       # 41
 PLACE_ACCEPTED_FIELD_COUNTS = (PLACE_FIELDS_REPORTED_ONLY, PLACE_FIELDS_WITH_IMPUTED)
 
 # County file, fields 0 to 5, in order. UNVERIFIED, same caveat as the URLs.
@@ -324,6 +343,11 @@ COUNTY_ACCEPTED_FIELD_COUNTS = (COUNTY_FIELDS_REPORTED_ONLY, COUNTY_FIELDS_WITH_
 # source module contract forbids passing an estimate off as data. Flip this to
 # True only after deciding you want Census imputations in the ranking, and say
 # so in the workbook if you do.
+MONTHS_IN_YEAR = 12
+
+# Kept for reference. The published figure is now always the second block, so
+# there is nothing to switch: see the comment above PLACE_FIELDS_REPORTED_ONLY
+# for why adding the blocks together would double count.
 INCLUDE_IMPUTED_IN_TOTAL = False
 
 # How many complete calendar years are summed.
@@ -350,8 +374,9 @@ class PlaceRow:
     fips_place_code: str
     fips_mcd_code: str
     place_name: str
+    months_reported: int
     units_reported: tuple[int, int, int, int]
-    units_imputed: tuple[int, int, int, int]
+    units_published: tuple[int, int, int, int]
 
     @property
     def reported_5plus(self) -> int:
@@ -362,12 +387,22 @@ class PlaceRow:
         return sum(self.units_reported)
 
     @property
+    def published_5plus(self) -> int:
+        return self.units_published[3]
+
+    @property
+    def published_total(self) -> int:
+        return sum(self.units_published)
+
+    @property
     def imputed_5plus(self) -> int:
-        return self.units_imputed[3]
+        # The imputed portion is the gap between the two blocks, never the
+        # second block itself.
+        return max(0, self.units_published[3] - self.units_reported[3])
 
     @property
     def imputed_total(self) -> int:
-        return sum(self.units_imputed)
+        return max(0, sum(self.units_published) - sum(self.units_reported))
 
     @property
     def place_key(self) -> str:
@@ -391,7 +426,7 @@ class CountyRow:
     county_code3: str
     county_name: str
     units_reported: tuple[int, int, int, int]
-    units_imputed: tuple[int, int, int, int]
+    units_published: tuple[int, int, int, int]
 
     @property
     def county_fips(self) -> str:
@@ -506,12 +541,12 @@ def parse_place_file(text: str, url: str) -> list[PlaceRow]:
         try:
             reported = _units_from_block(f, PLACE_PREFIX_LEN)
             if len(f) == PLACE_FIELDS_WITH_IMPUTED:
-                imputed = _units_from_block(f, PLACE_PREFIX_LEN + BLOCK_LEN)
+                published = _units_from_block(f, PLACE_PREFIX_LEN + BLOCK_LEN)
             else:
-                # Older vintage: no imputed block on the file at all. That is
-                # not the same as "imputation was zero", but there is nothing
-                # to report, so we carry zeros and never flag imputation.
-                imputed = (0, 0, 0, 0)
+                # Older vintage with the reported block only. There is no
+                # published total to read, so the reported figure is all we
+                # have and the imputed portion is unknowable, not zero.
+                published = reported
         except (ValueError, IndexError) as exc:
             raise FetchError(
                 f"Census BPS place file {url} line {line_no}: could not read the "
@@ -520,13 +555,14 @@ def parse_place_file(text: str, url: str) -> list[PlaceRow]:
             ) from exc
         rows.append(
             PlaceRow(
-                state_fips=_clean(f[14]).zfill(2),
-                county_code3=_clean(f[2]),
-                fips_place_code=_clean(f[4]),
-                fips_mcd_code=_clean(f[5]),
-                place_name=_clean(f[15]),
+                state_fips=_clean(f[1]).zfill(2),
+                county_code3=_clean(f[3]).zfill(3),
+                fips_place_code=_clean(f[5]),
+                fips_mcd_code=_clean(f[6]),
+                place_name=_clean(f[16]),
+                months_reported=_to_int(f[15]),
                 units_reported=reported,
-                units_imputed=imputed,
+                units_published=published,
             )
         )
     return rows
@@ -539,9 +575,9 @@ def parse_county_file(text: str, url: str) -> list[CountyRow]:
         try:
             reported = _units_from_block(f, COUNTY_PREFIX_LEN)
             if len(f) == COUNTY_FIELDS_WITH_IMPUTED:
-                imputed = _units_from_block(f, COUNTY_PREFIX_LEN + BLOCK_LEN)
+                published = _units_from_block(f, COUNTY_PREFIX_LEN + BLOCK_LEN)
             else:
-                imputed = (0, 0, 0, 0)
+                published = reported
         except (ValueError, IndexError) as exc:
             raise FetchError(
                 f"Census BPS county file {url} line {line_no}: could not read the "
@@ -554,7 +590,7 @@ def parse_county_file(text: str, url: str) -> list[CountyRow]:
                 county_code3=_clean(f[2]),
                 county_name=_clean(f[5]),
                 units_reported=reported,
-                units_imputed=imputed,
+                units_published=published,
             )
         )
     return rows
@@ -648,21 +684,36 @@ class _Agg:
     units_total: int = 0
     imputed_5plus: int = 0
     imputed_total: int = 0
+    months_reported: int = 0
+    months_possible: int = 0
     years_present: set[int] = dc_field(default_factory=set)
     offices: set[str] = dc_field(default_factory=set)
 
     def add(self, row: PlaceRow, year: int) -> None:
         self.rows += 1
-        self.units_5plus += row.reported_5plus
-        self.units_total += row.reported_total
+        # The published figure is the second block: reported plus whatever the
+        # Census imputed for months the office did not file. Adding the two
+        # blocks together would double count every office that reported in full.
+        self.units_5plus += row.published_5plus
+        self.units_total += row.published_total
         self.imputed_5plus += row.imputed_5plus
         self.imputed_total += row.imputed_total
-        if INCLUDE_IMPUTED_IN_TOTAL:
-            self.units_5plus += row.imputed_5plus
-            self.units_total += row.imputed_total
+        self.months_reported += row.months_reported
+        self.months_possible += MONTHS_IN_YEAR
         self.years_present.add(year)
         if row.place_name:
             self.offices.add(row.place_name)
+
+    @property
+    def never_reported(self) -> bool:
+        """True when no office filed a single month across the whole window.
+
+        A jurisdiction that filed nothing and therefore shows zero permits is
+        not the same as one that filed twelve months and genuinely permitted
+        nothing. Without the Number of Months Reported column the two are
+        indistinguishable, which is why that column matters more than it looks.
+        """
+        return self.months_possible > 0 and self.months_reported == 0
 
 
 def _value(
@@ -834,10 +885,9 @@ def collect(
                 fips = crow.county_fips
                 if not fips or fips not in wanted_counties:
                     continue
-                total = crow.units_reported[3]
-                if INCLUDE_IMPUTED_IN_TOTAL:
-                    total += crow.units_imputed[3]
-                county_5plus[fips] += total
+                # Same reading as the place file: the second block is the
+                # published total, not an increment to add on.
+                county_5plus[fips] += crow.units_published[3]
         if county_error:
             county_5plus.clear()
             ctx.log(f"BPS county: {county_error}")
@@ -933,20 +983,37 @@ def collect(
                 + " file, so those years contribute nothing to the sum."
             )
         if agg.units_total == 0:
-            # Case (a) with a genuine zero. This is a real number and is very
-            # different from case (b) above.
-            notes_bits.append(
-                "This jurisdiction appears in the BPS file and reported zero "
-                "permitted units over the window. This is a reported zero, not "
-                "a gap."
-            )
+            if agg.never_reported:
+                # A fifth case, and only the Number of Months Reported column
+                # can tell it apart from a genuine zero: the jurisdiction is in
+                # the file, but no permit office filed a single month, so its
+                # zero is an absence of reporting rather than an absence of
+                # building. Scoring that as zero supply would reward a
+                # jurisdiction for its own silence.
+                notes_bits.append(
+                    "This jurisdiction appears in the BPS file but no permit "
+                    "office reported a single month over the window, so its "
+                    "zero is an absence of reporting, not a reported zero."
+                )
+            else:
+                notes_bits.append(
+                    f"This jurisdiction appears in the BPS file, reported "
+                    f"{agg.months_reported} of {agg.months_possible} office "
+                    f"months, and permitted zero units over the window. This is "
+                    f"a reported zero, not a gap."
+                )
         if agg.imputed_total > 0:
             notes_bits.append(
-                f"Census imputed {agg.imputed_total} units "
-                f"({agg.imputed_5plus} in 5+ unit structures) for months this "
-                f"permit office did not report. Those imputed units are "
-                f"EXCLUDED from the figure shown, so the published Census total "
-                f"for this place is higher."
+                f"Of the units shown, {agg.imputed_total} ({agg.imputed_5plus} "
+                f"in 5+ unit structures) were imputed by the Census for months "
+                f"this permit office did not report, not counted from an actual "
+                f"permit. The figure shown is the published Census total, which "
+                f"includes them."
+            )
+        if agg.months_possible:
+            notes_bits.append(
+                f"Permit offices reported {agg.months_reported} of "
+                f"{agg.months_possible} possible office months over the window."
             )
         notes = " ".join(notes_bits)
 
@@ -973,7 +1040,19 @@ def collect(
                     hh = float(raw_hh)
                 except (TypeError, ValueError):
                     hh = None
-        if missing_years:
+        if agg.never_reported:
+            never_reason = (
+                "in the BPS file but no permit office reported a single month "
+                "over the window, so a supply figure here would measure "
+                "silence rather than building"
+            )
+            cells["permits_5plus_3y_per_1k_hh"] = missing(
+                never_reason, source=SOURCE_NAME, vintage=vintage, url=", ".join(urls)
+            )
+            cells["permits_total_3y_per_1k_hh"] = missing(
+                never_reason, source=SOURCE_NAME, vintage=vintage, url=", ".join(urls)
+            )
+        elif missing_years:
             # A short window is the fourth case, and it is the dangerous one.
             # The raw counts above stay as context with the note saying which
             # years are absent, but the SCORED metrics must not go out as if
