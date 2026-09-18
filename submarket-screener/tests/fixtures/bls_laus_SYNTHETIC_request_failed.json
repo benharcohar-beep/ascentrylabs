@@ -1,0 +1,9 @@
+{
+  "status": "REQUEST_NOT_PROCESSED",
+  "responseTime": 8,
+  "message": [
+    "Sorry, an unexpected error occurred. Invalid Series for Series LAUCN26081000000000",
+    "No Data Available for Series LAUCN260810000000099"
+  ],
+  "Results": {}
+}

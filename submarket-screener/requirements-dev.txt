@@ -1,0 +1,8 @@
+-r requirements.txt
+
+pytest>=8.0
+
+# Independent Excel formula engine. Used by tests/test_pipeline_end_to_end.py to
+# recalculate the saved workbook and prove its live formulas give the same
+# ranking as screener/score.py. Not needed to run the tool.
+formulas>=1.2

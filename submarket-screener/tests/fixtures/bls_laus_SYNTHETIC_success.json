@@ -1,0 +1,27 @@
+{
+  "status": "REQUEST_SUCCEEDED",
+  "responseTime": 121,
+  "message": [],
+  "Results": {
+    "series": [
+      {
+        "seriesID": "LAUCN260810000000003",
+        "data": [
+          {"year": "2025", "period": "M06", "periodName": "June", "value": "4.4", "footnotes": [{}]},
+          {"year": "2025", "period": "M05", "periodName": "May", "value": "4.2", "footnotes": [{}]},
+          {"year": "2024", "period": "M13", "periodName": "Annual", "value": "4.1", "footnotes": [{}]},
+          {"year": "2024", "period": "M12", "periodName": "December", "value": "4.6", "footnotes": [{}]},
+          {"year": "2023", "period": "M13", "periodName": "Annual", "value": "3.8", "footnotes": [{}]}
+        ]
+      },
+      {
+        "seriesID": "LAUCN260810000000006",
+        "data": [
+          {"year": "2025", "period": "M06", "periodName": "June", "value": "352100", "footnotes": [{}]},
+          {"year": "2024", "period": "M13", "periodName": "Annual", "value": "350123", "footnotes": [{}]},
+          {"year": "2023", "period": "M13", "periodName": "Annual", "value": "345900", "footnotes": [{}]}
+        ]
+      }
+    ]
+  }
+}

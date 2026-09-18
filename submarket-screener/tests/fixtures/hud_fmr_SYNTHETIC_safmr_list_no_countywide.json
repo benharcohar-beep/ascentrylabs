@@ -1,0 +1,18 @@
+{
+  "data": {
+    "county_name": "Synthetic SAFMR County",
+    "metro_status": "1",
+    "smallarea_status": "1",
+    "year": 2026,
+    "basicdata": [
+      {
+        "zip_code": "49503",
+        "Two-Bedroom": 1500
+      },
+      {
+        "zip_code": "49546",
+        "Two-Bedroom": 1100
+      }
+    ]
+  }
+}

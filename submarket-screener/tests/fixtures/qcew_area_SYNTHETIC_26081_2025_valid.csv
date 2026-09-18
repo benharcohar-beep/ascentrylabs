@@ -1,0 +1,5 @@
+"area_fips","own_code","industry_code","agglvl_code","size_code","year","qtr","disclosure_code","area_title","own_title","industry_title","agglvl_title","annual_avg_estabs_count","annual_avg_emplvl","total_annual_wages","annual_avg_wkly_wage","avg_annual_pay"
+"26081","0","10","70","0","2025","A","","SYNTHETIC County, Michigan","Total Covered","10 Total, all industries","County, Total Covered","21500","350000","21000000000","1154","60000"
+"26081","5","10","71","0","2025","A","","SYNTHETIC County, Michigan","Private","10 Total, all industries","County, Private","20100","300000","18000000000","1154","60000"
+"26081","0","1011","74","0","2025","A","","SYNTHETIC County, Michigan","Total Covered","1011 Natural resources and mining","County, NAICS Sector","120","900","45000000","961","50000"
+"26999","0","10","70","0","2025","A","","SYNTHETIC Other County, Michigan","Total Covered","10 Total, all industries","County, Total Covered","1000","11111","500000000","865","45000"
