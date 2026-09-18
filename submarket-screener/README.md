@@ -22,7 +22,10 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 # slow part of the install. Without it those columns read MISSING, by design.
 .venv/bin/pip install -r requirements-optional.txt
 
-cp .env.example .env          # then paste in the three free keys, see below
+# Set the three free keys. This prompts for each one and writes .env for you,
+# which is safer than pasting a long token at a shell prompt.
+.venv/bin/python setup_keys.py                   # Windows: .venv\Scripts\python setup_keys.py
+
 .venv/bin/python -m screener.cli check           # confirms keys and weights
 
 .venv/bin/python -m screener.cli run --market madison_wi   # fetch then report
