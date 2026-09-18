@@ -1,0 +1,138 @@
+# Run the submarket screener in the cloud.
+#
+# Actions > "Submarket screener data pull" > Run workflow. Pick a market, press
+# the button, wait a few minutes, download the results from the Artifacts
+# section at the bottom of the run page. No Python and no terminal needed.
+#
+# It needs three free API keys, added once at
+#   Settings > Secrets and variables > Actions > New repository secret
+# named CENSUS_API_KEY, BLS_API_KEY and HUD_API_KEY. GitHub masks secret values
+# in logs. Never put a key in a file in this repository: it is public.
+
+name: Submarket screener data pull
+
+on:
+  workflow_dispatch:
+    inputs:
+      market:
+        description: Which market to pull
+        required: true
+        default: madison_wi
+        type: choice
+        options: [madison_wi, grand_rapids_mi, lexington_ky, savannah_ga, all]
+      mode:
+        description: run = fetch and build outputs. diagnose = report what each source actually returns.
+        required: true
+        default: run
+        type: choice
+        options: [run, diagnose]
+      refresh:
+        description: Ignore the cache and download everything again
+        required: false
+        default: false
+        type: boolean
+      include_schools:
+        description: Also install geopandas for the school proxy columns (slower)
+        required: false
+        default: false
+        type: boolean
+
+  # Monthly refresh, so the screen does not go stale. ACS, QCEW, ZORI and the
+  # permits files all update on their own schedules through the year.
+  schedule:
+    - cron: "0 6 1 * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: screener-data-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: submarket-screener
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: submarket-screener/requirements.txt
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          if [ "${{ inputs.include_schools }}" = "true" ]; then
+            pip install -r requirements-optional.txt
+          fi
+
+      # The downloaded files are reused between runs. The Gazetteer and the
+      # ZCTA crosswalk are national files and are the slow part, so this turns
+      # a four minute run into a one minute one.
+      - name: Restore data cache
+        uses: actions/cache@v4
+        with:
+          path: submarket-screener/data/cache
+          key: screener-cache-${{ github.run_id }}
+          restore-keys: screener-cache-
+
+      - name: Check configuration
+        env:
+          CENSUS_API_KEY: ${{ secrets.CENSUS_API_KEY }}
+          BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
+          HUD_API_KEY: ${{ secrets.HUD_API_KEY }}
+        run: python -m screener.cli check || true
+
+      - name: Diagnose
+        if: ${{ inputs.mode == 'diagnose' }}
+        env:
+          CENSUS_API_KEY: ${{ secrets.CENSUS_API_KEY }}
+          BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
+          HUD_API_KEY: ${{ secrets.HUD_API_KEY }}
+        run: python diagnose.py 2>&1 | tee ../diagnose-log.txt
+
+      # Not `set -e` guarded: a source that fails is a MISSING column, not a
+      # failed run, and the outputs are still worth downloading. The log says
+      # what failed and why.
+      - name: Run the screen
+        if: ${{ inputs.mode != 'diagnose' }}
+        env:
+          CENSUS_API_KEY: ${{ secrets.CENSUS_API_KEY }}
+          BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
+          HUD_API_KEY: ${{ secrets.HUD_API_KEY }}
+        run: |
+          TARGET="--market ${{ inputs.market || 'all' }}"
+          if [ "${{ inputs.market }}" = "all" ] || [ -z "${{ inputs.market }}" ]; then
+            TARGET="--all"
+          fi
+          EXTRA=""
+          if [ "${{ inputs.refresh }}" = "true" ]; then
+            EXTRA="--refresh"
+          fi
+          python -m screener.cli run $TARGET $EXTRA 2>&1 | tee ../run-log.txt
+          exit ${PIPESTATUS[0]}
+        continue-on-error: true
+
+      - name: Collect the log
+        if: always()
+        run: |
+          mkdir -p output
+          cp ../run-log.txt output/ 2>/dev/null || true
+          cp ../diagnose-log.txt output/ 2>/dev/null || true
+          ls -la output || true
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screener-${{ inputs.market || 'all' }}-${{ github.run_number }}
+          path: submarket-screener/output
+          if-no-files-found: warn
+          retention-days: 30

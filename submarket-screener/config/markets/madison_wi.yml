@@ -1,0 +1,53 @@
+key: madison_wi
+name: Madison, Wisconsin
+short_name: Madison
+states: ["55"]
+
+# Trade area defined for this screen, not copied from an OMB delineation.
+# Dane County is the core. The three collar counties are included because
+# Continental's own Wisconsin starts (DeForest, Stoughton) sit at the edge of
+# Dane and the commuter shed runs past the county line.
+trade_area_note: >
+  Operator-defined trade area. Dane County core plus Columbia, Green and Iowa
+  counties. Verify against the current OMB Madison, WI MSA delineation before
+  quoting this as "the MSA".
+counties:
+  - {fips: "55025", name: "Dane County"}
+  - {fips: "55021", name: "Columbia County"}
+  - {fips: "55045", name: "Green County"}
+  - {fips: "55049", name: "Iowa County"}
+
+geo_type: county_subdivision
+geo_type_reason: >
+  In Wisconsin, minor civil divisions (cities, villages, towns) cover the whole
+  state with no gaps and no overlaps, and they are the unit that issues
+  building permits and sets zoning policy. Using MCDs means permits, ACS
+  demographics and the municipal attitude column all describe the same
+  jurisdiction.
+
+employment_centers:
+  - name: Downtown Madison (State Capitol)
+    lat: 43.0747
+    lon: -89.3844
+    note: Operator-set reference point for the primary CBD. Verify on a map.
+  - name: Epic Systems campus, Verona
+    lat: 42.9897
+    lon: -89.5407
+    note: >
+      Operator-set reference point. Largest single private employer in the
+      market, and the reason the west and southwest submarkets lease the way
+      they do. Verify the coordinate on a map.
+
+min_population: 2500
+max_distance_miles: 35
+target_submarkets: 12
+always_include:
+  # DeForest, WI (Springs at DeForest) and Stoughton, WI (Authentix Stoughton).
+  # Left as names rather than GEOIDs until the Gazetteer pull confirms them.
+  []
+always_exclude: []
+
+notes: >
+  Pilot market. Continental broke ground on Springs at DeForest (320 homes,
+  Dane County) and Authentix Stoughton (312 homes) in 2025, so the screen
+  should be able to explain why those two municipalities look attractive.

@@ -1,0 +1,68 @@
+# ---------------------------------------------------------------------------
+# Submarket screening weights. This is the only file you need to edit to
+# change the ranking. The Streamlit app reads the same numbers and lets you
+# move them with sliders for a live demo.
+#
+# Pillar weights do not have to sum to 100. They are normalised at run time,
+# so you can set 30/25/25/10/10 or 3/2.5/2.5/1/1 and get the same answer.
+# ---------------------------------------------------------------------------
+
+pillars:
+  demand: 30        # population and household growth, renter share, incomes, age profile
+  rent: 25          # rent level and rent growth
+  supply: 25        # multifamily permits relative to the existing household base
+  location: 10      # proximity to employment, school quality proxy
+  municipal: 10     # manual read on how the municipality treats rental housing
+
+# Weights *within* a pillar. Same rule: relative, not absolute.
+# Every metric listed here must exist in screener/metrics.py, or the run stops
+# with an error rather than silently dropping it.
+metrics:
+  # --- demand ---
+  pop_cagr_5y: 22
+  hh_cagr_5y: 22
+  renter_share: 16
+  median_hh_income: 12
+  age_20_34_share: 10
+  county_emp_cagr_3y: 12          # county level, same for every submarket in a county
+  county_unemployment_rate: 6     # county level, lower is better
+
+  # --- rent ---
+  zori_latest: 40
+  zori_yoy: 40
+  zori_cagr_3y: 20
+
+  # --- supply ---
+  permits_5plus_3y_per_1k_hh: 70
+  permits_total_3y_per_1k_hh: 30
+
+  # --- location ---
+  miles_to_employment: 60
+  school_proxy_index: 40
+
+  # --- municipal ---
+  municipal_attitude: 100
+
+# How a raw figure becomes a 0-100 sub-score.
+#   percentile  rank within the market, robust to outliers, easy to explain
+#   zscore      standardised, rewards how far ahead a submarket is, not just that it leads
+scoring_method: percentile
+
+# Trim this fraction off each tail before scoring (0.0 = off). Only applies to
+# the zscore method. 0.05 clips the top and bottom 5% of values.
+winsorize_pct: 0.0
+
+# A pillar is only scored if at least this many of its metrics are present for
+# a submarket. Otherwise the pillar is reported as MISSING and its weight is
+# redistributed across the pillars that do have data (the workbook shows this).
+min_metrics_per_pillar: 1
+
+# Manual municipal attitude column, scored 0-100. Edit config/municipal_attitude.csv
+# to set the rating per submarket. Anything left blank scores as MISSING, not as
+# neutral, so an unresearched municipality never quietly props up a ranking.
+attitude_scores:
+  supportive: 100
+  leaning_supportive: 75
+  neutral: 50
+  leaning_hostile: 25
+  hostile: 0

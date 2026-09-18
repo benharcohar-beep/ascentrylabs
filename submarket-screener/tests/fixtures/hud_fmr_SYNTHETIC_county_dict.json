@@ -1,0 +1,19 @@
+{
+  "data": {
+    "county_name": "Synthetic County",
+    "counties_msa": "Synthetic County, XX",
+    "town_name": "",
+    "metro_status": "1",
+    "metro_name": "Synthetic Metro Area",
+    "smallarea_status": "0",
+    "year": 2026,
+    "basicdata": {
+      "zip_code": null,
+      "Efficiency": 900,
+      "One-Bedroom": 1000,
+      "Two-Bedroom": 1250,
+      "Three-Bedroom": 1600,
+      "Four-Bedroom": 1900
+    }
+  }
+}

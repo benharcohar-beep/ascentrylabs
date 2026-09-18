@@ -1,0 +1,16 @@
+# Core
+pandas>=2.2
+numpy>=1.26
+requests>=2.32
+PyYAML>=6.0
+python-dotenv>=1.0
+
+# Excel output (live formulas)
+openpyxl>=3.1
+
+# Interview demo
+streamlit>=1.38
+
+# The school-district lookup needs geopandas, which pulls GDAL. It lives in
+# requirements-optional.txt so a plain install stays fast, and the school
+# columns come through as MISSING without it rather than being guessed at.

@@ -1,0 +1,12 @@
+# Optional: school-district point-in-polygon lookup.
+#
+# Without these the school proxy columns come through as MISSING rather than
+# guessing, which is the designed behaviour, so they are not needed to run the
+# tool or to run the tests. They are split out because they pull GDAL, which is
+# the slowest and most fragile part of the install.
+#
+#   pip install -r requirements.txt -r requirements-optional.txt
+
+geopandas>=1.0
+shapely>=2.0
+pyogrio>=0.9
