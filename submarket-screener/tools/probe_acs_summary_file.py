@@ -19,6 +19,7 @@ Building Permits layout right after two confident wrong attempts.
 from __future__ import annotations
 
 import io
+import re
 import sys
 import urllib.request
 import zipfile
@@ -236,13 +237,77 @@ def section_ccd_lunch() -> None:
         break
 
 
+def section_place_to_county() -> None:
+    """Find the real place-to-county reference file.
+
+    Places carry no county in their GEOID, and a place can straddle counties,
+    so a crosswalk is the only way to attach county level jobs data to a
+    place-based market. Savannah's first live run had every county column
+    MISSING because all four candidate URLs 404, which is 18 of the 108 points
+    inside demand plus the permit reconciliation, on two of the four markets.
+
+    Printing the directory index is the point: it says what is actually there
+    rather than testing another guess.
+    """
+    print("\n=== 7. Place to county crosswalk: what is actually published ===")
+    for url in (
+        "https://www2.census.gov/geo/docs/reference/codes2020/",
+        "https://www2.census.gov/geo/docs/reference/codes2020/place/",
+    ):
+        print(f" index of {url}")
+        body = fetch(url, nbytes=20000)
+        if body is None:
+            continue
+        text = body.decode("utf-8", "replace")
+        hrefs = re.findall(r'href="([^"?][^"]*)"', text)
+        for href in hrefs[:60]:
+            print(f"    {href}")
+
+    print(" candidate files, national and per state (Georgia and Kentucky):")
+    for url in (
+        "https://www2.census.gov/geo/docs/reference/codes2020/national_place2020.txt",
+        "https://www2.census.gov/geo/docs/reference/codes2020/place/national_place2020.txt",
+        "https://www2.census.gov/geo/docs/reference/codes2020/place/st13_ga_place2020.txt",
+        "https://www2.census.gov/geo/docs/reference/codes2020/place/st21_ky_place2020.txt",
+        "https://www2.census.gov/geo/docs/reference/codes2020/st13_ga_place2020.txt",
+        "https://www2.census.gov/geo/docs/reference/codes2020/place_by_county/st13_ga_place_by_county2020.txt",
+        "https://www2.census.gov/geo/docs/reference/codes/files/national_places.txt",
+        "https://www2.census.gov/geo/docs/reference/codes/files/st13_ga_places.txt",
+    ):
+        show(fetch(url), lines=4, width=200)
+
+
+SECTIONS = {
+    "vintages": lambda: section_prior_vintages(),
+    "geo": lambda: section_geo_file(),
+    "rows": lambda: section_data_row_shape(),
+    "tables": lambda: section_other_tables(),
+    "staff": lambda: section_ccd_staff(),
+    "lunch": lambda: section_ccd_lunch(),
+    "place": lambda: section_place_to_county(),
+}
+
+
 def main() -> int:
+    # Sections are slow and most are already answered, so allow one by name.
+    # Re-running the 200MB table download to re-read a directory index would
+    # turn a seconds long question into a minutes long one.
+    wanted = sys.argv[1:]
+    if wanted:
+        for name in wanted:
+            if name not in SECTIONS:
+                print(f"unknown section {name!r}. Known: {sorted(SECTIONS)}")
+                return 2
+            SECTIONS[name]()
+        return 0
+
     section_prior_vintages()
     section_geo_file()
     section_data_row_shape()
     section_other_tables()
     section_ccd_staff()
     section_ccd_lunch()
+    section_place_to_county()
     return 0
 
 

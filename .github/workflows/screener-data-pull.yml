@@ -36,6 +36,12 @@ on:
         required: false
         default: false
         type: boolean
+      probe_section:
+        description: "probe mode only: which section, blank runs all. One of vintages, geo, rows, tables, staff, lunch, place."
+        required: false
+        default: ""
+        type: string
+
       include_schools:
         description: Install geopandas so the school proxy columns load (adds about a minute)
         required: false
@@ -109,7 +115,7 @@ jobs:
       # after two wrong attempts. Downloads only the first kilobyte of each file.
       - name: Probe the ACS summary files
         if: ${{ inputs.mode == 'probe' }}
-        run: python tools/probe_acs_summary_file.py 2>&1 | tee ../probe-log.txt
+        run: python tools/probe_acs_summary_file.py ${{ inputs.probe_section }} 2>&1 | tee ../probe-log.txt
 
       # Not `set -e` guarded: a source that fails is a MISSING column, not a
       # failed run, and the outputs are still worth downloading. The log says
