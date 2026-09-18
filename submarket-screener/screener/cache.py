@@ -68,6 +68,26 @@ class Cache:
         stem = f"{safe}__{digest}"
         return self.root / f"{stem}.bin", self.root / f"{stem}.meta.json"
 
+    def forget(self, key: str) -> bool:
+        """Delete a cache entry.
+
+        Needed because some APIs answer an error with HTTP 200 and a body. The
+        Census API returns an HTML page titled "Invalid Key" that way, and
+        without this the bad page is cached and replayed for the whole TTL, so
+        fixing the key changes nothing until the cache expires or someone runs
+        with --refresh. A caller that can tell the body is not real data calls
+        this before raising.
+        """
+        body_path, meta_path = self._entry_paths(key)
+        removed = False
+        for path in (body_path, meta_path):
+            try:
+                path.unlink()
+                removed = True
+            except FileNotFoundError:
+                pass
+        return removed
+
     def cached_entries(self) -> list[dict]:
         out = []
         for meta_path in sorted(self.root.glob("*.meta.json")):

@@ -172,10 +172,15 @@ def _query(ctx: Context, year: int, variables: list[str], geo_clause: dict, key:
     resp = ctx.cache.get(url, key=cache_key, params=params, ttl_days=90)
     text = resp.text.lstrip()
     if not text.startswith("["):
+        # The Census API answers a bad key with HTTP 200 and an HTML page, so
+        # the cache has just stored an error page as if it were data. Drop it,
+        # or activating the key would change nothing until the TTL expired.
+        ctx.cache.forget(cache_key)
         raise FetchError(_explain_non_json(year, cache_key, text))
     try:
         return json.loads(text), resp.retrieved_at
     except json.JSONDecodeError as exc:
+        ctx.cache.forget(cache_key)
         raise FetchError(f"ACS {year} returned malformed JSON for {cache_key}: {exc}") from exc
 
 
