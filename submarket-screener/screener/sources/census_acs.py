@@ -29,13 +29,13 @@ acquisitions VP will catch.
 - Median household income is a place-wide figure and says nothing about the
   income of renter households specifically, which is what actually underwrites
   a rent roll.
-- The API key is optional, not required. Census serves this data
-  unauthenticated up to a daily request quota per IP address, and a key raises
-  that quota rather than unlocking anything. A screen of one market is a
-  handful of calls, so it runs keyless. Two cases still want a key: running
-  every market repeatedly in one day, and running on a shared IP address such
-  as a CI runner, where somebody else's requests count against the same quota.
-  The figures are identical either way.
+- The API key is required. Census used to serve this data unauthenticated
+  below a daily quota, and on 12 May 2026 it made a key mandatory for every
+  request to the Data API. Without one the API answers HTTP 200 and an HTML
+  page titled "Missing Key", so a caller that only checks the status code
+  reads an error page as data. This module checks for the key up front and
+  reports the columns MISSING rather than probing vintages that cannot answer.
+  https://api.census.gov/data/missing_key.html
 """
 from __future__ import annotations
 
@@ -150,11 +150,10 @@ def _explain_non_json(year: int, cache_key: str, text: str) -> str:
         )
     if "<title>missing key</title>" in lowered:
         return (
-            f"ACS {year}: the Census API is now demanding a key for this "
-            f"request, so the keyless allowance did not cover it. That usually "
-            f"means the daily quota for this IP address is used up, which on a "
-            f"shared runner can be somebody else's doing. {KEY_HELP} Then set "
-            f"it as CENSUS_API_KEY."
+            f"ACS {year}: the Census API received no key. Since 12 May 2026 a "
+            f"key is mandatory on every Data API request, so this is not a "
+            f"vintage problem and retrying other years will not help. "
+            f"{KEY_HELP} Then set it as CENSUS_API_KEY."
         )
     if "<html" in lowered[:400]:
         title = ""
@@ -269,13 +268,19 @@ def find_latest_vintage(ctx: Context, key: str, max_back: int = 4) -> int:
 
 def collect(ctx: Context, units: list[Unit]) -> dict[str, dict[str, Value]]:
     key = optional_key("CENSUS_API_KEY")
-    if key:
-        ctx.log("ACS: using CENSUS_API_KEY.")
-    else:
-        ctx.log(
-            "ACS: no CENSUS_API_KEY, so running against the keyless allowance. "
-            "The figures are identical either way, a key only raises the daily "
-            "request quota. This market needs a handful of calls."
+    if not key:
+        # Fail here rather than in the vintage probe. The probe would try five
+        # years and return five identical "Missing Key" pages, which reads like
+        # a data availability problem and is not one.
+        raise FetchError(
+            "CENSUS_API_KEY is not set, and since 12 May 2026 the Census Data "
+            "API requires a key on every request, so no ACS column can be "
+            "filled without one. Everything ACS would have provided is "
+            "reported MISSING rather than estimated. The rest of the screen is "
+            "unaffected: population comes from the Census Population Estimates "
+            "Program, rents from Zillow, permits from the Building Permits "
+            "Survey and employment from QCEW, none of which need a key. "
+            + KEY_HELP
         )
     latest_year = find_latest_vintage(ctx, key)
     prior_year = latest_year - 5          # non-overlapping five-year samples

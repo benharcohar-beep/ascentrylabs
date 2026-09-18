@@ -16,11 +16,12 @@ Markets configured: **Madison WI**, **Grand Rapids MI**, **Lexington KY**,
 
 The whole pull runs in GitHub Actions, so you do not need Python or a terminal.
 
-1. Go to **Actions > Submarket screener data pull > Run workflow**, choose a
-   market, press the green button. No API key is needed to get a result.
-2. Optionally add the free keys at **Settings > Secrets and variables >
-   Actions > New repository secret** to fill in the last few columns. The
-   table below says what each one adds.
+1. Add `CENSUS_API_KEY` at **Settings > Secrets and variables > Actions > New
+   repository secret**. It is free and instant, and without it the demand
+   pillar is blank: see the key table below. `BLS_API_KEY` and `HUD_API_KEY`
+   are genuinely optional.
+2. Go to **Actions > Submarket screener data pull > Run workflow**, choose a
+   market, press the green button.
 3. When it finishes, scroll to **Artifacts** at the bottom of the run page and
    download the zip. It holds the workbook, the one-pager, `raw.json` and the
    full run log.
@@ -62,28 +63,31 @@ is written to `data/cache/`, and `report` and the Streamlit app read only
 `output/<market>/raw.json`. Once you have fetched once, the whole demo runs
 with the wifi off.
 
-## The optional API keys
+## The API keys
 
-**None of these is required.** The screen runs end to end without any of them.
-Every source that carries a pillar is an open endpoint: the Census Gazetteer,
-ACS, the Building Permits Survey and the Population Estimates Program, BLS
-QCEW, Zillow ZORI and NCES.
+One matters, two are optional.
 
-| Key | What it adds | Where to get it |
+| Key | What it costs you to skip | Where to get it |
 | --- | --- | --- |
-| `CENSUS_API_KEY` | No extra columns. It raises a rate limit. | https://api.census.gov/data/key_signup.html (instant, click the activation link in the email) |
-| `BLS_API_KEY` | LAUS county unemployment, 6% of the demand pillar | https://data.bls.gov/registrationEngine/ (instant, key by email) |
-| `HUD_API_KEY` | Fair Market Rent cross-check columns, not scored | https://www.huduser.gov/portal/dataset/fmr-api.html (free account, generate a token on your account page) |
+| `CENSUS_API_KEY` | **The whole demand pillar (30%)** and the per-household supply columns | https://api.census.gov/data/key_signup.html (instant, click the activation link in the email) |
+| `BLS_API_KEY` | County unemployment, 6% of the demand pillar | https://data.bls.gov/registrationEngine/ (instant, key by email) |
+| `HUD_API_KEY` | The Fair Market Rent cross-check columns, which are not scored | https://www.huduser.gov/portal/dataset/fmr-api.html (free account, generate a token on your account page) |
 
-Put them in `.env`, which is gitignored.
+Put them in `.env`, which is gitignored, or add them as repository secrets to
+run in Actions.
 
-On the Census key: the API serves ACS unauthenticated up to a daily request
-quota per IP address, and a key raises that quota rather than unlocking
-anything. The numbers are identical either way. Two cases still want one:
-running every market repeatedly in one day, and running in GitHub Actions,
-where the runner's IP address is shared with other people's jobs and their
-requests count against the same allowance. If that happens the run says so
-explicitly rather than blaming the ACS vintage.
+**On the Census key.** Census used to serve the Data API unauthenticated below
+a daily quota. On 12 May 2026 it made a key mandatory on every request, and it
+signals a missing one with HTTP 200 and an HTML page titled "Missing Key", so
+anything that checks only the status code will read an error page as data. This
+tool checks for the key before it calls, reports every ACS column MISSING when
+there is none, and says why in one line instead of probing five vintages that
+cannot answer.
+
+Everything else still runs without any key at all: the Census Gazetteer,
+the Building Permits Survey, the Population Estimates Program (which is why the
+shortlist is still ranked on real population when ACS is absent), BLS QCEW,
+Zillow ZORI and the NCES district files.
 
 If a key is absent, the columns that need it come through as MISSING with the
 key named as the reason, and the rest of that source still loads. A missing key

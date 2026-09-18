@@ -139,6 +139,72 @@ def cmd_report(args) -> int:
     return 1 if failed else 0
 
 
+def cmd_coverage(args) -> int:
+    """Print, per column, how many submarkets actually got a figure.
+
+    The run already reports one coverage percentage per submarket, which tells
+    you that something is missing but not what. This lists every scored column
+    against the number of submarkets holding a real value for it, and groups
+    the missing ones by the reason recorded at the time. That turns "27%
+    coverage" into a list of specific things to go and fix.
+    """
+    weights = load_weights()
+    failed = 0
+    for key in _targets(args):
+        try:
+            bundle = assemble.load(key, OUTPUT_DIR)
+        except FileNotFoundError as exc:
+            print(f"  {exc}", file=sys.stderr)
+            failed += 1
+            continue
+
+        units = bundle["units"]
+        values = bundle["values"]
+        specs = bundle["specs"]
+        total = len(units)
+        print(f"\n{bundle['market']['name']}: column coverage across {total} submarkets")
+        print(f"  shortlist rule: {bundle.get('shortlist_method', 'unknown')}")
+
+        by_pillar: dict[str, list[str]] = {}
+        for name, spec in specs.items():
+            by_pillar.setdefault(spec.get("pillar") or "unassigned", []).append(name)
+
+        for pillar in list(weights.pillars) + [
+            p for p in sorted(by_pillar) if p not in weights.pillars
+        ]:
+            names = by_pillar.get(pillar)
+            if not names:
+                continue
+            print(f"\n  [{pillar}] weight {weights.pillars.get(pillar, 0)}")
+            for name in sorted(names):
+                spec = specs[name]
+                reasons: dict[str, int] = {}
+                present = 0
+                for unit in units:
+                    cell = values.get(unit["geoid"], {}).get(name)
+                    if cell is not None and cell.get("value") is not None:
+                        present += 1
+                    else:
+                        reason = (cell or {}).get("missing_reason") or "no cell was produced"
+                        reasons[reason.strip().splitlines()[0][:110]] = (
+                            reasons.get(reason.strip().splitlines()[0][:110], 0) + 1
+                        )
+                mark = "ok  " if present == total else ("PART" if present else "NONE")
+                scored = "" if spec.get("scored", True) else "  (not scored)"
+                weight = weights.metrics.get(name)
+                weight_txt = f" w={weight}" if weight is not None else ""
+                print(f"    {mark} {name:<34}{weight_txt:<7} {present}/{total}{scored}")
+                for reason, count in sorted(reasons.items(), key=lambda kv: -kv[1]):
+                    print(f"         {count:>3} missing: {reason}")
+
+        blocked = bundle.get("failures") or {}
+        if blocked:
+            print("\n  sources that returned nothing at all:")
+            for source, message in blocked.items():
+                print(f"    {source}: {str(message).strip().splitlines()[0][:150]}")
+    return 1 if failed else 0
+
+
 def cmd_run(args) -> int:
     rc = cmd_fetch(args)
     rc2 = cmd_report(args)
@@ -174,12 +240,15 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("check", help="show markets, keys and weight consistency")
     add_common(sub.add_parser("fetch", help="download and cache the data"), network=True)
     add_common(sub.add_parser("report", help="build the workbook and one pager"))
+    add_common(sub.add_parser(
+        "coverage", help="per column, how many submarkets got a figure and why not"))
     add_common(sub.add_parser("run", help="fetch then report"), network=True)
 
     args = parser.parse_args(argv)
     return {
         "check": cmd_check, "fetch": cmd_fetch,
         "report": cmd_report, "run": cmd_run,
+        "coverage": cmd_coverage,
     }[args.command](args)
 
 

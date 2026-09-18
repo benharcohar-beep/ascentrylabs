@@ -4,12 +4,11 @@
 # the button, wait a few minutes, download the results from the Artifacts
 # section at the bottom of the run page. No Python and no terminal needed.
 #
-# No API key is required. Census ACS, Census permits, Census population
-# estimates, QCEW employment and Zillow rents all serve this data
-# unauthenticated. Two optional free keys add columns: BLS_API_KEY for county
-# unemployment and HUD_API_KEY for the Fair Market Rent cross-check.
-# CENSUS_API_KEY is worth adding only because a CI runner shares its IP address
-# with other jobs, and Census meters the keyless allowance per IP.
+# One free key matters: CENSUS_API_KEY. Census made a key mandatory on every
+# Data API request on 12 May 2026, so without it the ACS demand columns are
+# blank. BLS_API_KEY and HUD_API_KEY are optional and each add a few columns.
+# Everything else runs unauthenticated: Census permits, Census population
+# estimates, QCEW employment, Zillow rents and the NCES district files.
 #
 # Add them at Settings > Secrets and variables > Actions > New repository
 # secret. GitHub masks secret values in logs. Never put a key in a file in this
@@ -124,6 +123,18 @@ jobs:
           fi
           python -m screener.cli run $TARGET $EXTRA 2>&1 | tee ../run-log.txt
           exit ${PIPESTATUS[0]}
+
+      # One percentage per submarket tells you something is missing but not
+      # what. This lists it column by column with the recorded reason, so the
+      # run log is enough to work out what to fix next.
+      - name: Column coverage
+        if: always()
+        run: |
+          TARGET="--market ${{ inputs.market }}"
+          if [ "${{ inputs.market }}" = "all" ] || [ -z "${{ inputs.market }}" ]; then
+            TARGET="--all"
+          fi
+          python -m screener.cli coverage $TARGET 2>&1 | tee ../coverage-log.txt || true
         continue-on-error: true
 
       - name: Collect the log
@@ -131,6 +142,13 @@ jobs:
         run: |
           mkdir -p output
           cp ../run-log.txt output/ 2>/dev/null || true
+          cp ../coverage-log.txt output/ 2>/dev/null || true
+          # The run creates a row per shortlisted submarket in this file for
+          # the manual municipal attitude column. On a cloud run it is written
+          # inside the runner and thrown away with it, so nobody ever sees the
+          # file they are supposed to fill in. Ship it in the artifact: fill it
+          # in, commit it back to config/, and the next run scores it.
+          cp config/municipal_attitude.csv output/ 2>/dev/null || true
           cp ../diagnose-log.txt output/ 2>/dev/null || true
           ls -la output || true
 

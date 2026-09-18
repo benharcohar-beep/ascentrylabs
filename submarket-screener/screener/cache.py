@@ -14,6 +14,7 @@ import hashlib
 import json
 import os
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -60,6 +61,45 @@ class Cache:
         self.request_timeout = request_timeout
         self.polite_delay = polite_delay
         self._last_request_at = 0.0
+        self._deadline: float | None = None
+
+    # ---------------------------------------------------------------- budget
+    @contextmanager
+    def budget(self, seconds: float | None, label: str = "this source"):
+        """Cap the wall-clock time one source may spend downloading.
+
+        request_timeout does not cover this. It is a per-socket timeout, so a
+        download that keeps trickling bytes never trips it, and a source that
+        pulls a very large file can hold up a run that is otherwise seconds
+        from finishing. One column is never worth that, so the budget turns an
+        overrun into a MISSING column with an honest reason attached and lets
+        the rest of the screen complete.
+
+        Nested budgets take the earlier deadline, so an inner one can tighten
+        an outer one but never extend past it.
+        """
+        previous = self._deadline
+        if seconds is not None:
+            proposed = time.monotonic() + seconds
+            self._deadline = proposed if previous is None else min(previous, proposed)
+        self._budget_label = label
+        self._budget_seconds = seconds
+        try:
+            yield
+        finally:
+            self._deadline = previous
+
+    def _check_deadline(self, url: str, downloaded: int | None = None) -> None:
+        if self._deadline is None or time.monotonic() <= self._deadline:
+            return
+        so_far = "" if downloaded is None else f" after {downloaded:,} bytes"
+        raise FetchError(
+            f"{getattr(self, '_budget_label', 'this source')} ran past its "
+            f"{getattr(self, '_budget_seconds', '?')} second download budget"
+            f"{so_far} on {url}. Nothing was guessed: the columns this source "
+            f"fills are reported MISSING and the rest of the screen completed. "
+            f"Raise the budget, or run once with a warm cache."
+        )
 
     # ------------------------------------------------------------------ paths
     def _entry_paths(self, key: str) -> tuple[Path, Path]:
@@ -154,6 +194,8 @@ class Cache:
         if gap < self.polite_delay:
             time.sleep(self.polite_delay - gap)
 
+        self._check_deadline(full_url)
+
         req_headers = {"User-Agent": USER_AGENT}
         if headers:
             req_headers.update(headers)
@@ -166,6 +208,7 @@ class Cache:
                 headers=req_headers,
                 json=json_body,
                 timeout=self.request_timeout,
+                stream=True,
             )
         except requests.RequestException as exc:
             raise FetchError(f"{type(exc).__name__} fetching {full_url}: {exc}") from exc
@@ -178,6 +221,25 @@ class Cache:
                 f"HTTP {resp.status_code} from {full_url} :: {snippet}"
             )
 
+        # Read the body in chunks so the budget can stop a download that is
+        # still arriving. Buffering it whole first would defeat the point: the
+        # oversized file is exactly the one that needs interrupting.
+        chunks: list[bytes] = []
+        downloaded = 0
+        try:
+            for chunk in resp.iter_content(chunk_size=1 << 16):
+                if not chunk:
+                    continue
+                chunks.append(chunk)
+                downloaded += len(chunk)
+                self._check_deadline(full_url, downloaded)
+        except requests.RequestException as exc:
+            raise FetchError(
+                f"{type(exc).__name__} while reading {full_url} after "
+                f"{downloaded:,} bytes: {exc}"
+            ) from exc
+        body = b"".join(chunks)
+
         if expect_content_type and expect_content_type not in resp.headers.get(
             "Content-Type", ""
         ):
@@ -188,21 +250,21 @@ class Cache:
             )
 
         retrieved_at = _utcnow_iso()
-        body_path.write_bytes(resp.content)
+        body_path.write_bytes(body)
         meta_path.write_text(
             json.dumps(
                 {
                     "key": key,
                     "url": full_url.split("&key=")[0].split("?key=")[0],
                     "status": resp.status_code,
-                    "bytes": len(resp.content),
+                    "bytes": len(body),
                     "content_type": resp.headers.get("Content-Type", ""),
                     "retrieved_at": retrieved_at,
                 },
                 indent=2,
             )
         )
-        return CachedResponse(resp.content, retrieved_at, full_url, False)
+        return CachedResponse(body, retrieved_at, full_url, False)
 
 
 def optional_key(env_name: str) -> str:

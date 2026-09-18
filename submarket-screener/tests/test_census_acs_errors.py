@@ -6,6 +6,9 @@ message to the actual cause.
 """
 from __future__ import annotations
 
+import pytest
+
+from screener.cache import FetchError
 from screener.sources import census_acs
 
 INVALID = (
@@ -28,15 +31,16 @@ def test_invalid_key_is_named_as_a_key_problem():
 
 
 def test_missing_key_is_distinguished_from_an_invalid_one():
-    """A "Missing Key" page no longer means somebody forgot to set the key.
+    """"Missing Key" means no key arrived, which is now always fatal.
 
-    The screen deliberately runs keyless, so this page means the keyless
-    allowance ran out. On a CI runner the IP address is shared, so the requests
-    that used it up may not even be ours. Blaming an unset key would send the
-    reader to fix something that is not broken.
+    Census made a key mandatory on every Data API request on 12 May 2026. The
+    message has to say that, because the obvious reading of a failure that
+    repeats across every vintage is that the data is unavailable, and somebody
+    would go looking for a release that is sitting there waiting for a key.
     """
     msg = census_acs._explain_non_json(2024, "probe", MISSING)
-    assert "daily quota" in msg
+    assert "12 May 2026" in msg
+    assert "retrying other years will not help" in msg
     assert "key_signup" in msg
     assert "rejected the key" not in msg
 
@@ -83,3 +87,27 @@ def test_the_key_parameter_is_omitted_entirely_when_there_is_no_key():
         assert sent.get("key") == expected, f"with key={supplied!r}"
         if expected is None:
             assert "key" not in sent
+
+
+def test_an_absent_key_is_reported_before_any_vintage_is_probed(monkeypatch):
+    """Five identical "Missing Key" pages read like a data outage. They are not.
+
+    Probing would also spend five requests to learn something knowable from an
+    environment variable, and the message it produced would name a vintage,
+    which is the one thing that is definitely not the problem here.
+    """
+    monkeypatch.delenv("CENSUS_API_KEY", raising=False)
+    probed = []
+    monkeypatch.setattr(census_acs, "find_latest_vintage",
+                        lambda *a, **k: probed.append(a) or 2024)
+
+    with pytest.raises(FetchError) as caught:
+        census_acs.collect(object(), [])
+
+    assert not probed, "it probed the API despite knowing there was no key"
+    message = str(caught.value)
+    assert "12 May 2026" in message
+    # It must scope the damage, or the reader assumes the whole run is void.
+    assert "MISSING" in message
+    for unaffected in ("Zillow", "QCEW", "Population Estimates"):
+        assert unaffected in message

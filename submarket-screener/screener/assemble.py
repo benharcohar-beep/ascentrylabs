@@ -52,11 +52,26 @@ def _merge(target: dict[str, dict[str, Value]], new: dict[str, dict[str, Value]]
         target.setdefault(geoid, {}).update(values)
 
 
+# How long each optional source may spend downloading before its columns are
+# given up as MISSING. The point is that no single column can hold up the whole
+# screen. Schools gets the largest budget because the NCES district files are
+# by far the biggest download in the tool, and it is also the cheapest thing to
+# lose: the school proxy is 40% of a pillar worth 10%.
+SOURCE_BUDGET_SECONDS = {
+    "bls_jobs": 240,
+    "rents": 240,
+    "census_bps": 300,
+    "schools": 420,
+}
+
+
 def _run_source(ctx: Context, name: str, fn, units, failures: dict, **kwargs
                 ) -> dict[str, dict[str, Value]]:
     """Call one source module, turning any failure into MISSING cells."""
+    budget = SOURCE_BUDGET_SECONDS.get(name)
     try:
-        return fn(ctx, units, **kwargs)
+        with ctx.cache.budget(budget, label=name):
+            return fn(ctx, units, **kwargs)
     except MissingCredential as exc:
         ctx.log(f"SKIPPED {name}: {exc}")
         failures[name] = str(exc)

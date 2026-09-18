@@ -767,21 +767,50 @@ def load_manual_reference(ctx: Any) -> DistrictReference | None:
     )
 
 
-def _first_csv_member(data: bytes, *, label: str) -> bytes:
-    """Pull the single data member out of a CCD zip."""
+# NCES wraps the CCD flat files one level deeper than you would expect. The
+# published archive holds two more archives, one CSV and one SAS, rather than
+# the data itself:
+#   ccd_lea_052_2122_l_1a_071722.zip
+#     ccd_lea_052_2122_l_1a_071722_CSV.zip  <- the data is in here
+#     ccd_lea_052_2122_l_1a_071722_SAS.zip
+# So the reader has to descend, and it has to prefer the CSV archive, because
+# the SAS one holds a .sas7bdat that nothing here can read.
+MAX_ZIP_DEPTH = 3
+
+
+def _first_csv_member(data: bytes, *, label: str, depth: int = 0) -> bytes:
+    """Pull the single data member out of a CCD zip, descending nested zips."""
     try:
         archive = zipfile.ZipFile(io.BytesIO(data))
     except zipfile.BadZipFile as exc:
         raise FetchError(f"{label}: downloaded bytes are not a zip archive ({exc}).") from exc
-    members = [
-        n for n in archive.namelist()
-        if n.lower().endswith((".csv", ".txt")) and not n.startswith("__MACOSX")
-    ]
-    if not members:
+
+    names = [n for n in archive.namelist() if not n.startswith("__MACOSX")]
+    members = [n for n in names if n.lower().endswith((".csv", ".txt"))]
+    if members:
+        return archive.read(sorted(members)[0])
+
+    nested = [n for n in names if n.lower().endswith(".zip")]
+    if nested and depth < MAX_ZIP_DEPTH:
+        # Prefer the CSV archive. Sorting alone would pick it over SAS by
+        # accident of the alphabet, which is not a reason to rely on.
+        nested.sort(key=lambda n: (0 if "csv" in n.lower() else 1, n))
+        errors = []
+        for name in nested:
+            try:
+                return _first_csv_member(
+                    archive.read(name), label=f"{label} > {name}", depth=depth + 1
+                )
+            except FetchError as exc:
+                errors.append(str(exc))
         raise FetchError(
-            f"{label}: zip contains no .csv or .txt member. Members: {archive.namelist()[:10]}."
+            f"{label}: none of the nested archives held a readable table. "
+            + " | ".join(errors[:3])
         )
-    return archive.read(sorted(members)[0])
+
+    raise FetchError(
+        f"{label}: zip contains no .csv or .txt member. Members: {names[:10]}."
+    )
 
 
 def _try_download(ctx: Any, urls: Iterable[str], *, key_prefix: str, label: str):
