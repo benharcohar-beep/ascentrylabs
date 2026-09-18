@@ -43,6 +43,8 @@ import json
 import math
 from datetime import date
 
+from dataclasses import dataclass
+
 from ..cache import FetchError, optional_key
 from ..context import Context
 from ..provenance import MetricSpec, Unit, Value, missing
@@ -266,22 +268,51 @@ def find_latest_vintage(ctx: Context, key: str, max_back: int = 4) -> int:
     )
 
 
+@dataclass
+class AcsMaps:
+    """Two ACS vintages, indexed by GEOID, plus where and when they came from.
+
+    Both the Data API and the summary files produce this, and compute_metrics
+    only ever reads this, so the two routes cannot drift apart in their maths.
+    Variable names use the API's spelling (B01003_001E) whichever route filled
+    them, because that is the spelling the computation is written against.
+    """
+    latest: dict[str, dict[str, str]]
+    prior: dict[str, dict[str, str]]
+    latest_year: int
+    prior_year: int
+    latest_url: str
+    prior_url: str
+    retrieved_latest: str
+    retrieved_prior: str
+    prior_error: str
+    source_name: str
+
+
 def collect(ctx: Context, units: list[Unit]) -> dict[str, dict[str, Value]]:
+    """ACS demand figures for every unit, from whichever route is available.
+
+    With CENSUS_API_KEY set, the Data API: a few kilobytes per market. Without
+    it, the table-based summary files on www2.census.gov: the same tables and
+    the same figures, as national flat files that need no key and are shared
+    across every market. The API is preferred only because it is lighter.
+    """
     key = optional_key("CENSUS_API_KEY")
-    if not key:
-        # Fail here rather than in the vintage probe. The probe would try five
-        # years and return five identical "Missing Key" pages, which reads like
-        # a data availability problem and is not one.
-        raise FetchError(
-            "CENSUS_API_KEY is not set, and since 12 May 2026 the Census Data "
-            "API requires a key on every request, so no ACS column can be "
-            "filled without one. Everything ACS would have provided is "
-            "reported MISSING rather than estimated. The rest of the screen is "
-            "unaffected: population comes from the Census Population Estimates "
-            "Program, rents from Zillow, permits from the Building Permits "
-            "Survey and employment from QCEW, none of which need a key. "
-            + KEY_HELP
+    if key:
+        maps = fetch_api_maps(ctx, key)
+    else:
+        from . import census_acs_sf
+        ctx.log(
+            "ACS: no CENSUS_API_KEY, so reading the ACS summary files from "
+            "www2.census.gov instead of the Data API. Same tables, same figures, "
+            "no key, larger download."
         )
+        maps = census_acs_sf.fetch_maps(ctx, units)
+    return compute_metrics(units, maps)
+
+
+def fetch_api_maps(ctx: Context, key: str) -> AcsMaps:
+    """The Data API route. Requires a key since 12 May 2026."""
     latest_year = find_latest_vintage(ctx, key)
     prior_year = latest_year - 5          # non-overlapping five-year samples
 
@@ -308,6 +339,29 @@ def collect(ctx: Context, units: list[Unit]) -> dict[str, dict[str, Value]]:
         except FetchError as exc:
             prior_error = str(exc)
             ctx.log(f"WARNING: prior ACS vintage {prior_year} failed for {tag}: {exc}")
+
+    return AcsMaps(
+        latest=latest_map, prior=prior_map,
+        latest_year=latest_year, prior_year=prior_year,
+        latest_url=latest_url, prior_url=prior_url,
+        retrieved_latest=retrieved_latest, retrieved_prior=retrieved_prior,
+        prior_error=prior_error, source_name=SOURCE_NAME,
+    )
+
+
+def compute_metrics(units: list[Unit], maps: AcsMaps) -> dict[str, dict[str, Value]]:
+    """Turn two vintages of raw ACS variables into the demand columns.
+
+    Every sentinel rule, the renter share, the age band sum, the CAGR and the
+    margin of error significance test live here and nowhere else, so the API
+    route and the summary file route cannot disagree.
+    """
+    latest_map, prior_map = maps.latest, maps.prior
+    latest_year, prior_year = maps.latest_year, maps.prior_year
+    latest_url, prior_url = maps.latest_url, maps.prior_url
+    retrieved_latest, retrieved_prior = maps.retrieved_latest, maps.retrieved_prior
+    prior_error = maps.prior_error
+    SOURCE_NAME = maps.source_name  # noqa: N806 - shadows the module constant on purpose
 
     latest_label = _vintage_label(latest_year)
     prior_label = _vintage_label(prior_year)

@@ -267,6 +267,131 @@ class Cache:
         return CachedResponse(body, retrieved_at, full_url, False)
 
 
+    # -------------------------------------------------------- filtered fetch
+    def get_filtered_lines(
+        self,
+        url: str,
+        *,
+        key: str,
+        prefixes: tuple[str, ...],
+        ttl_days: int = 90,
+        max_bytes: int | None = None,
+    ) -> CachedResponse:
+        """Download a large line-oriented file, keep only matching lines.
+
+        The ACS summary file for one table is a national file: 18MB for total
+        population and 200MB for the age table. A market needs the couple of
+        thousand lines for one state. Caching the whole download to serve those
+        would make the offline demo carry hundreds of megabytes it never reads,
+        and on a CI runner it is re-uploaded on every run.
+
+        So this streams the body, keeps the header plus any line starting with
+        one of `prefixes`, and caches only that. The cached entry is a few
+        hundred kilobytes and is what the offline demo replays.
+
+        The budget applies as it does to get(), and a download stopped part way
+        is never cached, because a truncated extract would look exactly like a
+        state with fewer municipalities than it has.
+        """
+        body_path, meta_path = self._entry_paths(key)
+
+        if body_path.exists() and meta_path.exists() and not self.refresh:
+            try:
+                meta = json.loads(meta_path.read_text())
+            except json.JSONDecodeError:
+                meta = {}
+            retrieved_at = meta.get("retrieved_at", "")
+            fresh = True
+            if ttl_days is not None and retrieved_at:
+                try:
+                    stamp = datetime.strptime(retrieved_at, "%Y-%m-%dT%H:%M:%SZ").replace(
+                        tzinfo=timezone.utc
+                    )
+                    fresh = datetime.now(timezone.utc) - stamp < timedelta(days=ttl_days)
+                except ValueError:
+                    fresh = True
+            if fresh or self.offline:
+                return CachedResponse(
+                    body_path.read_bytes(), retrieved_at, meta.get("url", url), True
+                )
+
+        if self.offline:
+            raise FetchError(
+                f"offline mode and nothing cached for '{key}'. "
+                f"Run the fetch step once with a network connection."
+            )
+
+        self._check_deadline(url)
+
+        gap = time.monotonic() - self._last_request_at
+        if gap < self.polite_delay:
+            time.sleep(self.polite_delay - gap)
+
+        try:
+            resp = requests.get(
+                url,
+                headers={"User-Agent": USER_AGENT},
+                timeout=self.request_timeout,
+                stream=True,
+            )
+        except requests.RequestException as exc:
+            raise FetchError(f"{type(exc).__name__} fetching {url}: {exc}") from exc
+        finally:
+            self._last_request_at = time.monotonic()
+
+        if resp.status_code != 200:
+            snippet = resp.text[:200].replace("\n", " ")
+            raise FetchError(f"HTTP {resp.status_code} from {url} :: {snippet}")
+
+        kept: list[str] = []
+        header_seen = False
+        downloaded = 0
+        try:
+            for line in resp.iter_lines(chunk_size=1 << 18, decode_unicode=True):
+                if line is None:
+                    continue
+                downloaded += len(line) + 1
+                if not header_seen:
+                    # The first line is the column header and is always kept:
+                    # without it the extract cannot be parsed at all.
+                    kept.append(line)
+                    header_seen = True
+                    continue
+                if line.startswith(prefixes):
+                    kept.append(line)
+                self._check_deadline(url, downloaded)
+                if max_bytes is not None and downloaded > max_bytes:
+                    raise FetchError(
+                        f"{url} is larger than the {max_bytes:,} byte ceiling set "
+                        f"for it ({downloaded:,} bytes read). Nothing was cached."
+                    )
+        except requests.RequestException as exc:
+            raise FetchError(
+                f"{type(exc).__name__} while reading {url} after "
+                f"{downloaded:,} bytes: {exc}"
+            ) from exc
+
+        body = ("\n".join(kept) + "\n").encode("utf-8")
+        retrieved_at = _utcnow_iso()
+        body_path.write_bytes(body)
+        meta_path.write_text(
+            json.dumps(
+                {
+                    "key": key,
+                    "url": url,
+                    "status": resp.status_code,
+                    "bytes": len(body),
+                    "bytes_downloaded": downloaded,
+                    "lines_kept": len(kept),
+                    "filtered_to_prefixes": list(prefixes),
+                    "retrieved_at": retrieved_at,
+                },
+                indent=2,
+            )
+        )
+        return CachedResponse(body, retrieved_at, url, False)
+
+
 def optional_key(env_name: str) -> str:
     """Read a credential that the caller can do without.
 

@@ -30,8 +30,9 @@ from .metrics import validate_weights
 # fourth field is what you actually lose without it.
 KEY_STATUS = [
     ("CENSUS_API_KEY", "Census ACS", "https://api.census.gov/data/key_signup.html",
-     "nothing on a single market: Census serves ACS keyless up to a daily "
-     "quota per IP. Worth having for repeated runs or a shared IP."),
+     "no columns. The Data API has needed a key since 12 May 2026, so without "
+     "one the same figures are read from the summary files instead: same "
+     "release, much larger download. A key only makes the pull lighter."),
     ("BLS_API_KEY", "BLS LAUS", "https://data.bls.gov/registrationEngine/",
      "the county unemployment columns. QCEW employment needs no key."),
     ("HUD_API_KEY", "HUD Fair Market Rents",

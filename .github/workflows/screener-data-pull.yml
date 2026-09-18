@@ -4,11 +4,11 @@
 # the button, wait a few minutes, download the results from the Artifacts
 # section at the bottom of the run page. No Python and no terminal needed.
 #
-# One free key matters: CENSUS_API_KEY. Census made a key mandatory on every
-# Data API request on 12 May 2026, so without it the ACS demand columns are
-# blank. BLS_API_KEY and HUD_API_KEY are optional and each add a few columns.
-# Everything else runs unauthenticated: Census permits, Census population
-# estimates, QCEW employment, Zillow rents and the NCES district files.
+# No API key is needed. Census made a key mandatory on the Data API on
+# 12 May 2026, so without one the ACS figures are read from the summary files
+# on www2.census.gov instead: same release, no key, larger download.
+# CENSUS_API_KEY only makes that pull lighter. BLS_API_KEY adds county
+# unemployment and HUD_API_KEY adds the Fair Market Rent cross-check.
 #
 # Add them at Settings > Secrets and variables > Actions > New repository
 # secret. GitHub masks secret values in logs. Never put a key in a file in this
