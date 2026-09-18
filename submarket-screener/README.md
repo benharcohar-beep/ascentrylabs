@@ -18,6 +18,10 @@ Markets configured: **Madison WI**, **Grand Rapids MI**, **Lexington KY**,
 cd submarket-screener
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
+# Optional, only needed for the school proxy columns. It pulls GDAL and is the
+# slow part of the install. Without it those columns read MISSING, by design.
+.venv/bin/pip install -r requirements-optional.txt
+
 cp .env.example .env          # then paste in the three free keys, see below
 .venv/bin/python -m screener.cli check           # confirms keys and weights
 
@@ -299,8 +303,10 @@ Read this section before you show anyone the output.
   while a single rank can sit at 5 or 95, so mixing the two shapes in one
   scored column would compare different things. If neither component covers the
   whole set, the column is not scored at all.
-- The lookup needs `geopandas`. Without it the school columns come through as
-  MISSING rather than guessing.
+- The lookup needs `geopandas`, which is in `requirements-optional.txt` rather
+  than the main install. Without it the school columns come through as MISSING
+  rather than guessing, and CI runs without it on purpose so that degradation
+  stays tested.
 
 **Scoring**
 
@@ -351,6 +357,12 @@ data/cache/                everything downloaded, gitignored
 output/<market>/           raw.json, the workbook, the one-pager, gitignored
 tests/                     run with .venv/bin/python -m pytest tests/ -q
 ```
+
+CI runs the same suite on every push touching `submarket-screener/`, via
+`.github/workflows/submarket-screener.yml`. It installs no API keys and has no
+access to the data hosts, because every test here is offline by design: a test
+that starts reaching the network is a bug and should fail in CI rather than
+pass quietly on one machine.
 
 ## Outputs
 
