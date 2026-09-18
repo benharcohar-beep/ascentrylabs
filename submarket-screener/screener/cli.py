@@ -206,6 +206,87 @@ def cmd_coverage(args) -> int:
     return 1 if failed else 0
 
 
+def cmd_verify(args) -> int:
+    """Recalculate the workbook's live formulas and compare against Python.
+
+    The scoring tab holds real Excel formulas so an interviewer can click a
+    cell and see the arithmetic. That is only worth anything if the formulas
+    agree with the Python scorer. They have disagreed before: N(range) returns
+    #VALUE! over a range, which blanked every pillar score and the whole
+    ranking tab while the Python output looked perfect.
+
+    The test suite checks this against fixtures. This checks it against the
+    workbook actually produced from real data, where the awkward shapes live:
+    columns that are entirely missing, single valued columns, thin rows.
+    """
+    try:
+        import formulas  # noqa: PLC0415
+    except ImportError:
+        print("The 'formulas' package is not installed, so the workbook "
+              "formulas cannot be independently recalculated. Install it with: "
+              "pip install formulas", file=sys.stderr)
+        return 2
+
+    weights = load_weights()
+    problems = 0
+    for key in _targets(args):
+        try:
+            bundle = assemble.load(key, OUTPUT_DIR)
+        except FileNotFoundError as exc:
+            print(f"  {exc}", file=sys.stderr)
+            problems += 1
+            continue
+
+        ranked = score.score_market(bundle, weights)
+        path = OUTPUT_DIR / key / f"{key}_submarket_screen.xlsx"
+        if not path.exists():
+            print(f"  no workbook at {path}. Run report first.", file=sys.stderr)
+            problems += 1
+            continue
+
+        print(f"\n{bundle['market']['name']}: recalculating {path.name} with an "
+              f"independent engine")
+        model = formulas.ExcelModel().loads(str(path)).finish()
+        cells = {k.upper(): v for k, v in model.calculate().items()}
+        sheet = f"'[{path.name.upper()}]RANKING'!"
+
+        def cell(ref):
+            value = cells.get(sheet + ref)
+            try:
+                return value.value[0, 0]
+            except (AttributeError, IndexError, TypeError):
+                return value
+
+        mismatches = 0
+        for i, result in enumerate(ranked):
+            row = 6 + i                      # the ranking table starts on row 6
+            name = str(cell(f"B{row}")).strip()
+            if name != result.name:
+                print(f"    MISMATCH row {row}: workbook {name!r}, Python "
+                      f"{result.name!r}")
+                mismatches += 1
+                continue
+            try:
+                total = float(cell(f"C{row}"))
+            except (TypeError, ValueError):
+                total = None
+            expected = result.total
+            if expected is None:
+                continue
+            if total is None or abs(total - expected) > 0.05:
+                print(f"    MISMATCH {result.name}: workbook total {total!r}, "
+                      f"Python {expected:.2f}")
+                mismatches += 1
+        if mismatches:
+            print(f"  {mismatches} cells disagree. The workbook would contradict "
+                  f"the one pager in front of an interviewer.")
+            problems += 1
+        else:
+            print(f"  every one of the {len(ranked)} ranking rows agrees with the "
+                  f"Python scorer, name and total.")
+    return 1 if problems else 0
+
+
 def cmd_run(args) -> int:
     rc = cmd_fetch(args)
     rc2 = cmd_report(args)
@@ -243,13 +324,15 @@ def main(argv: list[str] | None = None) -> int:
     add_common(sub.add_parser("report", help="build the workbook and one pager"))
     add_common(sub.add_parser(
         "coverage", help="per column, how many submarkets got a figure and why not"))
+    add_common(sub.add_parser(
+        "verify", help="recalculate the workbook formulas and compare with Python"))
     add_common(sub.add_parser("run", help="fetch then report"), network=True)
 
     args = parser.parse_args(argv)
     return {
         "check": cmd_check, "fetch": cmd_fetch,
         "report": cmd_report, "run": cmd_run,
-        "coverage": cmd_coverage,
+        "coverage": cmd_coverage, "verify": cmd_verify,
     }[args.command](args)
 
 

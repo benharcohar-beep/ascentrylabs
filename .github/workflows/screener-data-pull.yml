@@ -139,6 +139,21 @@ jobs:
       # One percentage per submarket tells you something is missing but not
       # what. This lists it column by column with the recorded reason, so the
       # run log is enough to work out what to fix next.
+      # The scoring tab holds live Excel formulas so an interviewer can click a
+      # cell. That is only worth anything if they agree with the Python scorer,
+      # and they have disagreed before: N(range) returns #VALUE! over a range,
+      # which blanked every pillar score while the Python output looked fine.
+      # The test suite checks fixtures; this checks the real workbook.
+      - name: Verify the workbook formulas
+        if: ${{ always() && inputs.mode != 'probe' }}
+        run: |
+          pip install formulas >/dev/null 2>&1 || true
+          TARGET="--market ${{ inputs.market }}"
+          if [ "${{ inputs.market }}" = "all" ] || [ -z "${{ inputs.market }}" ]; then
+            TARGET="--all"
+          fi
+          python -m screener.cli verify $TARGET 2>&1 | tee ../verify-log.txt || true
+
       - name: Column coverage
         if: ${{ always() && inputs.mode != 'probe' }}
         run: |
@@ -156,6 +171,7 @@ jobs:
           cp ../run-log.txt output/ 2>/dev/null || true
           cp ../coverage-log.txt output/ 2>/dev/null || true
           cp ../probe-log.txt output/ 2>/dev/null || true
+          cp ../verify-log.txt output/ 2>/dev/null || true
           # The run creates a row per shortlisted submarket in this file for
           # the manual municipal attitude column. On a cloud run it is written
           # inside the runner and thrown away with it, so nobody ever sees the

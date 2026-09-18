@@ -242,8 +242,11 @@ def fetch_maps(ctx, units: list[Unit]):
         ctx.log(f"WARNING: the prior ACS summary file vintage {prior_year} did not "
                 f"load, so the growth columns will be MISSING: {exc}")
 
+    # Deliberately NOT folded into prior_error. That string becomes the missing
+    # reason on the two growth columns, and the age table has nothing to do
+    # with them: it would send a reader to investigate the wrong file.
     if skipped:
-        prior_error = (prior_error + " | " if prior_error else "") + skipped
+        ctx.log(f"ACS summary file: {skipped}")
 
     return AcsMaps(
         latest=latest, prior=prior,

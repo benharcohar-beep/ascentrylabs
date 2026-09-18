@@ -343,13 +343,23 @@ class Cache:
             snippet = resp.text[:200].replace("\n", " ")
             raise FetchError(f"HTTP {resp.status_code} from {url} :: {snippet}")
 
-        kept: list[str] = []
+        # Match on bytes, not str. decode_unicode only decodes when the
+        # response declares a charset, and a .dat file is served as an octet
+        # stream with none, so iter_lines hands back bytes and comparing them
+        # against str prefixes raises TypeError halfway through a download.
+        # Encoding the prefixes once is cheaper than decoding every line, and
+        # the data is ASCII pipe-delimited either way.
+        wanted = tuple(prefix.encode("utf-8") for prefix in prefixes)
+
+        kept: list[bytes] = []
         header_seen = False
         downloaded = 0
         try:
-            for line in resp.iter_lines(chunk_size=1 << 18, decode_unicode=True):
+            for line in resp.iter_lines(chunk_size=1 << 18):
                 if line is None:
                     continue
+                if isinstance(line, str):       # a server that did declare one
+                    line = line.encode("utf-8")
                 downloaded += len(line) + 1
                 if not header_seen:
                     # The first line is the column header and is always kept:
@@ -357,7 +367,7 @@ class Cache:
                     kept.append(line)
                     header_seen = True
                     continue
-                if line.startswith(prefixes):
+                if line.startswith(wanted):
                     kept.append(line)
                 self._check_deadline(url, downloaded)
                 if max_bytes is not None and downloaded > max_bytes:
@@ -371,7 +381,7 @@ class Cache:
                 f"{downloaded:,} bytes: {exc}"
             ) from exc
 
-        body = ("\n".join(kept) + "\n").encode("utf-8")
+        body = b"\n".join(kept) + b"\n"
         retrieved_at = _utcnow_iso()
         body_path.write_bytes(body)
         meta_path.write_text(

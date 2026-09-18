@@ -58,6 +58,10 @@ def _merge(target: dict[str, dict[str, Value]], new: dict[str, dict[str, Value]]
 # by far the biggest download in the tool, and it is also the cheapest thing to
 # lose: the school proxy is 40% of a pillar worth 10%.
 SOURCE_BUDGET_SECONDS = {
+    # Without a key this reads the ACS summary files, which are national and
+    # run to a few hundred megabytes before filtering. It carries the largest
+    # pillar, so it gets the longest budget, but it still gets one.
+    "census_acs": 600,
     "bls_jobs": 240,
     "rents": 240,
     "census_bps": 300,

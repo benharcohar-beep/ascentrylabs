@@ -94,3 +94,122 @@ def test_a_nested_budget_cannot_extend_an_outer_one(tmp_path):
             assert cache._deadline == outer
         assert cache._deadline == outer
     assert cache._deadline is None
+
+
+# ---------------------------------------------------------------------------
+# get_filtered_lines, which streams a national file and keeps one state's rows.
+#
+# The first live run of this failed with "a bytes-like object is required, not
+# 'str'". requests only decodes a streamed body when the response declares a
+# charset, and Census serves the .dat files as an octet stream with none, so
+# every line arrives as bytes. The tests below run the bytes path, because a
+# fixture that hands back str would have passed while the real thing broke.
+# ---------------------------------------------------------------------------
+
+REAL_HEADER = b"GEO_ID|B01003_E001|B01003_M001"
+REAL_ROWS = [
+    b"0100000US|334922499|-555555555",
+    b"0600000US5500100275|2050|265",     # Wisconsin, wanted
+    b"0600000US5500100300|1347|172",     # Wisconsin, wanted
+    b"0600000US2600100275|999|50",       # Michigan, not wanted
+    b"1600000US5500100|2024|276",        # Wisconsin place, wrong summary level
+]
+
+
+class _ByteStream:
+    """Streams bytes lines, the way requests does for a body with no charset."""
+
+    status_code = 200
+    headers = {"Content-Type": "application/octet-stream"}
+    text = ""
+
+    def __init__(self, lines):
+        self.lines = lines
+
+    def iter_lines(self, chunk_size=1, decode_unicode=False):
+        yield from self.lines
+
+
+def _fake_get(lines):
+    def _get(*a, **k):
+        return _ByteStream(lines)
+    return _get
+
+
+def test_only_the_wanted_rows_and_the_header_survive(tmp_path, monkeypatch):
+    cache = Cache(tmp_path, polite_delay=0.0)
+    monkeypatch.setattr("screener.cache.requests.get",
+                        _fake_get([REAL_HEADER] + REAL_ROWS))
+    resp = cache.get_filtered_lines(
+        "https://example.invalid/acsdt5y2024-b01003.dat",
+        key="acs", prefixes=("0600000US55",),
+    )
+    lines = resp.text.strip().splitlines()
+    assert lines[0] == "GEO_ID|B01003_E001|B01003_M001"
+    assert lines[1:] == [
+        "0600000US5500100275|2050|265",
+        "0600000US5500100300|1347|172",
+    ]
+
+
+def test_the_header_is_kept_even_though_it_matches_no_prefix():
+    """Without it the extract cannot be parsed, and the failure would look
+    like a layout change rather than a dropped line."""
+    # Covered by the assertion above; kept separate so the reason is recorded.
+    assert not REAL_HEADER.startswith(b"0600000US55")
+
+
+def test_a_str_body_is_handled_too(tmp_path, monkeypatch):
+    """Some servers do declare a charset. Both paths must work."""
+    cache = Cache(tmp_path, polite_delay=0.0)
+    monkeypatch.setattr("screener.cache.requests.get",
+                        _fake_get([line.decode() for line in [REAL_HEADER] + REAL_ROWS]))
+    resp = cache.get_filtered_lines(
+        "https://example.invalid/x.dat", key="acs2", prefixes=("0600000US55",))
+    assert "0600000US5500100275|2050|265" in resp.text
+    assert "2600100275" not in resp.text
+
+
+def test_several_states_can_be_kept_at_once(tmp_path, monkeypatch):
+    """A market can straddle a state line, and the file is national anyway."""
+    cache = Cache(tmp_path, polite_delay=0.0)
+    monkeypatch.setattr("screener.cache.requests.get",
+                        _fake_get([REAL_HEADER] + REAL_ROWS))
+    resp = cache.get_filtered_lines(
+        "https://example.invalid/y.dat", key="acs3",
+        prefixes=("0600000US55", "0600000US26"))
+    assert "0600000US2600100275|999|50" in resp.text
+
+
+def test_the_extract_is_replayed_from_cache_without_downloading_again(tmp_path, monkeypatch):
+    cache = Cache(tmp_path, polite_delay=0.0)
+    calls = []
+
+    def counting(*a, **k):
+        calls.append(1)
+        return _ByteStream([REAL_HEADER] + REAL_ROWS)
+
+    monkeypatch.setattr("screener.cache.requests.get", counting)
+    first = cache.get_filtered_lines("https://example.invalid/z.dat", key="acs4",
+                                     prefixes=("0600000US55",))
+    second = cache.get_filtered_lines("https://example.invalid/z.dat", key="acs4",
+                                      prefixes=("0600000US55",))
+    assert len(calls) == 1, "it downloaded the national file twice"
+    assert second.from_cache and not first.from_cache
+    assert first.text == second.text
+
+
+def test_the_cached_extract_is_far_smaller_than_the_download(tmp_path, monkeypatch):
+    """The point of the whole method. The sidecar records both so the saving
+    is auditable rather than asserted."""
+    import json
+
+    cache = Cache(tmp_path, polite_delay=0.0)
+    noise = [b"0600000US1200100275|1|1"] * 500
+    monkeypatch.setattr("screener.cache.requests.get",
+                        _fake_get([REAL_HEADER] + REAL_ROWS + noise))
+    cache.get_filtered_lines("https://example.invalid/w.dat", key="acs5",
+                             prefixes=("0600000US55",))
+    meta = json.loads(next(tmp_path.glob("*.meta.json")).read_text())
+    assert meta["lines_kept"] == 3
+    assert meta["bytes"] < meta["bytes_downloaded"] / 10
