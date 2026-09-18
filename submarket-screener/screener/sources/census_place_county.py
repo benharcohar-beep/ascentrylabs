@@ -31,14 +31,20 @@ SOURCE_NAME = "Census place-to-county reference file"
 
 # Tried in order. Comment says what each is believed to contain. If all fail,
 # the error message tells the user exactly where to look.
+# Verified against the live server on 2026-09-18, not guessed. The first
+# answers with 2.5MB and this header:
+#
+#   STATE|STATEFP|PLACEFP|PLACENS|PLACENAME|TYPE|CLASSFP|FUNCSTAT|COUNTIES
+#   GA|13|00184|02403056|Abbeville city|INCORPORATED PLACE|C1|A|Wilcox County
+#
+# Note COUNTIES, not a county FIPS. The file names the county and never
+# numbers it, which is what defeated the first version of this reader: it
+# looked for a county FIPS column, found none, and gave up, so every place
+# based market lost every county level figure.
 CANDIDATE_URLS = [
-    # 2020 vintage national place file: pipe delimited, one row per
-    # place/county part, with county FIPS and county name.
-    "https://www2.census.gov/geo/docs/reference/codes2020/place/national_place2020.txt",
     "https://www2.census.gov/geo/docs/reference/codes2020/national_place2020.txt",
-    # 2010 vintage equivalent, still published.
+    # 2010 vintage. Same shape, column called COUNTY, blank lines between rows.
     "https://www2.census.gov/geo/docs/reference/codes/files/national_places.txt",
-    "https://www2.census.gov/geo/docs/reference/codes2010/national_places.txt",
 ]
 
 MANUAL_PATH_HINT = (
@@ -62,8 +68,16 @@ def _norm(name: str) -> str:
     return name.strip().upper().replace("﻿", "")
 
 
-def _parse(text: str) -> dict[str, tuple[str, str]]:
-    """Return {7-char place GEOID: (5-char county FIPS, county name)}."""
+def _parse(text: str, county_fips_by_name: dict[str, str] | None = None
+           ) -> dict[str, tuple[str, str]]:
+    """Return {7-char place GEOID: (5-char county FIPS, county name)}.
+
+    Census names the county rather than numbering it, so a name to FIPS map is
+    needed. It comes from the market config, which already lists every county
+    with both, so there is no second file to fetch and nothing else to 404.
+    A place in a county the market does not cover resolves to no FIPS, which is
+    correct: it is about to be filtered out anyway.
+    """
     delim = _sniff(text)
     reader = csv.DictReader(io.StringIO(text), delimiter=delim)
     if not reader.fieldnames:
@@ -82,34 +96,69 @@ def _parse(text: str) -> dict[str, tuple[str, str]]:
     county_fp_col = find("COUNTYFP") or find("COUNTY", "FP")
     county_name_col = find("COUNTYNAME") or find("COUNTY", "NAME")
 
-    if not (state_col and place_col and county_fp_col):
+    # COUNTIES in the 2020 file, COUNTY in the 2010 one. Both hold names.
+    county_name_col = county_name_col or find("COUNTIES") or find("COUNTY")
+
+    if not (state_col and place_col and (county_fp_col or county_name_col)):
         raise FetchError(
             "place-to-county file does not have recognisable state, place and "
-            f"county FIPS columns. Saw: {sorted(cols)}"
+            f"county columns. Saw: {sorted(cols)}"
         )
+
+    by_name = {_norm(k): v for k, v in (county_fips_by_name or {}).items()}
 
     mapping: dict[str, tuple[str, str]] = {}
     for row in reader:
         state = (row.get(state_col) or "").strip().zfill(2)
         place = (row.get(place_col) or "").strip().zfill(5)
-        county = (row.get(county_fp_col) or "").strip().zfill(3)
-        if not state.isdigit() or not place.isdigit() or not county.isdigit():
+        if not state.isdigit() or not place.isdigit():
             continue
         geoid = state + place
-        # First listed county wins. Recorded as a limitation.
-        if geoid not in mapping:
-            name = (row.get(county_name_col) or "").strip() if county_name_col else ""
-            mapping[geoid] = (state + county, name)
+        if geoid in mapping:
+            continue
+
+        names = [n.strip() for n in
+                 (row.get(county_name_col) or "").split(",") if n.strip()]
+
+        county_fips = ""
+        county_name = names[0] if names else ""
+        if county_fp_col:
+            raw = (row.get(county_fp_col) or "").strip().zfill(3)
+            if raw.isdigit():
+                county_fips = state + raw
+        if not county_fips and names:
+            # Prefer a county the market actually covers. A place straddling a
+            # covered and an uncovered county belongs in the screen, and taking
+            # whichever Census listed first would drop it at the county filter
+            # for no reason the reader could see.
+            for candidate in names:
+                hit = by_name.get(_norm(candidate))
+                if hit:
+                    county_fips, county_name = hit, candidate
+                    break
+        if county_fips:
+            mapping[geoid] = (county_fips, county_name)
     if not mapping:
-        raise FetchError("place-to-county file parsed but produced no rows")
+        raise FetchError(
+            "place-to-county file parsed but matched no county. The file names "
+            "counties rather than numbering them, so this usually means the "
+            "market's configured county names do not match the Census spelling."
+        )
     return mapping
 
 
 def load(ctx: Context) -> tuple[dict[str, tuple[str, str]], dict]:
     """Return the mapping plus a provenance dict. Raises FetchError if unavailable."""
+    # The market already lists every county it covers with both name and FIPS,
+    # so the name to FIPS resolution needs no second download.
+    county_fips_by_name = {
+        county["name"]: county["fips"] for county in ctx.market.counties
+        if county.get("name") and county.get("fips")
+    }
+
     manual = ctx.cache.root / "manual" / "place_county.txt"
     if manual.exists():
-        mapping = _parse(manual.read_text(encoding="latin-1"))
+        mapping = _parse(manual.read_text(encoding="latin-1"), county_fips_by_name)
         ctx.log(f"place-to-county: manual file, {len(mapping):,} places")
         return mapping, {
             "source": SOURCE_NAME + " (manual drop)",
@@ -122,8 +171,11 @@ def load(ctx: Context) -> tuple[dict[str, tuple[str, str]], dict]:
     for url in CANDIDATE_URLS:
         try:
             resp = ctx.cache.get(url, key=f"place_county_{url.rsplit('/', 1)[-1]}", ttl_days=365)
-            mapping = _parse(resp.body.decode("latin-1", errors="replace"))
-            ctx.log(f"place-to-county: {url.rsplit('/', 1)[-1]}, {len(mapping):,} places")
+            mapping = _parse(resp.body.decode("latin-1", errors="replace"),
+                             county_fips_by_name)
+            ctx.log(f"place-to-county: {url.rsplit('/', 1)[-1]}, {len(mapping):,} "
+                    f"places matched to the {len(county_fips_by_name)} counties "
+                    f"this market covers")
             return mapping, {
                 "source": SOURCE_NAME,
                 "vintage": url.rsplit("/", 1)[-1],
