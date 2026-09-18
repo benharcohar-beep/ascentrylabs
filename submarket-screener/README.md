@@ -69,7 +69,7 @@ free keys each add a few columns.
 
 | Key | What it adds | Where to get it |
 | --- | --- | --- |
-| `CENSUS_API_KEY` | No columns. It makes the ACS pull a few kilobytes instead of a few hundred megabytes. | https://api.census.gov/data/key_signup.html (instant, click the activation link in the email) |
+| `CENSUS_API_KEY` | The two ACS growth columns, 44 of the 108 points inside demand, and it makes the ACS pull a few kilobytes instead of a few hundred megabytes | https://api.census.gov/data/key_signup.html (instant, click the activation link in the email) |
 | `BLS_API_KEY` | County unemployment, 6% of the demand pillar | https://data.bls.gov/registrationEngine/ (instant, key by email) |
 | `HUD_API_KEY` | The Fair Market Rent cross-check columns, which are not scored | https://www.huduser.gov/portal/dataset/fmr-api.html (free account, generate a token on your account page) |
 
@@ -98,6 +98,16 @@ summary files. Both fill the same structure and the arithmetic
 (`census_acs.compute_metrics`) runs once, so the two cannot drift apart. The
 column naming differs between them, `B25003_E003` against `B25003_003E`, and
 that translation is the one place a divergence could hide, so a test pins it.
+
+There is one thing the keyless route cannot do. Comparing population and
+household counts across two ACS releases needs the releases not to overlap, so
+a 2020-2024 figure has to be set against 2015-2019. The table-based summary
+files do not go back that far, and the Data API does. A closer vintage is not a
+substitute: two five-year samples that share years are correlated, which damps
+the measured change and invalidates the margin of error test this tool runs on
+it, so both growth columns are reported MISSING rather than filled with a
+number that would look ordinary and be wrong. That is 44 of the 108 points
+inside the demand pillar, and it is the one concrete reason to add the key.
 
 Everything else runs without a key either way: the Census Gazetteer, the
 Building Permits Survey, the Population Estimates Program, BLS QCEW, Zillow
