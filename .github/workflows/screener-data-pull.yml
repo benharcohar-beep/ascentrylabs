@@ -4,10 +4,16 @@
 # the button, wait a few minutes, download the results from the Artifacts
 # section at the bottom of the run page. No Python and no terminal needed.
 #
-# It needs three free API keys, added once at
-#   Settings > Secrets and variables > Actions > New repository secret
-# named CENSUS_API_KEY, BLS_API_KEY and HUD_API_KEY. GitHub masks secret values
-# in logs. Never put a key in a file in this repository: it is public.
+# No API key is required. Census ACS, Census permits, Census population
+# estimates, QCEW employment and Zillow rents all serve this data
+# unauthenticated. Two optional free keys add columns: BLS_API_KEY for county
+# unemployment and HUD_API_KEY for the Fair Market Rent cross-check.
+# CENSUS_API_KEY is worth adding only because a CI runner shares its IP address
+# with other jobs, and Census meters the keyless allowance per IP.
+#
+# Add them at Settings > Secrets and variables > Actions > New repository
+# secret. GitHub masks secret values in logs. Never put a key in a file in this
+# repository: it is public.
 
 name: Submarket screener data pull
 
@@ -32,9 +38,9 @@ on:
         default: false
         type: boolean
       include_schools:
-        description: Also install geopandas for the school proxy columns (slower)
+        description: Install geopandas so the school proxy columns load (adds about a minute)
         required: false
-        default: false
+        default: true
         type: boolean
 
   # Monthly refresh, so the screen does not go stale. ACS, QCEW, ZORI and the
@@ -69,7 +75,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          if [ "${{ inputs.include_schools }}" = "true" ]; then
+          if [ "${{ inputs.include_schools }}" != "false" ]; then
             pip install -r requirements-optional.txt
           fi
 

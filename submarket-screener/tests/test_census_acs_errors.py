@@ -28,8 +28,16 @@ def test_invalid_key_is_named_as_a_key_problem():
 
 
 def test_missing_key_is_distinguished_from_an_invalid_one():
+    """A "Missing Key" page no longer means somebody forgot to set the key.
+
+    The screen deliberately runs keyless, so this page means the keyless
+    allowance ran out. On a CI runner the IP address is shared, so the requests
+    that used it up may not even be ours. Blaming an unset key would send the
+    reader to fix something that is not broken.
+    """
     msg = census_acs._explain_non_json(2024, "probe", MISSING)
-    assert "no key reached the API" in msg
+    assert "daily quota" in msg
+    assert "key_signup" in msg
     assert "rejected the key" not in msg
 
 
@@ -44,3 +52,34 @@ def test_a_plain_non_json_body_falls_through_to_the_raw_text():
     msg = census_acs._explain_non_json(2023, "probe", "error: something odd")
     assert "non-JSON body" in msg
     assert "something odd" in msg
+
+
+def test_the_key_parameter_is_omitted_entirely_when_there_is_no_key():
+    """Census must not be sent an empty key, it must be sent no key at all.
+
+    "key=" with nothing after it is not the same request as no key parameter.
+    The API treats the empty one as a supplied credential and rejects it, which
+    would put the whole demand pillar back behind a credential that the data
+    does not actually need.
+    """
+    sent = {}
+
+    class FakeCache:
+        def get(self, url, *, key, params, ttl_days):
+            sent.update(params)
+            raise AssertionError("stop here, the params are what is under test")
+
+    class FakeCtx:
+        cache = FakeCache()
+
+    for supplied, expected in (("", None), ("abc123", "abc123")):
+        sent.clear()
+        try:
+            census_acs._query(FakeCtx(), 2024, ["B01003_001E"],
+                              {"for": "state:55"}, supplied, "probe")
+        except AssertionError as exc:
+            if "stop here" not in str(exc):
+                raise
+        assert sent.get("key") == expected, f"with key={supplied!r}"
+        if expected is None:
+            assert "key" not in sent

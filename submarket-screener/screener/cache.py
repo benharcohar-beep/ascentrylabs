@@ -205,6 +205,18 @@ class Cache:
         return CachedResponse(resp.content, retrieved_at, full_url, False)
 
 
+def optional_key(env_name: str) -> str:
+    """Read a credential that the caller can do without.
+
+    Some hosts serve the same data with or without a key, and only meter you
+    differently. The Census API is the case that matters here: it answers
+    unauthenticated requests up to a published daily quota per IP address, so
+    demanding a key would turn a working screen into no screen at all. Sources
+    that genuinely cannot run without a credential keep using require_key.
+    """
+    return os.environ.get(env_name, "").strip()
+
+
 def require_key(env_name: str, how_to_get: str) -> str:
     value = os.environ.get(env_name, "").strip()
     if not value:

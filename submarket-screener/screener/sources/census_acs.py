@@ -29,6 +29,13 @@ acquisitions VP will catch.
 - Median household income is a place-wide figure and says nothing about the
   income of renter households specifically, which is what actually underwrites
   a rent roll.
+- The API key is optional, not required. Census serves this data
+  unauthenticated up to a daily request quota per IP address, and a key raises
+  that quota rather than unlocking anything. A screen of one market is a
+  handful of calls, so it runs keyless. Two cases still want a key: running
+  every market repeatedly in one day, and running on a shared IP address such
+  as a CI runner, where somebody else's requests count against the same quota.
+  The figures are identical either way.
 """
 from __future__ import annotations
 
@@ -36,7 +43,7 @@ import json
 import math
 from datetime import date
 
-from ..cache import FetchError, require_key
+from ..cache import FetchError, optional_key
 from ..context import Context
 from ..provenance import MetricSpec, Unit, Value, missing
 
@@ -143,8 +150,11 @@ def _explain_non_json(year: int, cache_key: str, text: str) -> str:
         )
     if "<title>missing key</title>" in lowered:
         return (
-            f"ACS {year}: no key reached the API. Check CENSUS_API_KEY is set in "
-            f".env, then rerun setup_keys.py. Get a free key at {KEY_SIGNUP}."
+            f"ACS {year}: the Census API is now demanding a key for this "
+            f"request, so the keyless allowance did not cover it. That usually "
+            f"means the daily quota for this IP address is used up, which on a "
+            f"shared runner can be somebody else's doing. {KEY_HELP} Then set "
+            f"it as CENSUS_API_KEY."
         )
     if "<html" in lowered[:400]:
         title = ""
@@ -168,7 +178,12 @@ def _query(ctx: Context, year: int, variables: list[str], geo_clause: dict, key:
     url = f"{BASE}/{year}/acs/acs5"
     params: dict[str, object] = {"get": ",".join(["NAME"] + variables)}
     params.update(geo_clause)
-    params["key"] = key
+    # The Census API serves this data unauthenticated up to a published daily
+    # quota per IP address. A key raises that quota, it does not unlock the
+    # data, so an absent key is not a reason to skip the largest pillar in the
+    # screen. The LIMITATIONS block at the top of this file has the detail.
+    if key:
+        params["key"] = key
     resp = ctx.cache.get(url, key=cache_key, params=params, ttl_days=90)
     text = resp.text.lstrip()
     if not text.startswith("["):
@@ -253,7 +268,15 @@ def find_latest_vintage(ctx: Context, key: str, max_back: int = 4) -> int:
 
 
 def collect(ctx: Context, units: list[Unit]) -> dict[str, dict[str, Value]]:
-    key = require_key("CENSUS_API_KEY", KEY_HELP)
+    key = optional_key("CENSUS_API_KEY")
+    if key:
+        ctx.log("ACS: using CENSUS_API_KEY.")
+    else:
+        ctx.log(
+            "ACS: no CENSUS_API_KEY, so running against the keyless allowance. "
+            "The figures are identical either way, a key only raises the daily "
+            "request quota. This market needs a handful of calls."
+        )
     latest_year = find_latest_vintage(ctx, key)
     prior_year = latest_year - 5          # non-overlapping five-year samples
 

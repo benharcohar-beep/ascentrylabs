@@ -149,19 +149,21 @@ def build(ctx: Context) -> dict:
     )
 
     if not acs_values and not pep_population:
-        # The population rule cannot run without ACS. The fallback still honours
+        # Both population sources are gone, which takes two independent
+        # failures now that PEP backs ACS up. The fallback still honours
         # always_include and always_exclude, because silently screening an
         # excluded municipality is worse than screening nothing, and it is
         # recorded in the bundle so the outputs can say the rule changed.
         ctx.log(
-            "WARNING: ACS returned nothing, so the shortlist could not be ranked "
-            "by population. Falling back to the closest municipalities by "
-            "distance. The population floor cannot be applied."
+            "WARNING: neither ACS nor the Census population estimates returned "
+            "anything, so the shortlist could not be ranked by population. "
+            "Falling back to the closest municipalities by distance. The "
+            "population floor cannot be applied."
         )
         shortlist_method = (
-            f"FALLBACK, ACS unavailable: closest {market.target_submarkets} "
-            f"municipalities by straight-line distance. The population floor "
-            f"was NOT applied."
+            f"FALLBACK, no population source available: closest "
+            f"{market.target_submarkets} municipalities by straight-line "
+            f"distance. The population floor was NOT applied."
         )
         candidates = [u for u in in_range if u.geoid not in excluded]
         forced_units = [u for u in candidates if u.geoid in forced]

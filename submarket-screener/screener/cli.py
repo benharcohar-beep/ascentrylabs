@@ -25,10 +25,18 @@ from .config import CACHE_DIR, OUTPUT_DIR, list_markets, load_market, load_weigh
 from .context import Context
 from .metrics import validate_weights
 
+# No key is required to run the screen. Each one either raises a rate limit or
+# adds a few columns, and the tool says which columns went MISSING and why. The
+# fourth field is what you actually lose without it.
 KEY_STATUS = [
-    ("CENSUS_API_KEY", "Census ACS", "https://api.census.gov/data/key_signup.html"),
-    ("BLS_API_KEY", "BLS LAUS", "https://data.bls.gov/registrationEngine/"),
-    ("HUD_API_KEY", "HUD Fair Market Rents", "https://www.huduser.gov/portal/dataset/fmr-api.html"),
+    ("CENSUS_API_KEY", "Census ACS", "https://api.census.gov/data/key_signup.html",
+     "nothing on a single market: Census serves ACS keyless up to a daily "
+     "quota per IP. Worth having for repeated runs or a shared IP."),
+    ("BLS_API_KEY", "BLS LAUS", "https://data.bls.gov/registrationEngine/",
+     "the county unemployment columns. QCEW employment needs no key."),
+    ("HUD_API_KEY", "HUD Fair Market Rents",
+     "https://www.huduser.gov/portal/dataset/fmr-api.html",
+     "the FMR cross-check columns. Zillow rents need no key."),
 ]
 
 
@@ -52,12 +60,12 @@ def cmd_check(args) -> int:
         print(f"  {key:<18} {market.name:<28} "
               f"{len(market.counties)} counties, {market.geo_type.replace('_', ' ')}")
 
-    print("\nAPI keys (all free):")
-    missing_any = False
-    for env, label, url in KEY_STATUS:
+    print("\nAPI keys (all free, none required):")
+    absent = []
+    for env, label, url, cost in KEY_STATUS:
         present = bool(os.environ.get(env, "").strip())
         if not present:
-            missing_any = True
+            absent.append((env, cost))
         print(f"  [{'x' if present else ' '}] {env:<16} {label:<24} {url}")
 
     print("\nWeights:")
@@ -73,11 +81,11 @@ def cmd_check(args) -> int:
         return 1
     print("\nweights.yml is consistent with the metrics the source modules produce.")
 
-    if missing_any:
-        print("\nAt least one key is missing. Add them to submarket-screener/.env "
-              "and rerun. fetch will stop with instructions if it needs one it "
-              "does not have.")
-        return 2
+    if absent:
+        print("\nThe screen runs without these. What each one is costing you:")
+        for env, cost in absent:
+            print(f"  {env}: {cost}")
+        print("Add any of them to submarket-screener/.env and rerun.")
     return 0
 
 
