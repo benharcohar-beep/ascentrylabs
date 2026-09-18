@@ -973,7 +973,28 @@ def collect(
                     hh = float(raw_hh)
                 except (TypeError, ValueError):
                     hh = None
-        if hh is None or hh <= 0:
+        if missing_years:
+            # A short window is the fourth case, and it is the dangerous one.
+            # The raw counts above stay as context with the note saying which
+            # years are absent, but the SCORED metrics must not go out as if
+            # they were a three year total. Supply pressure is scored low is
+            # good, so a permit office that failed to file for two of three
+            # years would otherwise look like a quiet, undersupplied submarket
+            # and climb the ranking on the strength of its own missing data.
+            short_reason = (
+                "permit records cover only "
+                + ", ".join(str(y) for y in sorted(agg.years_present))
+                + " of the "
+                + ", ".join(str(y) for y in years)
+                + " window, so a three year rate would understate supply"
+            )
+            cells["permits_5plus_3y_per_1k_hh"] = missing(
+                short_reason, source=SOURCE_NAME, vintage=vintage, url=", ".join(urls)
+            )
+            cells["permits_total_3y_per_1k_hh"] = missing(
+                short_reason, source=SOURCE_NAME, vintage=vintage, url=", ".join(urls)
+            )
+        elif hh is None or hh <= 0:
             hh_reason = "household base not available from ACS"
             cells["permits_5plus_3y_per_1k_hh"] = missing(
                 hh_reason, source=SOURCE_NAME, vintage=vintage, url=", ".join(urls)

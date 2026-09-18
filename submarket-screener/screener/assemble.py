@@ -124,15 +124,41 @@ def build(ctx: Context) -> dict:
             shortlist.append(unit)
     shortlist.sort(key=population_of, reverse=True)
 
+    shortlist_method = (
+        f"largest {market.target_submarkets} municipalities by ACS population, "
+        f"above {market.min_population:,}, within "
+        f"{market.max_distance_miles:.0f} miles of an employment centre"
+    )
+
     if not acs_values:
+        # The population rule cannot run without ACS. The fallback still honours
+        # always_include and always_exclude, because silently screening an
+        # excluded municipality is worse than screening nothing, and it is
+        # recorded in the bundle so the outputs can say the rule changed.
         ctx.log(
-            "WARNING: ACS returned nothing, so the shortlist could not be ranked by "
-            "population. Falling back to the closest municipalities by distance."
+            "WARNING: ACS returned nothing, so the shortlist could not be ranked "
+            "by population. Falling back to the closest municipalities by "
+            "distance. The population floor cannot be applied."
         )
-        shortlist = sorted(
-            in_range,
+        shortlist_method = (
+            f"FALLBACK, ACS unavailable: closest {market.target_submarkets} "
+            f"municipalities by straight-line distance. The population floor "
+            f"was NOT applied."
+        )
+        candidates = [u for u in in_range if u.geoid not in excluded]
+        forced_units = [u for u in candidates if u.geoid in forced]
+        rest = sorted(
+            (u for u in candidates if u.geoid not in forced),
             key=lambda u: distances[u.geoid]["miles_to_employment"].value,
-        )[: market.target_submarkets]
+        )
+        shortlist = (forced_units + rest)[: max(market.target_submarkets, len(forced_units))]
+
+    unreachable_forced = sorted(forced - {u.geoid for u in in_range})
+    if unreachable_forced:
+        ctx.log(
+            "WARNING: always_include GEOIDs outside the trade area filter, so "
+            "they were not screened: " + ", ".join(unreachable_forced)
+        )
 
     ctx.log(f"Shortlist: {len(shortlist)} submarkets")
     for unit in shortlist:
@@ -205,6 +231,8 @@ def build(ctx: Context) -> dict:
         "built_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "universe_size": len(universe),
         "in_range_size": len(in_range),
+        "shortlist_method": shortlist_method,
+        "always_include_not_screened": unreachable_forced,
         "units": [_unit_to_dict(u) for u in shortlist],
         "values": {
             geoid: {k: v.to_dict() for k, v in row.items()}

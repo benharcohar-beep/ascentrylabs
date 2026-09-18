@@ -993,7 +993,11 @@ def percentile_ranks(values: dict[str, float]) -> dict[str, float]:
     if n == 0:
         return {}
     if n == 1:
-        return {next(iter(values)): 50.0}
+        # One value carries no relative information. Publishing 50 would be
+        # inventing a figure, which is the one thing this project must never do.
+        # The caller turns an absent key into MISSING, which is the honest
+        # answer. screener/score.py does the same for n < 2.
+        return {}
     observed = list(values.values())
     out: dict[str, float] = {}
     for key, value in values.items():
@@ -1027,20 +1031,46 @@ def composite_index(
     frpl_ranks = percentile_ranks({k: -v for k, v in frpl_by_unit.items()})
     ratio_ranks = percentile_ranks({k: -v for k, v in ratio_by_unit.items()})
 
+    covered = set(frpl_by_unit) | set(ratio_by_unit)
+
+    # Every row in a scored column has to be the same measurement. An average
+    # of two percentile ranks regresses toward 50, while a single rank can sit
+    # at 5 or 95, so mixing the two shapes in one column and then ranking them
+    # against each other compares different things. Instead, the components
+    # used are the ones present for EVERY unit that has any school data at all,
+    # and a unit missing one of those drops to MISSING rather than being scored
+    # on a different basis from its neighbours.
+    common: list[str] = []
+    if covered and all(g in frpl_ranks for g in covered):
+        common.append("frpl")
+    if covered and all(g in ratio_ranks for g in covered):
+        common.append("ratio")
+
+    label = "+".join(common) if len(common) > 1 else (
+        f"{common[0]} only" if common else "none"
+    )
+
     out: dict[str, tuple[float | None, str]] = {}
-    for geoid in set(frpl_by_unit) | set(ratio_by_unit):
-        parts: list[float] = []
-        labels: list[str] = []
-        if geoid in frpl_ranks:
-            parts.append(frpl_ranks[geoid])
-            labels.append("frpl")
-        if geoid in ratio_ranks:
-            parts.append(ratio_ranks[geoid])
-            labels.append("ratio")
-        if not parts:
-            out[geoid] = (None, "none")
+    for geoid in covered:
+        if not common:
+            # Both components exist somewhere in the market but neither covers
+            # the whole set, so there is no basis every row shares.
+            have = [
+                name for name, ranks in (("frpl", frpl_ranks), ("ratio", ratio_ranks))
+                if geoid in ranks
+            ]
+            out[geoid] = (
+                None,
+                ("not scored, " + "+".join(have) + " available but not for every "
+                 "submarket in this market") if have else "none",
+            )
             continue
-        out[geoid] = (sum(parts) / len(parts), "+".join(labels) if len(labels) > 1 else f"{labels[0]} only")
+        parts = []
+        if "frpl" in common:
+            parts.append(frpl_ranks[geoid])
+        if "ratio" in common:
+            parts.append(ratio_ranks[geoid])
+        out[geoid] = (sum(parts) / len(parts), label)
     return out
 
 

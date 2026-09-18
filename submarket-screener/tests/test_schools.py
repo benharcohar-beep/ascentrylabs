@@ -233,7 +233,9 @@ def test_percentile_ranks_basics():
     tied = schools.percentile_ranks({"a": 1.0, "b": 1.0})
     assert tied == {"a": 50.0, "b": 50.0}
     # A single unit has nothing to rank against.
-    assert schools.percentile_ranks({"a": 9.0}) == {"a": 50.0}
+    # A single unit has nothing to rank against, so it gets no rank at all.
+    # Returning 50 here would be inventing a figure.
+    assert schools.percentile_ranks({"a": 9.0}) == {}
     assert schools.percentile_ranks({}) == {}
 
 
@@ -271,14 +273,33 @@ def test_composite_with_neither_component():
     assert schools.composite_index({}, {}) == {}
 
 
-def test_composite_ranks_only_across_units_that_have_the_component():
-    """A unit missing the ratio is not counted in the ratio ranking at all."""
+def test_composite_uses_only_components_every_unit_shares():
+    """Partial cover on one component drops that component for the whole column.
+
+    An average of two percentile ranks regresses toward 50, while a single rank
+    can sit at 5 or 95. Mixing the two shapes in one scored column and then
+    ranking them against each other compares different things, so the composite
+    uses only the components present for every unit that has any school data.
+    Here the ratio covers two units of three, so the whole column falls back to
+    FRPL alone rather than scoring 'a' on a different basis from 'c'.
+    """
     frpl = {"a": 0.10, "b": 0.20, "c": 0.30}
     ratio = {"a": 16.0, "b": 20.0}
     result = schools.composite_index(frpl, ratio)
-    # frpl ranked across three units, ratio across two.
-    assert result["a"] == (pytest.approx((83.33333333 + 75.0) / 2), "frpl+ratio")
+    assert result["a"] == (pytest.approx(83.33333333), "frpl only")
+    assert result["b"] == (pytest.approx(50.0), "frpl only")
     assert result["c"] == (pytest.approx(16.66666667), "frpl only")
+
+
+def test_composite_refuses_to_score_when_no_component_covers_everyone():
+    """Neither component covers the full set, so nothing shared exists to rank."""
+    frpl = {"a": 0.10, "b": 0.20}
+    ratio = {"c": 16.0, "d": 20.0}
+    result = schools.composite_index(frpl, ratio)
+    for geoid in ("a", "b", "c", "d"):
+        index, label = result[geoid]
+        assert index is None
+        assert "not scored" in label
 
 
 # --------------------------------------------------- geopandas absent degrades

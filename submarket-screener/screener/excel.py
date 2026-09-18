@@ -16,6 +16,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
 from .metrics import PILLARS, PILLAR_LABELS
+from .score import COVERAGE_WARN as COVERAGE_PENALTY_THRESHOLD
 
 HEADER_FILL = PatternFill("solid", fgColor="1F3864")
 PILLAR_FILL = PatternFill("solid", fgColor="D9E2F3")
@@ -84,8 +85,12 @@ def _write_raw(wb: Workbook, bundle: dict) -> dict[str, int]:
         cell.font = WHITE_BOLD
         cell.alignment = Alignment(wrap_text=True, vertical="bottom")
 
-    # Metadata rows. Source and vintage are taken from the first non-missing
-    # cell in the column, because every cell in a column comes from one source.
+    # Metadata rows. Source comes from the first cell that has one. Vintage is
+    # NOT assumed to be uniform: several columns legitimately carry different
+    # vintages per row (ZORI picks each submarket's own latest month, QCEW and
+    # LAUS probe back per county to the newest year that is not suppressed), so
+    # where a column mixes vintages the header says so rather than printing one
+    # row's vintage over the whole column.
     for r, row_label in enumerate(RAW_META_ROWS, start=2):
         lab = ws.cell(row=r, column=1, value=row_label)
         lab.font = SMALL_GREY
@@ -102,9 +107,21 @@ def _write_raw(wb: Workbook, bundle: dict) -> dict[str, int]:
                 sample = cell
                 if cell.get("value") is not None:
                     break
+        vintages = sorted({
+            (values.get(u["geoid"], {}).get(key) or {}).get("vintage", "")
+            for u in units
+            if (values.get(u["geoid"], {}).get(key) or {}).get("value") is not None
+        } - {""})
+        if len(vintages) > 1:
+            vintage_text = f"MIXED ({len(vintages)}): " + "; ".join(vintages)
+        elif vintages:
+            vintage_text = vintages[0]
+        else:
+            vintage_text = (sample or {}).get("vintage", "")
+
         meta = {
             "Source": (sample or {}).get("source", ""),
-            "Vintage": (sample or {}).get("vintage", ""),
+            "Vintage": vintage_text,
             "Retrieved": (sample or {}).get("retrieved_at", ""),
             "Source URL": (sample or {}).get("url", ""),
             "Direction": ("higher is better" if spec["higher_is_better"] else "lower is better")
@@ -169,6 +186,7 @@ def _write_scoring(wb: Workbook, bundle: dict, weights, raw_cols: dict[str, int]
     metric_keys = _ordered_metrics(specs)
     n = len(units)
     method = weights.scoring_method
+    min_metrics = max(1, int(weights.min_metrics_per_pillar))
 
     raw_first = RAW_DATA_START
     raw_last = RAW_DATA_START + n - 1
@@ -201,6 +219,7 @@ def _write_scoring(wb: Workbook, bundle: dict, weights, raw_cols: dict[str, int]
     ).font = BOLD
 
     # ---- table geometry
+    PILLAR_ROW = 8        # merged pillar band over each block of metric columns
     WEIGHT_ROW = 9        # metric and pillar weights, aligned with their columns
     GROUP_ROW = 10        # pillar grouping labels
     HEAD_ROW = 11         # metric labels
@@ -238,9 +257,16 @@ def _write_scoring(wb: Workbook, bundle: dict, weights, raw_cols: dict[str, int]
             ws.column_dimensions[get_column_letter(col)].width = 13
             col += 1
         pillar_metric_range[pillar] = (start_col, col - 1)
-        label_cell = ws.cell(row=GROUP_ROW, column=start_col)
-        # Put the pillar name in the group row of the first column of the block.
-        label_cell.value = PILLAR_LABELS[pillar] + " (" + label_cell.value + ")"
+        # The pillar name gets a merged band of its own above the metric
+        # columns, so it does not sit on top of the first metric's direction
+        # marker and make that column look mislabelled.
+        band = ws.cell(row=PILLAR_ROW, column=start_col, value=PILLAR_LABELS[pillar])
+        band.font = BOLD
+        band.fill = PILLAR_FILL
+        band.alignment = Alignment(horizontal="center")
+        if col - 1 > start_col:
+            ws.merge_cells(start_row=PILLAR_ROW, start_column=start_col,
+                           end_row=PILLAR_ROW, end_column=col - 1)
 
     # pillar score columns
     pillar_score_col: dict[str, int] = {}
@@ -282,6 +308,12 @@ def _write_scoring(wb: Workbook, bundle: dict, weights, raw_cols: dict[str, int]
             rc = get_column_letter(raw_cols[key])
             cell_ref = f"'Raw data'!{rc}{raw_row}"
             col_range = f"'Raw data'!${rc}${raw_first}:${rc}${raw_last}"
+            # A scored column can end up with a single number in it, when every
+            # other submarket is MISSING. PERCENTRANK.INC then divides by n-1=0
+            # and returns an error, and STDEV.P returns 0, which the old formula
+            # scored as 50. Both are wrong: a column with one value carries no
+            # relative information at all. COUNT guards it, and IFERROR catches
+            # anything else so one bad column can never blank the Ranking tab.
             if method == "zscore":
                 core = (
                     f"IF(STDEV.P({col_range})=0,50,"
@@ -292,7 +324,11 @@ def _write_scoring(wb: Workbook, bundle: dict, weights, raw_cols: dict[str, int]
                 core = f"PERCENTRANK.INC({col_range},{cell_ref})*100"
             if not specs[key]["higher_is_better"]:
                 core = f"100-({core})"
-            target = ws.cell(row=r, column=c, value=f'=IF(ISNUMBER({cell_ref}),{core},"")')
+            target = ws.cell(
+                row=r, column=c,
+                value=f'=IFERROR(IF(AND(ISNUMBER({cell_ref}),COUNT({col_range})>1),'
+                      f'{core},""),"")',
+            )
             target.number_format = "0.0"
             target.border = BOX
 
@@ -304,8 +340,13 @@ def _write_scoring(wb: Workbook, bundle: dict, weights, raw_cols: dict[str, int]
             # wrapper. N() would look tidier but N() does not accept an array in
             # Excel and returns #VALUE!, and --ISNUMBER() is not portable across
             # every calculation engine, so ISNUMBER()*1 is used for the divisor.
+            # COUNT enforces weights.yml's min_metrics_per_pillar here, so the
+            # workbook drops a thin pillar on the same rule the Python scorer
+            # uses. Without it the two disagree the moment that setting is
+            # raised above 1.
             formula = (
-                f'=IF(SUMPRODUCT(ISNUMBER({a})*1,{w})=0,"",'
+                f'=IF(OR(COUNT({a})<{min_metrics},'
+                f'SUMPRODUCT(ISNUMBER({a})*1,{w})=0),"",'
                 f"SUMPRODUCT({a},{w})/SUMPRODUCT(ISNUMBER({a})*1,{w}))"
             )
             c = ws.cell(row=r, column=pillar_score_col[pillar], value=formula)
@@ -331,8 +372,10 @@ def _write_scoring(wb: Workbook, bundle: dict, weights, raw_cols: dict[str, int]
             a = f"{get_column_letter(c0)}{r}:{get_column_letter(c1)}{r}"
             w = f"${get_column_letter(c0)}${WEIGHT_ROW}:${get_column_letter(c1)}${WEIGHT_ROW}"
             pw_cell = f"{get_column_letter(pillar_score_col[pillar])}${WEIGHT_ROW}"
+            score_cell = f"{get_column_letter(pillar_score_col[pillar])}{r}"
             cov_terms.append(
-                f"{pw_cell}*IFERROR(SUMPRODUCT(ISNUMBER({a})*1,{w})/SUM({w}),0)"
+                f'IF({score_cell}="",0,'
+                f"{pw_cell}*IFERROR(SUMPRODUCT(ISNUMBER({a})*1,{w})/SUM({w}),0))"
             )
         cov = ws.cell(
             row=r, column=coverage_col,
@@ -341,12 +384,18 @@ def _write_scoring(wb: Workbook, bundle: dict, weights, raw_cols: dict[str, int]
         cov.number_format = "0%"
         cov.border = BOX
 
-        # Tiny row-index nudge so LARGE and MATCH on the ranking tab cannot be
-        # confused by two submarkets scoring exactly the same.
+        # The sort key does two things. The tiny row-index nudge stops LARGE and
+        # MATCH being confused by two submarkets scoring exactly the same. The
+        # large penalty pushes any row below the coverage threshold beneath
+        # every row we could actually measure, which is the same rule
+        # screener/score.py applies, and it is what stops a submarket with one
+        # figure out of thirteen taking rank 1 with a score of 100.
+        tot_ref = f"{get_column_letter(total_score_col)}{r}"
+        cov_ref = f"{get_column_letter(coverage_col)}{r}"
         ws.cell(
             row=r, column=sortkey_col,
-            value=f'=IF({get_column_letter(total_score_col)}{r}="","",'
-                  f"{get_column_letter(total_score_col)}{r}+ROW()/1000000)",
+            value=f'=IF({tot_ref}="","",{tot_ref}+ROW()/1000000'
+                  f"-IF({cov_ref}<{COVERAGE_PENALTY_THRESHOLD},1000,0))",
         ).number_format = "0.000000"
 
     ws.column_dimensions["A"].width = 30
@@ -424,8 +473,13 @@ def _write_ranking(wb: Workbook, bundle: dict, layout: dict, explanation: list[s
         ws.cell(row=r, column=cov_col,
                 value=f'=IFERROR(INDEX({sheet}!${cov}${first}:${cov}${last},{match}),"")'
                 ).number_format = "0%"
-        ws.cell(row=r, column=cov_col + 1,
-                value=f'=IF({get_column_letter(1)}{r}<=3,"TOP 3","")').font = BOLD
+        cov_cell = f"{get_column_letter(cov_col)}{r}"
+        ws.cell(
+            row=r, column=cov_col + 1,
+            value=f'=IF({cov_cell}="","",'
+                  f'IF({cov_cell}<{COVERAGE_PENALTY_THRESHOLD},"thin data",'
+                  f'IF(A{r}<=3,"TOP 3","")))',
+        ).font = BOLD
         if rank <= 3:
             for c in range(1, cov_col + 2):
                 ws.cell(row=r, column=c).fill = TOP3_FILL

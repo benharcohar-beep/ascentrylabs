@@ -113,8 +113,12 @@ def _clean(raw) -> float | None:
     if int(num) in ACS_SENTINELS:
         return None
     # ACS publishes a margin of error of -555555555 for "estimate is controlled",
-    # already caught above. A negative count is never valid.
-    if num < 0 and not math.isclose(num, -1.0):
+    # already caught above. No ACS count, median or margin of error is ever
+    # legitimately negative, so anything still negative here is a code we do
+    # not recognise and must not be treated as a figure. Letting -1 through
+    # would be particularly bad: a margin of error of -1 squares to 1 and would
+    # make almost any change read as statistically significant.
+    if num < 0:
         return None
     return num
 

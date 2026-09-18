@@ -62,8 +62,12 @@ nearest employment centre; anything beyond `max_distance_miles` drops out.
 fifty municipalities cost the same as ten.
 
 **4. Pick the shortlist.** The `target_submarkets` largest survivors above
-`min_population`, plus anything in `always_include`. Selection is rule-based
-and reproducible, not hand-picked.
+`min_population`, plus anything in `always_include`, minus anything in
+`always_exclude`. Selection is rule-based and reproducible, not hand-picked. If
+ACS is unavailable the population rule cannot run and the tool falls back to the
+closest municipalities by distance; `always_include` and `always_exclude` are
+still honoured, and `raw.json` records which rule produced the set in
+`shortlist_method` so the run is never silently different.
 
 **5. Pull the rest for the shortlist**: rents, permits, county jobs, the school
 proxy, and your manual municipal attitude column.
@@ -139,18 +143,42 @@ add to 100%. Nothing is filled in with a zero or a group average.
 If a whole pillar has no data for a submarket, its weight is redistributed
 across the pillars that do.
 
-**Data coverage** reports what share of the intended weighting each submarket
-actually had data behind. A submarket scoring 80 on 45% coverage is not the
-same thing as one scoring 80 on 100% coverage, and the workbook, the one-pager
-and the app all show it.
+**Data coverage** reports what share of the intended weighting actually backed
+the score. A pillar that was dropped for thin data contributed nothing to the
+total, so it contributes nothing to coverage either.
+
+**Thin rows cannot win.** This is the trap the tool is most careful about. Every
+sub-score is relative and a missing pillar's weight is redistributed, so a
+submarket with one figure out of thirteen can score 100 on that one figure and
+take rank 1. It is a real number, but it is a ranking of different things. Any
+submarket whose coverage falls below 60% is therefore marked thin and ranked
+beneath every submarket that could be measured properly, in the Python scorer,
+in the workbook (through the sort key) and in the one-pager. It never gets a
+"TOP 3" badge, and if it still leads the explanation says so in the first two
+sentences.
 
 Default weights: Demand 30, Rent 25, Supply pressure 25, Location 10, Municipal
 10. They do not have to sum to 100; they are normalised at run time.
 
+`winsorize_pct` in `weights.yml` clips the top and bottom tail of a column back
+to the surviving extremes before scoring. It only applies to the `zscore`
+method, where one runaway value drags the mean and flattens everyone else. The
+raw figure in the workbook is untouched.
+
 The Python scorer and the workbook's live formulas are held to the same answer
-by a test (`tests/test_pipeline_end_to_end.py`) that recalculates the saved
-`.xlsx` with an independent formula engine and compares the ranking row by row,
-under both scoring methods. If they ever drift, the test fails.
+by tests in `tests/test_pipeline_end_to_end.py`, which recalculate the saved
+`.xlsx` with an independent formula engine and compare the ranking row by row.
+They cover both scoring methods, a raised `min_metrics_per_pillar`, a column
+with one number in it, an entirely empty column, and a starved row. If they
+ever drift, the tests fail.
+
+One gap in that check, stated because it matters: the test engine returns the
+mid-rank for a tied value in `PERCENTRANK.INC`, where Excel returns the lowest
+tied rank. `screener/score.py` implements Excel's behaviour and pins it in its
+own test, but the cross-engine comparison is run on tie-free data. County-level
+columns are identical for every submarket in a county by construction, so real
+runs do contain ties. If you want to be certain before an interview, put
+`=PERCENTRANK.INC({10,10,30,40},10)` in a cell; Excel should return 0.
 
 ---
 
@@ -240,12 +268,18 @@ Read this section before you show anyone the output.
 - This is the one to be most careful with. The Building Permits Survey reports
   by **permit-issuing place**. Many small municipalities do not issue their own
   permits; the county does. A jurisdiction that is genuinely building can show
-  zero. The tool distinguishes three cases: a reported zero (value 0, with a
-  note saying it was reported), a jurisdiction absent from the file
-  (MISSING, with the reason "not a permit-issuing place in BPS"), and a failed
-  download (MISSING, with the error). It also reports each county's total and
-  what share of it the screened jurisdictions actually capture, so you can see
-  how much permitting the screen is not seeing.
+  zero. The tool distinguishes four cases: a reported zero (value 0, with a
+  note saying it was reported), a jurisdiction absent from the file (MISSING,
+  "not a permit-issuing place in BPS"), a failed download (MISSING, with the
+  error), and a **short window**, where the jurisdiction filed in only one or
+  two of the three years. The last one matters because supply pressure is
+  scored low is good, so a permit office that failed to file would otherwise
+  look like a quiet, undersupplied submarket and climb the ranking on the
+  strength of its own missing data. The raw counts still appear as context with
+  the years listed; the scored per-1,000-household metrics go MISSING.
+- It also reports each county's total and what share of it the screened
+  jurisdictions actually capture, so you can see how much permitting the screen
+  is not seeing.
 - Permits are permits, not starts and not completions. Some never get built.
 
 **Schools**
@@ -260,6 +294,11 @@ Read this section before you show anyone the output.
   coarse bins that make small differences unusable.
 - A submarket is assigned the district containing its centroid. Large
   municipalities split across several districts get only one of them.
+- The composite uses only the components present for **every** submarket that
+  has any school data. An average of two percentile ranks regresses toward 50
+  while a single rank can sit at 5 or 95, so mixing the two shapes in one
+  scored column would compare different things. If neither component covers the
+  whole set, the column is not scored at all.
 - The lookup needs `geopandas`. Without it the school columns come through as
   MISSING rather than guessing.
 
@@ -268,6 +307,12 @@ Read this section before you show anyone the output.
 - All scores are relative to the other submarkets in the same market. A 100 on
   rent growth means best of this group, not good in absolute terms. Scores are
   not comparable across markets.
+- Some columns legitimately mix vintages across rows. ZORI takes each
+  submarket's own latest month, and QCEW and LAUS probe back per county to the
+  newest year that is not suppressed, so two counties can be compared over
+  slightly different windows. Where that happens the workbook's vintage header
+  says MIXED and lists them rather than printing one row's vintage over the
+  whole column.
 - Weighting is a judgement. That is why it lives in one editable file and one
   set of sliders.
 

@@ -89,7 +89,19 @@ def percentrank_inc(values: list[float], x: float) -> float | None:
     if n < 2:
         return None
     below = sum(1 for v in values if v < x)
-    return 100.0 * below / (n - 1)
+    fraction = below / (n - 1)
+    # Excel's PERCENTRANK.INC truncates to three significant digits by default,
+    # so 1/9 comes back as 0.111 and not 0.111111. Matched here so the workbook
+    # and this code agree to the last digit rather than to a tolerance.
+    return 100.0 * _truncate_significant(fraction, 3)
+
+
+def _truncate_significant(value: float, digits: int) -> float:
+    if value == 0:
+        return 0.0
+    exponent = math.floor(math.log10(abs(value)))
+    factor = 10 ** (digits - 1 - exponent)
+    return math.trunc(value * factor) / factor
 
 
 def zscore_points(values: list[float], x: float) -> float | None:
@@ -102,6 +114,24 @@ def zscore_points(values: list[float], x: float) -> float | None:
     if sd == 0:
         return Z_CENTRE
     return max(0.0, min(100.0, Z_CENTRE + Z_SCALE * (x - mean) / sd))
+
+
+def winsorize(values: list[float], pct: float) -> list[float]:
+    """Clip the top and bottom `pct` of a column back to the surviving extremes.
+
+    Only used by the zscore method, where one runaway value drags the mean and
+    the standard deviation and flattens everyone else. Clipping is not the same
+    as inventing: the clipped value is replaced by a value that really occurs in
+    the column, and the raw figure in the workbook is untouched.
+    """
+    if pct <= 0 or len(values) < 3:
+        return values
+    ordered = sorted(values)
+    k = int(len(ordered) * pct)
+    if k < 1:
+        return values
+    low, high = ordered[k], ordered[-1 - k]
+    return [min(max(v, low), high) for v in values]
 
 
 def _sub_score(method: str, values: list[float], x: float, higher_is_better: bool
@@ -145,7 +175,7 @@ def score_market(bundle: dict, weights, *, method: str | None = None,
                     col.append(float(cell["value"]))
                 except (TypeError, ValueError):
                     pass
-        columns[key] = col
+        columns[key] = winsorize(col, weights.winsorize_pct) if method == "zscore" else col
 
     total_pillar_weight = sum(w for w in pillar_w.values() if w > 0)
     results: list[UnitScore] = []
@@ -203,10 +233,13 @@ def score_market(bundle: dict, weights, *, method: str | None = None,
         else:
             total = None
 
-        # Coverage is the share of the INTENDED total weight that had data,
-        # counting partial coverage inside a pillar.
+        # Coverage is the share of the INTENDED total weight that actually
+        # backed the score. A pillar that was dropped for thin data contributed
+        # nothing to the total, so it must contribute nothing here either,
+        # otherwise coverage flatters exactly the rows it exists to catch.
         covered = sum(
-            ps.weight_used * ps.coverage for ps in pillars.values()
+            ps.weight_used * ps.coverage
+            for ps in pillars.values() if ps.score is not None
         )
         coverage = covered / total_pillar_weight if total_pillar_weight else 0.0
 
@@ -221,9 +254,20 @@ def score_market(bundle: dict, weights, *, method: str | None = None,
             )
         )
 
+    # Sort order, and why it is not simply by score. A submarket with one
+    # figure out of thirteen can score 100 on that one figure, because every
+    # sub-score is relative and a missing pillar's weight is redistributed. It
+    # would then rank first on 8% data coverage, and the one-pager would say so
+    # in a full sentence. So rows below COVERAGE_WARN are ranked among
+    # themselves, beneath every row we could actually measure. A ranking of
+    # different things is not a ranking.
     ranked = sorted(
         results,
-        key=lambda r: (r.total is None, -(r.total if r.total is not None else 0.0)),
+        key=lambda r: (
+            r.total is None,
+            r.thin_data,
+            -(r.total if r.total is not None else 0.0),
+        ),
     )
     for i, res in enumerate(ranked, start=1):
         res.rank = i if res.total is not None else None
@@ -299,6 +343,13 @@ def explain(bundle: dict, scores: list[UnitScore], top_n: int = 3) -> list[str]:
             f"of {pillar_means[pillar]:.0f}, and that is the first thing to test."
         )
 
+    if leader.thin_data:
+        lines.insert(
+            1,
+            f"Treat that with care: only {leader.coverage * 100:.0f}% of the "
+            f"intended weighting had a figure behind it for {leader.name}, so it "
+            f"leads a ranking it was not fully measured for."
+        )
     if leader.coverage < 1.0:
         lines.append(
             f"Data coverage for {leader.name} is {leader.coverage * 100:.0f}% of the "

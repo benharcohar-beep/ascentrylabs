@@ -668,6 +668,12 @@ def collect(ctx: Context, units: list[Unit]) -> dict[str, dict[str, Value]]:
     """
     out: dict[str, dict[str, Value]] = {unit.geoid: {} for unit in units}
 
+    # The HUD key is checked FIRST, before any work. It used to be checked after
+    # the ZORI pass, which meant a missing key for the cross-check source threw
+    # away the primary rent data that needs no key at all, and handed the rent
+    # pillar's whole weight to the other pillars. Fail before, not after.
+    token = require_key("HUD_API_KEY", HUD_KEY_HELP)
+
     # ---------------------------------------------------------------- ZORI
     weights_by_unit = {unit.geoid: _collapse_weights(unit.zctas) for unit in units}
     wanted = {zcta for pairs in weights_by_unit.values() for zcta, _ in pairs}
@@ -854,10 +860,7 @@ def collect(ctx: Context, units: list[Unit]) -> dict[str, dict[str, Value]]:
             )
 
     # ----------------------------------------------------------------- FMR
-    # The key is required even though ZORI needs none: the contract is that a
-    # missing free key stops the run with instructions rather than silently
-    # dropping the independent cross-check.
-    token = require_key("HUD_API_KEY", HUD_KEY_HELP)
+    # token was obtained at the top of this function, before any download.
 
     fmr_by_county: dict[str, dict[str, Any]] = {}
     for unit in units:

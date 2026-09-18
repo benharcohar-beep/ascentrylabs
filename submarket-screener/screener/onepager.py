@@ -14,6 +14,7 @@ import html
 from datetime import datetime, timezone
 from pathlib import Path
 
+from . import score as score_module
 from .metrics import PILLAR_LABELS
 
 CSS = """
@@ -32,6 +33,7 @@ th { text-align:left; font-weight:600; font-size:11px; text-transform:uppercase;
 td { padding:6px 8px; border-bottom:1px solid var(--line); }
 td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
 tr.top td { background:#eef7f2; font-weight:600; }
+tr.thin td { background:#fdf4f0; color:#8a6a5c; }
 .rank { width:34px; color:var(--muted); font-variant-numeric:tabular-nums; }
 .why li { margin-bottom:6px; }
 .grid { display:grid; grid-template-columns:1.25fr 1fr; gap:26px; align-items:start; }
@@ -125,7 +127,11 @@ def render(bundle: dict, ranked, explanation: list[str], weights, path: Path) ->
 
     rows = []
     for r in ranked:
-        cls = ' class="top"' if r.rank and r.rank <= 3 else ""
+        # A row below the coverage threshold is already sorted to the bottom by
+        # screener/score.py. Belt and braces: it never gets the top-three
+        # highlight either, even if every row in the market is thin.
+        top = bool(r.rank and r.rank <= 3 and not r.thin_data)
+        cls = ' class="top"' if top else (' class="thin"' if r.thin_data else "")
         cells = [f'<td class="rank">{r.rank or "-"}</td>',
                  f"<td>{html.escape(r.name)}</td>",
                  f'<td class="num">{"-" if r.total is None else f"{r.total:.1f}"}</td>']
@@ -135,7 +141,11 @@ def render(bundle: dict, ranked, explanation: list[str], weights, path: Path) ->
                 f'<td class="num">'
                 f'{"-" if ps is None or ps.score is None else f"{ps.score:.0f}"}</td>'
             )
-        cells.append(f'<td class="num">{r.coverage * 100:.0f}%</td>')
+        cells.append(
+            f'<td class="num">{r.coverage * 100:.0f}%'
+            + ('<br><span class="miss">thin</span>' if r.thin_data else "")
+            + "</td>"
+        )
         rows.append(f"<tr{cls}>{''.join(cells)}</tr>")
 
     headline_keys = [k for k in ("hh_cagr_5y", "renter_share", "zori_latest", "zori_yoy",
@@ -221,7 +231,11 @@ Weights: {weight_line}. Scoring: {weights.scoring_method}.</p>
 <h2>Sources</h2>
 <ul class="gaps">{source_list}</ul>
 
-<p class="foot">Trade area: {html.escape(market['trade_area_note'])}<br>
+<p class="foot">Submarkets whose data coverage falls below
+{int(score_module.COVERAGE_WARN * 100)}% of the intended weighting are marked
+thin and are ranked beneath every submarket that could be measured properly.
+A score built on two columns is not comparable with one built on thirteen.<br>
+Trade area: {html.escape(market['trade_area_note'])}<br>
 Geography choice: {html.escape(market['geo_type_reason'])}<br>
 This is a screen built from free public data. It says which municipalities are
 worth a week of work. It is not an underwriting and it is not a site selection.</p>
