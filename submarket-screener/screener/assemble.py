@@ -29,7 +29,7 @@ from .cache import FetchError, MissingCredential
 from .context import Context
 from .metrics import registry
 from .provenance import Unit, Value, missing
-from .sources import census_gazetteer, census_relationship, geo
+from .sources import census_gazetteer, census_pep, census_relationship, geo
 
 
 def _unit_to_dict(unit: Unit) -> dict:
@@ -96,15 +96,31 @@ def build(ctx: Context) -> dict:
         f"{len(in_range)} of {len(universe)}"
     )
 
-    # ------------------------------------------------------------------- 3. ACS
+    # --------------------------------------------- 3. population, then ACS
+    # PEP first, deliberately. It needs no API key, so the shortlist can always
+    # be ranked by population even when ACS is unavailable, and the permits
+    # metric always has a denominator. ACS is still the better source where it
+    # loads, and its household figures take precedence for the shortlist.
+    pep_values = _run_source(ctx, "census_pep", census_pep.collect, in_range, failures)
+    pep_population = census_pep.population_by_geoid(pep_values)
+
     from .sources import census_acs
 
     acs_values = _run_source(ctx, "census_acs", census_acs.collect, in_range, failures)
 
     # -------------------------------------------------------------- 4. shortlist
     def population_of(unit: Unit) -> float:
+        """ACS population where available, otherwise the keyless estimate.
+
+        Ranking by population is the selection rule. Before PEP existed, a
+        missing Census key collapsed this to ranking by distance, which is a
+        different screen producing a different shortlist.
+        """
         v = acs_values.get(unit.geoid, {}).get("population")
-        return float(v.value) if v is not None and not v.is_missing else -1.0
+        if v is not None and not v.is_missing:
+            return float(v.value)
+        estimate = pep_population.get(unit.geoid)
+        return float(estimate) if estimate is not None else -1.0
 
     forced = set(market.always_include)
     excluded = set(market.always_exclude)
@@ -124,13 +140,15 @@ def build(ctx: Context) -> dict:
             shortlist.append(unit)
     shortlist.sort(key=population_of, reverse=True)
 
+    ranking_source = "ACS" if acs_values else "Census population estimates"
     shortlist_method = (
-        f"largest {market.target_submarkets} municipalities by ACS population, "
+        f"largest {market.target_submarkets} municipalities by "
+        f"{ranking_source} population, "
         f"above {market.min_population:,}, within "
         f"{market.max_distance_miles:.0f} miles of an employment centre"
     )
 
-    if not acs_values:
+    if not acs_values and not pep_population:
         # The population rule cannot run without ACS. The fallback still honours
         # always_include and always_exclude, because silently screening an
         # excluded municipality is worse than screening nothing, and it is
@@ -169,7 +187,9 @@ def build(ctx: Context) -> dict:
     provenance["zcta_crosswalk"] = census_relationship.attach_zctas(ctx, shortlist)
 
     values: dict[str, dict[str, Value]] = {}
-    _merge(values, {g: v for g, v in acs_values.items() if g in {u.geoid for u in shortlist}})
+    short_geoids = {u.geoid for u in shortlist}
+    _merge(values, {g: v for g, v in pep_values.items() if g in short_geoids})
+    _merge(values, {g: v for g, v in acs_values.items() if g in short_geoids})
     _merge(values, geo.collect(ctx, shortlist))
 
     households = {
@@ -184,7 +204,7 @@ def build(ctx: Context) -> dict:
     optional_sources = [
         ("bls_jobs", {}),
         ("rents", {}),
-        ("census_bps", {"households": households}),
+        ("census_bps", {"households": households, "population": pep_population}),
         ("schools", {}),
     ]
     for name, kwargs in optional_sources:

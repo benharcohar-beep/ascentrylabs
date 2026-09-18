@@ -844,12 +844,30 @@ def _values_for_county(fips5: str, county_name: str, qcew: _CountyQcew,
     return out
 
 
+# Every column that comes from LAUS rather than QCEW, so a missing key can be
+# reported against exactly those and no others.
+LAUS_COLUMN_KEYS = (
+    "county_unemployment_rate",
+    "county_labor_force",
+    "county_unemployment_year",
+)
+
+
 def collect(ctx: Context, units: list[Unit]) -> dict[str, dict[str, Value]]:
     """Return {unit.geoid: {metric_key: Value}} for every unit passed in."""
-    # Fail fast and loudly if the free key is absent. There is no unauthenticated
-    # v2 endpoint that returns the same numbers, and the v1 endpoint has a
-    # different series universe, so degrading is not an option.
-    api_key = cache_module.require_key(ENV_BLS_KEY, HOW_TO_GET_KEY)
+    # Only LAUS needs a key. QCEW is an open CSV download, and it carries the
+    # employment level and growth columns, which are the ones that actually
+    # move the ranking. Requiring the key up front took QCEW down with it, so
+    # the two now fail independently: without BLS_API_KEY the unemployment rate
+    # and labour force columns go MISSING and employment growth still loads.
+    api_key = ""
+    laus_credential_error = ""
+    try:
+        api_key = cache_module.require_key(ENV_BLS_KEY, HOW_TO_GET_KEY)
+    except cache_module.MissingCredential as exc:
+        laus_credential_error = str(exc).splitlines()[0]
+        ctx.log("bls_jobs: no BLS key, so the unemployment columns will be "
+                "MISSING. QCEW employment needs no key and still loads.")
 
     # Unique counties, in first seen order so the log reads predictably.
     county_names: dict[str, str] = {}
@@ -864,12 +882,15 @@ def collect(ctx: Context, units: list[Unit]) -> dict[str, dict[str, Value]]:
         ctx.log(f"QCEW annual employment for county {fips5}")
         qcew_by_county[fips5] = _collect_county_qcew(ctx, fips5)
 
-    if county_fips:
+    if county_fips and not laus_credential_error:
         ctx.log(
             f"LAUS annual averages for {len(county_fips)} county/counties "
             f"({2 * len(county_fips)} series)"
         )
-    laus_by_county = _collect_county_laus(ctx, county_fips, api_key)
+    if laus_credential_error:
+        laus_by_county = {}
+    else:
+        laus_by_county = _collect_county_laus(ctx, county_fips, api_key)
 
     # Build each county's columns once, then hand the same figures to every
     # submarket in that county. This is the whole caveat in one line of code.
@@ -881,6 +902,16 @@ def collect(ctx: Context, units: list[Unit]) -> dict[str, dict[str, Value]]:
             qcew_by_county[fips5],
             laus_by_county.get(fips5, _CountyLaus()),
         )
+
+    # Without a key the LAUS columns are MISSING for a specific, fixable
+    # reason, and saying "no annual average observation" would send the reader
+    # looking for a data problem that does not exist.
+    if laus_credential_error:
+        for values in per_county.values():
+            for key in LAUS_COLUMN_KEYS:
+                cell = values.get(key)
+                if cell is not None and cell.is_missing:
+                    cell.missing_reason = laus_credential_error
 
     out: dict[str, dict[str, Value]] = {}
     for unit in units:

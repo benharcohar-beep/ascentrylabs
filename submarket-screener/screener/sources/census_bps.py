@@ -99,6 +99,20 @@ METRICS: list[MetricSpec] = [
             "years, per 1,000 households."
         ),
     ),
+    MetricSpec(
+        "permits_5plus_3y_per_10k_pop",
+        "5+ unit permits per 10k population, 3yr",
+        "supply",
+        higher_is_better=False,
+        unit="units",
+        decimals=1,
+        description=(
+            "The same permits over a population denominator rather than a "
+            "household one. A different measure, not a substitute: it is here "
+            "because population needs no API key, so the supply pillar still "
+            "works when ACS is unavailable."
+        ),
+    ),
 ]
 
 CONTEXT_COLUMNS: list[MetricSpec] = [
@@ -750,6 +764,7 @@ def collect(
     ctx: Context,
     units: list[Unit],
     households: dict[str, float] | None = None,
+    population: dict[str, float] | None = None,
 ) -> dict[str, dict[str, Value]]:
     """Return {geoid: {metric_key: Value}} for every unit passed in.
 
@@ -1052,6 +1067,9 @@ def collect(
             cells["permits_total_3y_per_1k_hh"] = missing(
                 never_reason, source=SOURCE_NAME, vintage=vintage, url=", ".join(urls)
             )
+            cells["permits_5plus_3y_per_10k_pop"] = missing(
+                never_reason, source=SOURCE_NAME, vintage=vintage, url=", ".join(urls)
+            )
         elif missing_years:
             # A short window is the fourth case, and it is the dangerous one.
             # The raw counts above stay as context with the note saying which
@@ -1073,6 +1091,34 @@ def collect(
             cells["permits_total_3y_per_1k_hh"] = missing(
                 short_reason, source=SOURCE_NAME, vintage=vintage, url=", ".join(urls)
             )
+            cells["permits_5plus_3y_per_10k_pop"] = missing(
+                short_reason, source=SOURCE_NAME, vintage=vintage, url=", ".join(urls)
+            )
+        pop = None
+        if population:
+            raw_pop = population.get(u.geoid)
+            if raw_pop is not None:
+                try:
+                    pop = float(raw_pop)
+                except (TypeError, ValueError):
+                    pop = None
+        if missing_years or agg.never_reported:
+            pass  # handled by the branches below, which also cover this metric
+        elif pop is None or pop <= 0:
+            cells["permits_5plus_3y_per_10k_pop"] = missing(
+                "population not available", source=SOURCE_NAME, vintage=vintage,
+                url=", ".join(urls),
+            )
+        else:
+            cells["permits_5plus_3y_per_10k_pop"] = _value(
+                agg.units_5plus / (pop / 10000.0),
+                urls=urls, retrieved_at=retrieved, vintage=vintage,
+                notes=notes + f" Denominator: {pop:,.0f} residents from the "
+                              f"Census population estimates.",
+            )
+
+        if missing_years or agg.never_reported:
+            pass
         elif hh is None or hh <= 0:
             hh_reason = "household base not available from ACS"
             cells["permits_5plus_3y_per_1k_hh"] = missing(

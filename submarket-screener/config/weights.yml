@@ -26,6 +26,7 @@ metrics:
   age_20_34_share: 10
   county_emp_cagr_3y: 12          # county level, same for every submarket in a county
   county_unemployment_rate: 6     # county level, lower is better
+  pop_cagr_pep: 8                 # Census population estimates, needs no API key
 
   # --- rent ---
   zori_latest: 40
@@ -33,8 +34,13 @@ metrics:
   zori_cagr_3y: 20
 
   # --- supply ---
-  permits_5plus_3y_per_1k_hh: 70
-  permits_total_3y_per_1k_hh: 30
+  permits_5plus_3y_per_1k_hh: 55
+  permits_total_3y_per_1k_hh: 25
+  # Same permits over a population denominator rather than a household one.
+  # It is a different measure, not a substitute, so it has its own name and its
+  # own weight. It matters because population needs no API key: without it the
+  # whole supply pillar goes MISSING when ACS is unavailable.
+  permits_5plus_3y_per_10k_pop: 20
 
   # --- location ---
   miles_to_employment: 60

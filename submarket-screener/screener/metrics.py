@@ -14,6 +14,7 @@ from .provenance import MetricSpec
 # the workbook.
 SOURCE_MODULES = [
     "census_acs",
+    "census_pep",
     "bls_jobs",
     "rents",
     "census_bps",
