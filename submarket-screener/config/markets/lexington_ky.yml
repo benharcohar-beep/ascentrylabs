@@ -1,0 +1,40 @@
+key: lexington_ky
+name: Lexington, Kentucky
+short_name: Lexington
+states: ["21"]
+
+trade_area_note: >
+  Operator-defined trade area. Fayette County core plus the inner Bluegrass
+  counties. Verify against the current OMB Lexington-Fayette, KY MSA
+  delineation before calling this "the MSA".
+counties:
+  - {fips: "21067", name: "Fayette County"}
+  - {fips: "21113", name: "Jessamine County"}
+  - {fips: "21209", name: "Scott County"}
+  - {fips: "21239", name: "Woodford County"}
+  - {fips: "21049", name: "Clark County"}
+  - {fips: "21017", name: "Bourbon County"}
+
+geo_type: place
+geo_type_reason: >
+  Kentucky minor civil divisions are non-functional statistical divisions with
+  no government, so they cannot issue permits or set policy. Incorporated
+  Census places (Nicholasville, Georgetown, Versailles and so on) are the real
+  jurisdictions. Unincorporated county land is therefore outside this screen,
+  which is a genuine coverage gap and is flagged in the README.
+
+employment_centers:
+  - name: Downtown Lexington
+    lat: 38.0406
+    lon: -84.5037
+    note: Operator-set reference point for the CBD. Verify on a map.
+
+min_population: 2500
+max_distance_miles: 35
+target_submarkets: 10
+always_include: []
+always_exclude: []
+
+notes: >
+  Continental broke ground on Springs at Polo Club (Lexington) and Springs at
+  Colts Run (Nicholasville, Jessamine County) in 2025.

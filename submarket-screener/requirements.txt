@@ -1,0 +1,22 @@
+# Core
+pandas>=2.2
+numpy>=1.26
+requests>=2.32
+PyYAML>=6.0
+python-dotenv>=1.0
+
+# Excel output (live formulas)
+openpyxl>=3.1
+
+# One-pager HTML + charts
+Jinja2>=3.1
+matplotlib>=3.8
+
+# Interview demo
+streamlit>=1.38
+
+# Optional: school-district point-in-polygon lookup.
+# If this is not installed the school proxy degrades to MISSING rather than guessing.
+geopandas>=1.0
+shapely>=2.0
+pyogrio>=0.9

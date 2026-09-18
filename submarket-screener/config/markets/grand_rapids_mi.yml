@@ -1,0 +1,40 @@
+key: grand_rapids_mi
+name: Grand Rapids, Michigan
+short_name: Grand Rapids
+states: ["26"]
+
+trade_area_note: >
+  Operator-defined trade area. Kent County core plus Ottawa, Ionia, Barry and
+  Montcalm. Verify against the current OMB Grand Rapids-Wyoming-Kentwood, MI
+  MSA delineation before describing this as "the MSA"; county membership has
+  changed across delineation vintages.
+counties:
+  - {fips: "26081", name: "Kent County"}
+  - {fips: "26139", name: "Ottawa County"}
+  - {fips: "26067", name: "Ionia County"}
+  - {fips: "26015", name: "Barry County"}
+  - {fips: "26117", name: "Montcalm County"}
+
+geo_type: county_subdivision
+geo_type_reason: >
+  Michigan townships and cities cover the state completely and are the zoning
+  and permitting authority. Gaines Township, where Continental's fifth Grand
+  Rapids community broke ground, is a township and not a Census place, so a
+  place-based screen would miss it entirely.
+
+employment_centers:
+  - name: Downtown Grand Rapids
+    lat: 42.9634
+    lon: -85.6681
+    note: Operator-set reference point for the CBD. Verify on a map.
+
+min_population: 2500
+max_distance_miles: 35
+target_submarkets: 12
+always_include: []
+always_exclude: []
+
+notes: >
+  Continental described Authentix Gaines (336 homes, Gaines Township) as its
+  fifth community in this market, so the screen has five revealed preferences
+  to check itself against.

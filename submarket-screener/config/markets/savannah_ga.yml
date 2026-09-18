@@ -1,0 +1,47 @@
+key: savannah_ga
+name: Savannah, Georgia
+short_name: Savannah
+states: ["13"]
+
+trade_area_note: >
+  Operator-defined trade area. Chatham County core plus Effingham and Bryan.
+  Bulloch County is deliberately excluded even though the Hyundai plant
+  workforce reaches it, because it is a separate micropolitan area with its own
+  rent dynamics. Verify against the current OMB Savannah, GA MSA delineation.
+counties:
+  - {fips: "13051", name: "Chatham County"}
+  - {fips: "13103", name: "Effingham County"}
+  - {fips: "13029", name: "Bryan County"}
+
+geo_type: place
+geo_type_reason: >
+  Georgia minor civil divisions are non-functional. Incorporated places
+  (Port Wentworth, Pooler, Rincon, Richmond Hill) are the permitting and
+  zoning authorities. Unincorporated county land is outside this screen, which
+  matters more in Savannah than in the Midwest markets because a large share
+  of new rooftops sit in unincorporated Chatham and Bryan. Flagged in the
+  README as the single biggest coverage limitation of this market.
+
+employment_centers:
+  - name: Downtown Savannah
+    lat: 32.0809
+    lon: -81.0912
+    note: Operator-set reference point for the CBD. Verify on a map.
+  - name: Port of Savannah, Garden City Terminal (approximate)
+    lat: 32.1300
+    lon: -81.1500
+    note: >
+      Operator-set approximate reference point for the port and the logistics
+      employment cluster along SR 21 and I-95. This coordinate is approximate.
+      Confirm it on a map before you present a distance figure that depends on it.
+
+min_population: 2000
+max_distance_miles: 35
+target_submarkets: 10
+always_include: []
+always_exclude: []
+
+notes: >
+  Continental broke ground on Springs at Port Wentworth (240 homes) in Q4 2025.
+  The interesting question in this market is whether demand from the Hyundai
+  Metaplant is already fully priced into permits.
