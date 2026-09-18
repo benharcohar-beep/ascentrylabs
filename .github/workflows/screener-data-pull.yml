@@ -26,11 +26,11 @@ on:
         type: choice
         options: [madison_wi, grand_rapids_mi, lexington_ky, savannah_ga, all]
       mode:
-        description: run = fetch and build outputs. diagnose = report what each source actually returns.
+        description: run = fetch and build outputs. diagnose = report what each source returns. probe = report what the ACS summary files look like.
         required: true
         default: run
         type: choice
-        options: [run, diagnose]
+        options: [run, diagnose, probe]
       refresh:
         description: Ignore the cache and download everything again
         required: false
@@ -103,11 +103,23 @@ jobs:
           HUD_API_KEY: ${{ secrets.HUD_API_KEY }}
         run: python diagnose.py 2>&1 | tee ../diagnose-log.txt
 
+      # Reads the layout of a published file set and prints it, so a source
+      # module can be written against what is actually there rather than
+      # against a guess. That is how the Building Permits reader was got right
+      # after two wrong attempts. Downloads only the first kilobyte of each file.
+      - name: Probe the ACS summary files
+        if: ${{ inputs.mode == 'probe' }}
+        run: python tools/probe_acs_summary_file.py 2>&1 | tee ../probe-log.txt
+
       # Not `set -e` guarded: a source that fails is a MISSING column, not a
       # failed run, and the outputs are still worth downloading. The log says
       # what failed and why.
+      #
+      # The condition is written as two "not"s rather than == 'run' because the
+      # monthly scheduled trigger passes no inputs at all, so an equality test
+      # would silently stop the schedule from ever running the screen.
       - name: Run the screen
-        if: ${{ inputs.mode != 'diagnose' }}
+        if: ${{ inputs.mode != 'diagnose' && inputs.mode != 'probe' }}
         env:
           CENSUS_API_KEY: ${{ secrets.CENSUS_API_KEY }}
           BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
@@ -128,7 +140,7 @@ jobs:
       # what. This lists it column by column with the recorded reason, so the
       # run log is enough to work out what to fix next.
       - name: Column coverage
-        if: always()
+        if: ${{ always() && inputs.mode != 'probe' }}
         run: |
           TARGET="--market ${{ inputs.market }}"
           if [ "${{ inputs.market }}" = "all" ] || [ -z "${{ inputs.market }}" ]; then
@@ -143,6 +155,7 @@ jobs:
           mkdir -p output
           cp ../run-log.txt output/ 2>/dev/null || true
           cp ../coverage-log.txt output/ 2>/dev/null || true
+          cp ../probe-log.txt output/ 2>/dev/null || true
           # The run creates a row per shortlisted submarket in this file for
           # the manual municipal attitude column. On a cloud run it is written
           # inside the runner and thrown away with it, so nobody ever sees the
