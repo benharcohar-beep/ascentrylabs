@@ -238,9 +238,31 @@ def fetch_maps(ctx, units: list[Unit]):
         ctx.log(f"ACS summary file: prior vintage {prior_year} loaded "
                 f"({len(prior):,} geographies)")
     except FetchError as exc:
-        prior_error = str(exc)
-        ctx.log(f"WARNING: the prior ACS summary file vintage {prior_year} did not "
-                f"load, so the growth columns will be MISSING: {exc}")
+        # The table-based summary file layout does not go back as far as the
+        # Data API does. When the non-overlapping prior vintage is not
+        # published in this layout, the growth columns are reported MISSING
+        # rather than computed against a vintage that overlaps the latest one.
+        #
+        # That is not fussiness. Two 5-year samples sharing years are strongly
+        # correlated, so the difference between them is damped, and the margin
+        # of error test this tool runs on that difference (root of the sum of
+        # squares) assumes independence and is simply wrong for overlapping
+        # samples. It would report a growth rate that understates the truth and
+        # a significance verdict that means nothing, both looking perfectly
+        # ordinary in the workbook. Census's own guidance is to compare
+        # non-overlapping releases.
+        prior_error = (
+            f"the {prior_year} ACS summary file, which is the non-overlapping "
+            f"prior vintage for {latest_year}, is not published in the "
+            f"table-based layout. A closer vintage would overlap the {latest_year} "
+            f"sample, which damps the growth rate and invalidates the margin of "
+            f"error test, so no growth figure is given rather than a misleading "
+            f"one. The Data API serves older vintages: set CENSUS_API_KEY to get "
+            f"these two columns back. Underlying error: {exc}"
+        )
+        ctx.log(f"WARNING: no non-overlapping prior vintage ({prior_year}) in the "
+                f"summary files, so the two growth columns will be MISSING. "
+                f"Everything else in the demand pillar is unaffected.")
 
     # Deliberately NOT folded into prior_error. That string becomes the missing
     # reason on the two growth columns, and the age table has nothing to do

@@ -215,9 +215,20 @@ def cmd_verify(args) -> int:
     #VALUE! over a range, which blanked every pillar score and the whole
     ranking tab while the Python output looked perfect.
 
-    The test suite checks this against fixtures. This checks it against the
-    workbook actually produced from real data, where the awkward shapes live:
-    columns that are entirely missing, single valued columns, thin rows.
+    One wrinkle, and it matters, because taking it the wrong way round would
+    mean breaking a correct workbook to satisfy a faulty oracle. The `formulas`
+    package does not implement PERCENTRANK.INC the way Excel does for tied
+    values. Excel returns the rank of the lowest tied entry; `formulas` returns
+    a mid-rank. For [0, 0, 0, 12.5, 30, 45.7] Excel gives 0 for each zero and
+    `formulas` gives 20. screener/score.py implements Excel's rule, so where a
+    column has ties the engine reads HIGHER than both Excel and Python, and
+    every total shifts with it.
+
+    Real data is full of ties: any municipality that permitted no multifamily
+    over the window sits at zero alongside the others. So a difference is only
+    a defect when the columns behind it have no ties. What is checked
+    unconditionally is that every formula evaluates to a number, which is the
+    class of failure that actually happened.
     """
     try:
         import formulas  # noqa: PLC0415
@@ -244,6 +255,27 @@ def cmd_verify(args) -> int:
             problems += 1
             continue
 
+        # Which scored columns hold tied values, and so cannot be compared
+        # against this engine.
+        tied: dict[str, int] = {}
+        specs, values, units = bundle["specs"], bundle["values"], bundle["units"]
+        for name, spec in specs.items():
+            if not spec.get("scored", True) or not weights.metrics.get(name):
+                continue
+            seen: list[float] = []
+            for unit in units:
+                cell = values.get(unit["geoid"], {}).get(name) or {}
+                raw = cell.get("value")
+                if raw is None:
+                    continue
+                try:
+                    seen.append(float(raw))
+                except (TypeError, ValueError):
+                    continue
+            duplicates = len(seen) - len(set(seen))
+            if duplicates:
+                tied[name] = duplicates
+
         print(f"\n{bundle['market']['name']}: recalculating {path.name} with an "
               f"independent engine")
         model = formulas.ExcelModel().loads(str(path)).finish()
@@ -257,33 +289,67 @@ def cmd_verify(args) -> int:
             except (AttributeError, IndexError, TypeError):
                 return value
 
-        mismatches = 0
+        # 1. The unconditional check. Ties do not affect it.
+        blank_or_error = []
         for i, result in enumerate(ranked):
-            row = 6 + i                      # the ranking table starts on row 6
-            name = str(cell(f"B{row}")).strip()
-            if name != result.name:
-                print(f"    MISMATCH row {row}: workbook {name!r}, Python "
-                      f"{result.name!r}")
-                mismatches += 1
+            row = 6 + i
+            raw = cell(f"C{row}")
+            text = str(raw).strip()
+            if result.total is None:
                 continue
+            if text == "" or text.startswith("#") or raw is None:
+                blank_or_error.append((row, text or "blank"))
+        if blank_or_error:
+            print(f"  {len(blank_or_error)} of the {len(ranked)} total cells do not "
+                  f"evaluate to a number. This is the failure mode that matters: "
+                  f"the workbook would be empty where the one pager has figures.")
+            for row, what in blank_or_error[:5]:
+                print(f"    row {row}: {what}")
+            problems += 1
+        else:
+            print(f"  every one of the {len(ranked)} ranking total cells evaluates "
+                  f"to a number, no errors and no blanks.")
+
+        # 2. The comparison, valid only where nothing is tied.
+        differences = []
+        for i, result in enumerate(ranked):
+            row = 6 + i
+            name = str(cell(f"B{row}")).strip()
             try:
                 total = float(cell(f"C{row}"))
             except (TypeError, ValueError):
                 total = None
-            expected = result.total
-            if expected is None:
-                continue
-            if total is None or abs(total - expected) > 0.05:
-                print(f"    MISMATCH {result.name}: workbook total {total!r}, "
-                      f"Python {expected:.2f}")
-                mismatches += 1
-        if mismatches:
-            print(f"  {mismatches} cells disagree. The workbook would contradict "
-                  f"the one pager in front of an interviewer.")
-            problems += 1
+            if name != result.name:
+                differences.append(f"row {row}: workbook {name!r}, Python "
+                                   f"{result.name!r}")
+            elif result.total is not None and (
+                    total is None or abs(total - result.total) > 0.05):
+                differences.append(f"{result.name}: workbook {total}, Python "
+                                   f"{result.total:.2f}")
+
+        if not differences:
+            print("  and every name and total matches the Python scorer exactly.")
+        elif tied:
+            worst = sorted(tied.items(), key=lambda kv: -kv[1])[:3]
+            print(f"  {len(differences)} rows differ from the Python scorer, which "
+                  f"is expected here and is not a workbook defect.")
+            print(f"  {len(tied)} scored columns contain tied values, for instance "
+                  + ", ".join(f"{n} ({d} repeats)" for n, d in worst) + ".")
+            print("  Excel ranks a tie at the lowest tied position and this engine "
+                  "uses a mid-rank, so it reads tied rows higher and every total "
+                  "moves with them. score.py implements Excel's rule, so the "
+                  "workbook is right and the engine is the approximation.")
+            print("  Example: for [0, 0, 0, 12.5, 30, 45.7] Excel scores each zero "
+                  "0 and this engine scores it 20.")
+            for line in differences[:4]:
+                print(f"    {line}")
         else:
-            print(f"  every one of the {len(ranked)} ranking rows agrees with the "
-                  f"Python scorer, name and total.")
+            print(f"  {len(differences)} rows disagree with the Python scorer and NO "
+                  f"scored column has ties, so the engine's tie handling cannot "
+                  f"explain it. The workbook would contradict the one pager.")
+            for line in differences[:8]:
+                print(f"    {line}")
+            problems += 1
     return 1 if problems else 0
 
 
