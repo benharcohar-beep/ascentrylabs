@@ -1,35 +1,29 @@
+import { useState } from 'react'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { Nav } from './components/ui'
+import type { RangeKey } from './lib/data'
+import Home from './screens/Home'
+import Market from './screens/Market'
+import Menu from './screens/Menu'
+import Spots from './screens/Spots'
+import Tips from './screens/Tips'
 import './app.css'
 
 export default function App() {
+  // One shared time range across Home, Spots and Menu.
+  const [range, setRange] = useState<RangeKey>('1W')
   return (
-    <main className="shell">
-      <header className="top">
-        <span className="brand">Truckboard</span>
-        <span className="tag">Preview</span>
-      </header>
-
-      <section className="card hero">
-        <div className="label">This week</div>
-        <div className="big">$4,860</div>
-        <div className="delta">+12% vs last week</div>
-      </section>
-
-      <section className="tiles">
-        <div className="card tile"><div className="num">312</div><div className="label">orders</div></div>
-        <div className="card tile"><div className="num">$15.60</div><div className="label">avg order</div></div>
-        <div className="card tile"><div className="num">$412</div><div className="label">tips</div></div>
-      </section>
-
-      <p className="note">
-        Placeholder shell. Screens, charts and data are coming next; this page exists so the
-        deployment pipeline can be set up first.
-      </p>
-
-      <nav className="nav">
-        {['Home', 'Spots', 'Menu', 'Market', 'Tips'].map((n, i) => (
-          <span key={n} className={i === 0 ? 'on' : ''}>{n}</span>
-        ))}
-      </nav>
-    </main>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
+      <main className="shell">
+        <Routes>
+          <Route path="/" element={<Home range={range} setRange={setRange} />} />
+          <Route path="/spots" element={<Spots range={range === '1W' ? '3M' : range} setRange={setRange} />} />
+          <Route path="/menu" element={<Menu range={range} setRange={setRange} />} />
+          <Route path="/market" element={<Market />} />
+          <Route path="/tips" element={<Tips />} />
+        </Routes>
+        <Nav />
+      </main>
+    </BrowserRouter>
   )
 }

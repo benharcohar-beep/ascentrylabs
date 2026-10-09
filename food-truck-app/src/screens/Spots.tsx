@@ -1,0 +1,77 @@
+import { useState } from 'react'
+import { Bars, Card, Meter, Pills } from '../components/ui'
+import { RANGES, hourLabel, hourlyFor, money, pct, rangeWindow, spotStats, type RangeKey } from '../lib/data'
+
+export default function Spots({ range, setRange }: { range: RangeKey; setRange: (k: RangeKey) => void }) {
+  const w = rangeWindow(range)
+  const spots = spotStats(w.from, w.to)
+  const [open, setOpen] = useState<string | null>(null)
+  const maxNet = Math.max(1, ...spots.map((s) => s.netPerHour))
+  const maxGross = Math.max(1, ...spots.map((s) => s.grossPerHour))
+  const label = RANGES.find((r) => r.key === range)!.label
+
+  return (
+    <>
+      <header className="top">
+        <h1>Spots</h1>
+        <Pills value={range} onChange={setRange} />
+      </header>
+      <p className="lede">What each pitch earns per hour over the last {label}, after the fee the venue takes. Tap a spot for its best hours.</p>
+
+      {spots.length === 0 && <Card>No trading days in this range.</Card>}
+
+      {spots.map((s, i) => {
+        const feeShare = s.gross ? s.fees / s.gross : 0
+        const isOpen = open === s.loc.id
+        const hourly = hourlyFor(s.loc.id)
+        return (
+          <Card key={s.loc.id} className={`spot ${isOpen ? 'open' : ''}`} onClick={() => setOpen(isOpen ? null : s.loc.id)}>
+            <div className="row">
+              <div>
+                <div className="name">{i + 1}. {s.loc.name}</div>
+                <div className="sub">{s.loc.neighbourhood} · {s.days} {s.days === 1 ? 'day' : 'days'}{feeShare > 0.12 ? ' · high fees' : ''}</div>
+              </div>
+              <div className="val-stack">
+                <div className="val">{money(s.netPerHour)}<small>/hr</small></div>
+                <div className="sub">net of fees</div>
+              </div>
+            </div>
+            <div className="dual">
+              <div className="dual-row">
+                <span>Gross</span>
+                <Meter value={s.grossPerHour} max={maxGross} tone="ink" />
+                <span className="num">{money(s.grossPerHour)}</span>
+              </div>
+              <div className="dual-row">
+                <span>Net</span>
+                <Meter value={s.netPerHour} max={maxNet} tone={feeShare > 0.12 ? 'warn' : 'accent'} />
+                <span className="num">{money(s.netPerHour)}</span>
+              </div>
+            </div>
+            {isOpen && (
+              <div className="detail">
+                <div className="facts">
+                  <div><b>{money(s.gross)}</b><span>sales</span></div>
+                  <div><b>{money(s.fees)}</b><span>fees ({pct(feeShare, false)})</span></div>
+                  <div><b>{money(s.tips)}</b><span>tips</span></div>
+                  <div><b>{s.orders.toLocaleString()}</b><span>orders</span></div>
+                </div>
+                {s.loc.pctFee > 0 || s.loc.flatFee > 0 ? (
+                  <p className="note">Venue takes {s.loc.pctFee > 0 ? `${pct(s.loc.pctFee, false)} of sales` : ''}{s.loc.pctFee > 0 && s.loc.flatFee > 0 ? ' plus ' : ''}{s.loc.flatFee > 0 ? `${money(s.loc.flatFee)} a day` : ''}.</p>
+                ) : (
+                  <p className="note">No venue fee. Only card processing comes off.</p>
+                )}
+                <h3>Sales per hour of the day (all visits)</h3>
+                <Bars
+                  bars={hourly.map((h) => ({ label: hourLabel(h.hour), value: h.days ? h.gross_sales / h.days : 0, sub: `${hourLabel(h.hour)}: ${money(h.days ? h.gross_sales / h.days : 0)} an hour on average` }))}
+                  height={80}
+                  highlightLast={false}
+                />
+              </div>
+            )}
+          </Card>
+        )
+      })}
+    </>
+  )
+}
