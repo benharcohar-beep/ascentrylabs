@@ -12,7 +12,8 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
   const topMax = items[0]?.revenue ?? 1
   const avg = now.orders ? now.gross / now.orders : 0
   const prevAvg = prev.orders ? prev.gross / prev.orders : 0
-  const lead = weeklyInsights()[1] ?? weeklyInsights()[0]
+  const tips = weeklyInsights()
+  const lead = tips.find((t) => t.id === 'fees') ?? tips[0]
 
   return (
     <>

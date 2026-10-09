@@ -27,7 +27,7 @@ export default function Menu({ range, setRange }: { range: RangeKey; setRange: (
         <Pills value={range} onChange={setRange} />
       </header>
       <p className="lede">
-        Every item over the last {label}. "Keeps" is what is left after ingredients, from your recipe costs. Overall you keep {pct(1 - cogs / total, false)} of {money(total)}.
+        Every item over the last {label}. "Keeps" is what is left after ingredients, from your recipe costs. {total > 0 ? `Overall you keep ${pct(1 - cogs / total, false)} of ${money(total)}.` : 'Nothing sold in this range.'}
       </p>
 
       <Card>

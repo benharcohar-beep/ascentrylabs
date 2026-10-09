@@ -39,6 +39,9 @@ XLSX_OUT = HERE / "truckboard-data.xlsx"
 JSON_OUT = HERE.parent / "src" / "data" / "data.json"
 
 rng = random.Random(20261009)
+# Separate streams so tuning the sales model never reshuffles the market or the weather.
+rng_market = random.Random(7)
+rng_weather = random.Random(11)
 
 START = date(2025, 10, 1)
 END = date(2026, 9, 30)
@@ -94,10 +97,10 @@ ASSUMPTIONS = [
 ]
 
 PLANTED_STORIES = [
-    "Birria taco is priced $4.25 against a market median near $4.75: underpriced by about 10%.",
-    "Deer District (Bucks games) has the highest gross per hour of any regular spot, but a 25% fee plus $200 flat takes its net per hour below a no-fee office lunch.",
+    "Birria taco is priced $4.25 against a market median of about $5.10: underpriced by roughly 17%.",
+    "Deer District (Bucks games) takes nearly $200 an hour at the till, but a 25% cut plus a $100 pitch fee leaves less per hour than a no-fee office lunch.",
     "A rainy day roughly halves sales; the worst Saturday of the summer is a rain day.",
-    "Brewers tailgate lot is the best weekday slot by net revenue per hour.",
+    "Water St downtown office lunch is the best no-fee slot by net revenue per hour, and it is bookable any weekday.",
     "Quesabirria runs a 40%+ food cost (cheese and beef); al pastor runs under 30%. Same price band, very different margin.",
     "Tips run about 15% of sales at breweries, 10% on the street and under 8% at games and festivals.",
 ]
@@ -221,7 +224,7 @@ LOCATIONS = [
     ("L02", "Third Ward, Broadway & Menomonee", "street",    "Third Ward",      43.0334, -87.9075,   0,  0.00, 15, {3, 4, 5},       (11, 21), "warm"),
     ("L03", "Bay View, KK Ave",                 "street",    "Bay View",        43.0035, -87.9029,   0,  0.00, 14, {2, 3, 4, 5, 6}, (11, 20), "warm"),
     ("L04", "Cesar Chavez Dr",                  "street",    "Clarke Square",   43.0202, -87.9323,   0,  0.00, 13, {0, 1, 2, 3, 4, 5, 6}, (11, 20), "all"),
-    ("L05", "Deer District (Bucks games)",      "event",     "Westown",         43.0451, -87.9174, 200,  0.25, 46, {0, 1, 2, 3, 4, 5, 6}, (16, 22), "all"),
+    ("L05", "Deer District (Bucks games)",      "event",     "Westown",         43.0451, -87.9174, 100,  0.25, 46, {0, 1, 2, 3, 4, 5, 6}, (16, 22), "all"),
     ("L06", "Brewers tailgate lot",             "event",     "Story Hill",      43.0280, -87.9712, 250,  0.00, 32, {0, 1, 2, 3, 4, 5, 6}, (16, 21), "warm"),
     ("L07", "Lakefront Brewery",                "brewery",   "Brewers Hill",    43.0528, -87.9057,   0,  0.00, 17, {3, 4, 5, 6},    (16, 21), "all"),
     ("L08", "Third Space Brewing",              "brewery",   "Menomonee Valley",43.0291, -87.9290,   0,  0.00, 15, {3, 4, 5},       (16, 21), "all"),
@@ -232,11 +235,11 @@ LOCATIONS = [
     ("L13", "Milwaukee Regional Medical Center","hospital",  "Wauwatosa",       43.0423, -88.0224,   0,  0.00, 19, {0, 1, 2, 3, 4}, (11, 14), "all"),
     ("L14", "South Shore Farmers Market",       "market",    "Bay View",        42.9965, -87.8812,  60,  0.00, 20, {5},             (8, 13),  "warm"),
     ("L15", "Tosa Farmers Market",              "market",    "Wauwatosa",       43.0466, -88.0075,  50,  0.00, 19, {5},             (8, 13),  "warm"),
-    ("L16", "Summerfest grounds",               "festival",  "Lakefront",       43.0301, -87.8996, 300,  0.20, 42, {0, 1, 2, 3, 4, 5, 6}, (12, 22), "warm"),
-    ("L17", "Mexican Fiesta",                   "festival",  "Lakefront",       43.0301, -87.8996, 250,  0.20, 45, {0, 1, 2, 3, 4, 5, 6}, (12, 22), "warm"),
-    ("L18", "Wisconsin State Fair",             "festival",  "West Allis",      43.0186, -88.0100, 300,  0.18, 38, {0, 1, 2, 3, 4, 5, 6}, (11, 21), "warm"),
+    ("L16", "Summerfest grounds",               "festival",  "Lakefront",       43.0301, -87.8996, 300,  0.20, 32, {0, 1, 2, 3, 4, 5, 6}, (12, 22), "warm"),
+    ("L17", "Mexican Fiesta",                   "festival",  "Lakefront",       43.0301, -87.8996, 250,  0.20, 34, {0, 1, 2, 3, 4, 5, 6}, (12, 22), "warm"),
+    ("L18", "Wisconsin State Fair",             "festival",  "West Allis",      43.0186, -88.0100, 300,  0.18, 28, {0, 1, 2, 3, 4, 5, 6}, (11, 21), "warm"),
     ("L19", "UWM campus, Kenwood Blvd",         "campus",    "East Side",       43.0760, -87.8820,  75,  0.00, 15, {1, 2, 3},       (11, 15), "all"),
-    ("L20", "Bastille Days, Cathedral Square",  "festival",  "East Town",       43.0412, -87.9044, 200,  0.15, 36, {0, 1, 2, 3, 4, 5, 6}, (12, 22), "warm"),
+    ("L20", "Bastille Days, Cathedral Square",  "festival",  "East Town",       43.0412, -87.9044, 200,  0.15, 30, {0, 1, 2, 3, 4, 5, 6}, (12, 22), "warm"),
 ]
 LOC = {l[0]: l for l in LOCATIONS}
 TIP_MEAN = {"brewery": 0.20, "street": 0.12, "food_park": 0.15, "event": 0.09,
@@ -302,11 +305,11 @@ def make_weather():
     rows = []
     for d in daterange(START, END):
         m = d.month
-        temp = rng.gauss(MONTH_TEMP_F[m], 9)
-        rain = rng.random() < MONTH_RAIN_P[m]
-        mm = r2(rng.expovariate(1 / 6)) if rain else 0.0
-        rows.append({"date": d.isoformat(), "temp_f": round(temp), "rain": rain, "rain_mm": mm,
-                     "condition": "rain" if rain and temp > 34 else "snow" if rain else "clear" if rng.random() < 0.6 else "cloudy"})
+        temp = round(min(95, max(-15, rng_weather.gauss(MONTH_TEMP_F[m], 9))))
+        rain = rng_weather.random() < MONTH_RAIN_P[m]
+        mm = r2(rng_weather.expovariate(1 / 6)) if rain else 0.0
+        rows.append({"date": d.isoformat(), "temp_f": temp, "rain": rain, "rain_mm": mm,
+                     "condition": "rain" if rain and temp > 34 else "snow" if rain else "clear" if rng_weather.random() < 0.6 else "cloudy"})
     # Planted story: make two July/August Saturdays rain days
     by = {r["date"]: r for r in rows}
     for ds in ("2026-07-18", "2026-08-15"):
@@ -424,7 +427,7 @@ def make_schedule(events):
         staff_n = 2 if (ltype in ("event", "festival") or not winter) else 1
         rows.append({"date": d.isoformat(), "trading": True, "location_id": loc, "start_hour": start_h,
                      "end_hour": end_h, "paid_staff": staff_n,
-                     "event_id": (fest or sport or market)[0]["event_id"] if (loc in {e["location_id"] for e in todays}) else None,
+                     "event_id": next((e["event_id"] for e in todays if e["location_id"] == loc), None),
                      "reason": ""})
     return rows
 
@@ -458,7 +461,7 @@ def make_orders(schedule, weather, events):
             mult *= e["boost"]
         if ltype in ("event", "festival", "office", "hospital", "market", "campus"):
             mult *= 1.0 / SEASON[d.month] ** 0.5  # bookings are less seasonal than walk-up
-        day_noise = rng.lognormvariate(0, 0.18)
+        day_noise = rng.lognormvariate(0, 0.12)
         for h in range(s["start_hour"], s["end_hour"]):
             lam = base * HOUR_PROFILE.get(h, 0.5) * mult * day_noise
             if ltype in ("office", "hospital", "market", "campus"):
@@ -525,13 +528,16 @@ def make_shifts(schedule):
     return rows
 
 
-def make_catering():
+def make_catering(schedule):
+    trading = {s["date"] for s in schedule if s["trading"]}
     rows = []
     n = 0
     for d in daterange(START, END):
+        if d.isoformat() in trading:
+            continue
         m = d.month
         p = {12: 0.14, 5: 0.12, 6: 0.15, 7: 0.13, 8: 0.15, 9: 0.13, 10: 0.08}.get(m, 0.03)
-        if d.weekday() in (4, 5) and rng.random() < p:
+        if d.weekday() in (4, 5, 6) and rng.random() < p * 1.6:
             n += 1
             heads = rng.choice([40, 50, 60, 75, 80, 100, 120, 150])
             per_head = rng.choice([18, 20, 22, 25])
@@ -569,14 +575,14 @@ def make_market():
             if concept not in concepts:
                 continue
             if concept == "Birria specialist" and sid in ("taco_single", "burrito_std", "burrito_cali"):
-                if rng.random() < 0.5:
+                if rng_market.random() < 0.5:
                     continue
-            if rng.random() < 0.12:
+            if rng_market.random() < 0.12:
                 continue
-            price = quarter(med * TIER_MULT[tier] * rng.lognormvariate(0, 0.07))
-            seen = START + timedelta(days=rng.randrange(0, (END - START).days))
+            price = quarter(med * TIER_MULT[tier] * rng_market.lognormvariate(0, 0.07))
+            seen = START + timedelta(days=rng_market.randrange(0, (END - START).days))
             rows.append({"truck_id": tid, "truck": name, "standard_item": sid, "item_label": label,
-                         "price": price, "date_seen": seen.isoformat(), "source": rng.choice(sources)})
+                         "price": price, "date_seen": seen.isoformat(), "source": rng_market.choice(sources)})
     return rows
 
 
@@ -778,7 +784,7 @@ def write_xlsx(data):
     sheet(wb, "Trucks", trucks)
     sheet(wb, "Locations", [dict(location_id=l[0], name=l[1], type=l[2], neighbourhood=l[3], lat=l[4], lon=l[5],
                                  flat_fee=l[6], pct_fee=l[7], base_orders_per_hour=l[8],
-                                 days=",".join("MTWTFSS"[d] for d in sorted(l[9])), open_hour=l[10][0],
+                                 days=",".join(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][d] for d in sorted(l[9])), open_hour=l[10][0],
                                  close_hour=l[10][1], season=l[11]) for l in LOCATIONS], widths={"name": 36})
     sheet(wb, "Standard_Items", [dict(standard_item=s[0], label=s[1], assumed_market_median=s[2]) for s in STANDARD_ITEMS],
           widths={"label": 34})
@@ -857,7 +863,7 @@ def main():
     schedule = make_schedule(events)
     orders, lines = make_orders(schedule, weather, events)
     shifts = make_shifts(schedule)
-    catering = make_catering()
+    catering = make_catering(schedule)
     fixed = make_fixed_costs(orders)
     market = make_market()
     benchmarks = make_benchmarks(market)

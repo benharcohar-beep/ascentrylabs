@@ -1,7 +1,7 @@
 // Rule-based insights. No model, no API: every card is a plain calculation
 // over the data, so the owner can check each claim against the numbers.
 import {
-  TODAY, addDays, daysBetween, data, itemTotals, locationById, money, pct, pctChange, rangeWindow, spotStats, totals,
+  TODAY, daysBetween, data, itemTotals, locationById, money, pct, pctChange, rangeWindow, spotStats, totals,
   weekday,
 } from './data'
 
@@ -38,7 +38,7 @@ export function weeklyInsights(): Insight[] {
   const q = rangeWindow('3M')
   const yr = rangeWindow('1Y')
   const spots = spotStats(yr.from, yr.to).filter((s) => s.days >= 3)
-  const regular = spots.filter((s) => s.loc.type !== 'festival' && s.loc.type !== 'market')
+  const regular = spots.filter((s) => s.loc.type !== 'festival' && s.loc.type !== 'market' && s.gross > 0)
   const noFee = regular.filter((s) => s.loc.pctFee === 0 && s.loc.flatFee === 0).sort((a, b) => b.netPerHour - a.netPerHour)[0]
   const feeHeavy = regular
     .filter((s) => s.fees / s.gross > 0.15 && noFee && s.netPerHour < noFee.netPerHour && s.grossPerHour > noFee.grossPerHour)
@@ -54,14 +54,14 @@ export function weeklyInsights(): Insight[] {
   }
 
   // 3. Best regular slot by net per hour
-  const bestNet = regular.filter((s) => s.days >= 8)[0]
+  const bestNet = regular.filter((s) => s.days >= 8 && s.loc.type !== 'event')[0]
   if (bestNet) {
     out.push({
       id: 'best-slot', tone: 'good',
       title: `${bestNet.loc.name} is your best regular slot`,
       body: `${money(bestNet.netPerHour)} an hour after fees over the last 12 months, from ${bestNet.days} visits.`,
-      evidence: `Ranked on net sales per trading hour; festivals, markets and spots with fewer than 8 visits excluded.`,
-      action: 'If there is a free weekday, this is where to put it.',
+      evidence: `Ranked on net sales per trading hour; festivals, markets, game days and spots with fewer than 8 visits excluded.`,
+      action: 'If there is a free day, this is where to put it.',
     })
   }
 
@@ -98,7 +98,9 @@ export function weeklyInsights(): Insight[] {
   }
 
   // 6. Rain
-  const ds = daysBetween(yr.from, yr.to).filter((d) => d.trading && d.date >= '2026-05-01' && d.date <= '2026-09-30')
+  // Summer = May to September of whichever year TODAY falls in.
+  const y = TODAY.slice(0, 4)
+  const ds = daysBetween(yr.from, yr.to).filter((d) => d.trading && d.date >= `${y}-05-01` && d.date <= `${y}-09-30`)
   const rain = ds.filter((d) => d.rain), dry = ds.filter((d) => !d.rain)
   if (rain.length >= 5 && dry.length >= 5) {
     const r = totals(rain).gross / rain.length, dr = totals(dry).gross / dry.length
@@ -118,7 +120,7 @@ export function weeklyInsights(): Insight[] {
     t.tips += s.tips; t.gross += s.gross
     byType.set(s.loc.type, t)
   }
-  const rates = [...byType.entries()].map(([k, v]) => ({ type: k, rate: v.tips / v.gross })).sort((a, b) => b.rate - a.rate)
+  const rates = [...byType.entries()].filter(([, v]) => v.gross > 0).map(([k, v]) => ({ type: k, rate: v.tips / v.gross })).sort((a, b) => b.rate - a.rate)
   if (rates.length >= 2) {
     const hi = rates[0], lo = rates[rates.length - 1]
     out.push({
@@ -137,4 +139,3 @@ export function typeLabel(t: string): string {
     office: 'office lunches', hospital: 'the hospital', market: 'farmers markets', campus: 'campus' }[t] ?? t
 }
 
-export const lastUpdated = addDays(TODAY, 0)

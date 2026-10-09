@@ -177,7 +177,7 @@ export function spotStats(from: string, to: string): SpotStat[] {
     acc.set(loc.id, s)
   }
   return [...acc.values()]
-    .map((s) => ({ ...s, grossPerHour: s.gross / s.hours, netPerHour: s.net / s.hours }))
+    .map((s) => ({ ...s, grossPerHour: s.hours ? s.gross / s.hours : 0, netPerHour: s.hours ? s.net / s.hours : 0 }))
     .sort((a, b) => b.netPerHour - a.netPerHour)
 }
 

@@ -17,7 +17,7 @@ export default function App() {
       <main className="shell">
         <Routes>
           <Route path="/" element={<Home range={range} setRange={setRange} />} />
-          <Route path="/spots" element={<Spots range={range === '1W' ? '3M' : range} setRange={setRange} />} />
+          <Route path="/spots" element={<Spots range={range} setRange={setRange} />} />
           <Route path="/menu" element={<Menu range={range} setRange={setRange} />} />
           <Route path="/market" element={<Market />} />
           <Route path="/tips" element={<Tips />} />
