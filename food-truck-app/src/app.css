@@ -1,0 +1,30 @@
+.shell {
+  max-width: 430px;
+  margin: 0 auto;
+  padding: 16px 16px 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.top { display: flex; justify-content: space-between; align-items: center; padding: 8px 4px; }
+.brand { font-weight: 700; font-size: 18px; letter-spacing: -0.01em; }
+.tag { font-size: 12px; color: var(--ink-2); background: var(--card); padding: 4px 10px; border-radius: 999px; box-shadow: var(--shadow); }
+
+.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; }
+.hero .big { font-size: 44px; font-weight: 700; letter-spacing: -0.03em; margin: 6px 0 4px; }
+.label { font-size: 13px; color: var(--ink-2); }
+.delta { font-size: 13px; color: var(--good); font-weight: 600; }
+
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.tile { padding: 18px 12px; text-align: center; }
+.tile .num { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+
+.note { font-size: 13px; color: var(--ink-3); padding: 0 4px; line-height: 1.5; }
+
+.nav {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+  display: flex; gap: 4px; padding: 6px; background: var(--card); border-radius: 999px;
+  box-shadow: var(--shadow); border: 1px solid var(--line);
+}
+.nav span { font-size: 13px; padding: 8px 14px; border-radius: 999px; color: var(--ink-2); }
+.nav .on { background: var(--ink); color: #fff; font-weight: 600; }
