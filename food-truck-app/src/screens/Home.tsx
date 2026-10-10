@@ -36,7 +36,7 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
 
         <button className={`rating-hero ${h.tone}`} onClick={() => setWhy(!why)} aria-expanded={why}>
           <div className="label">Business is</div>
-          <div className="rating-big">{h.rating}</div>
+          <div className={`rating-big ${h.tone}`}>{h.rating}</div>
           <div className="rating-sum">{h.summary}</div>
           <div className="rating-why">{why ? 'hide the checks ▴' : 'see the three checks ▾'}</div>
         </button>
