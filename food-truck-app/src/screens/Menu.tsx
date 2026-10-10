@@ -21,16 +21,20 @@ export default function Menu({ range, setRange }: { range: RangeKey; setRange: (
 
   return (
     <>
-      <header className="top">
-        <h1>Menu</h1>
-        <Pills value={range} onChange={setRange} />
-      </header>
-      {total > 0 && (
-        <Card className="hero compact">
-          <div className="label">You keep, after ingredients</div>
-          <div className="big">{pct(1 - cogs / total, false)} <small>of {money(total)}</small></div>
-        </Card>
-      )}
+      <section className="grad sage">
+        <header className="top">
+          <h1>Menu</h1>
+          <Pills value={range} onChange={setRange} />
+        </header>
+        {total > 0 ? (
+          <>
+            <div className="label">You keep, after ingredients</div>
+            <div className="big">{pct(1 - cogs / total, false)} <small>of {money(total)}</small></div>
+          </>
+        ) : (
+          <div className="label">Nothing sold in this range</div>
+        )}
+      </section>
 
       <Card>
         <ul className="list">

@@ -103,6 +103,7 @@ PLANTED_STORIES = [
     "Water St downtown office lunch is the best no-fee slot by net revenue per hour, and it is bookable any weekday.",
     "Quesabirria runs a 40%+ food cost (cheese and beef); al pastor runs under 30%. Same price band, very different margin.",
     "Tips run about 15% of sales at breweries, 10% on the street and under 8% at games and festivals.",
+    "Veggie taco sales fall by three quarters from 7 September while the roasted veg prep stays the same: a slow seller the owner should prep less of.",
 ]
 
 # ---------------------------------------------------------------------------
@@ -159,32 +160,32 @@ STANDARD_ITEMS = [
     ("churros",            "Churros",                        4.50, {"Classic taqueria", "Street snacks", "Mexican fusion"}),
 ]
 
-# Ingredients: (id, name, unit, cost per unit $)
+# Ingredients: (id, name, unit, cost per unit $, shelf life in days once prepped/opened)
 INGREDIENTS = {
-    "tortilla_corn":  ("Corn tortilla", "each", 0.08),
-    "tortilla_flour": ("Flour tortilla, large", "each", 0.35),
-    "pork_pastor":    ("Pork, marinated al pastor", "oz", 0.22),
-    "beef_asada":     ("Beef, carne asada", "oz", 0.34),
-    "pork_carnitas":  ("Pork, carnitas", "oz", 0.20),
-    "chicken":        ("Chicken, marinated", "oz", 0.17),
-    "beef_birria":    ("Beef, birria braise", "oz", 0.35),
-    "veg_mix":        ("Roasted veg mix", "oz", 0.12),
-    "cheese":         ("Oaxaca/jack cheese", "oz", 0.28),
-    "rice_beans":     ("Rice and beans portion", "portion", 0.35),
-    "toppings":       ("Onion, cilantro, lime, salsa", "portion", 0.12),
-    "crema_guac":     ("Crema / guacamole", "oz", 0.30),
-    "consome":        ("Consome", "cup", 0.45),
-    "corn_cob":       ("Corn on the cob", "each", 0.60),
-    "elote_dress":    ("Mayo, cotija, chili", "portion", 0.35),
-    "chips":          ("Tortilla chips", "portion", 0.40),
-    "salsa_cup":      ("Salsa cup", "each", 0.20),
-    "agua_base":      ("Agua fresca base", "cup", 0.55),
-    "soda":           ("Bottled soda", "each", 1.10),
-    "water_btl":      ("Bottled water", "each", 0.25),
-    "churro":         ("Churro, fried", "each", 0.45),
-    "bread_torta":    ("Torta roll", "each", 0.55),
-    "packaging":      ("Packaging and napkins", "portion", 0.07),
-    "foil_box":       ("Foil / clamshell", "each", 0.18),
+    "tortilla_corn":  ("Corn tortilla", "each", 0.08, 7),
+    "tortilla_flour": ("Flour tortilla, large", "each", 0.35, 10),
+    "pork_pastor":    ("Pork, marinated al pastor", "oz", 0.22, 3),
+    "beef_asada":     ("Beef, carne asada", "oz", 0.34, 3),
+    "pork_carnitas":  ("Pork, carnitas", "oz", 0.20, 4),
+    "chicken":        ("Chicken, marinated", "oz", 0.17, 2),
+    "beef_birria":    ("Beef, birria braise", "oz", 0.35, 3),
+    "veg_mix":        ("Roasted veg mix", "oz", 0.12, 2),
+    "cheese":         ("Oaxaca/jack cheese", "oz", 0.28, 10),
+    "rice_beans":     ("Rice and beans portion", "portion", 0.35, 2),
+    "toppings":       ("Onion, cilantro, lime, salsa", "portion", 0.12, 1),
+    "crema_guac":     ("Crema / guacamole", "oz", 0.30, 1),
+    "consome":        ("Consome", "cup", 0.45, 3),
+    "corn_cob":       ("Corn on the cob", "each", 0.60, 3),
+    "elote_dress":    ("Mayo, cotija, chili", "portion", 0.35, 5),
+    "chips":          ("Tortilla chips", "portion", 0.40, 14),
+    "salsa_cup":      ("Salsa cup", "each", 0.20, 3),
+    "agua_base":      ("Agua fresca base", "cup", 0.55, 2),
+    "soda":           ("Bottled soda", "each", 1.10, 180),
+    "water_btl":      ("Bottled water", "each", 0.25, 365),
+    "churro":         ("Churro, fried", "each", 0.45, 1),
+    "bread_torta":    ("Torta roll", "each", 0.55, 2),
+    "packaging":      ("Packaging and napkins", "portion", 0.07, 365),
+    "foil_box":       ("Foil / clamshell", "each", 0.18, 365),
 }
 
 # Menu: (item_id, name, category, standard_item, price, daypart weight, popularity, recipe)
@@ -210,6 +211,12 @@ MENU = [
     ("M19", "Churros (3)",         "Dessert", "churros",            4.50,  4, {"churro": 3, "packaging": 1}),
 ]
 TACO_IDS = {"M01", "M02", "M03", "M04", "M05", "M06"}
+
+
+def key_ingredient(recipe: dict):
+    """The ingredient that carries most of the item's cost, and its quantity."""
+    k = max(recipe, key=lambda i: INGREDIENTS[i][2] * recipe[i])
+    return k, recipe[k]
 
 
 def item_cost(recipe: dict) -> float:
@@ -439,7 +446,18 @@ def make_schedule(events):
 def make_orders(schedule, weather, events):
     w_by = {w["date"]: w for w in weather}
     ev_by = {(e["date"], e["location_id"]): e for e in events}
-    menu_w = [m[5] for m in MENU]
+    def menu_weights(d: date):
+        # PLANTED STORY: veggie taco falls off a cliff from 7 Sep 2026 (students back, lunch crowd changes);
+        # churros fade from mid-August. The owner keeps prepping the same amount.
+        ws = []
+        for m in MENU:
+            w = m[5]
+            if m[0] == "M06" and d >= date(2026, 9, 7):
+                w *= 0.25
+            if m[0] == "M19" and d >= date(2026, 8, 15):
+                w *= 0.45
+            ws.append(w)
+        return ws
     orders, lines = [], []
     oid = 0
     for s in schedule:
@@ -462,6 +480,7 @@ def make_orders(schedule, weather, events):
         if ltype in ("event", "festival", "office", "hospital", "market", "campus"):
             mult *= 1.0 / SEASON[d.month] ** 0.5  # bookings are less seasonal than walk-up
         day_noise = rng.lognormvariate(0, 0.12)
+        menu_w = menu_weights(d)
         for h in range(s["start_hour"], s["end_hour"]):
             lam = base * HOUR_PROFILE.get(h, 0.5) * mult * day_noise
             if ltype in ("office", "hospital", "market", "campus"):
@@ -797,8 +816,8 @@ def write_xlsx(data):
     recipe_rows = []
     for m in MENU:
         for k, q in m[6].items():
-            nm, unit, cost = INGREDIENTS[k]
-            recipe_rows.append(dict(item_id=m[0], item=m[1], ingredient=nm, unit=unit, qty=q, unit_cost=cost, cost=r2(q * cost)))
+            nm, unit, cost, shelf = INGREDIENTS[k]
+            recipe_rows.append(dict(item_id=m[0], item=m[1], ingredient=nm, unit=unit, qty=q, unit_cost=cost, cost=r2(q * cost), shelf_life_days=shelf))
     sheet(wb, "Recipes", recipe_rows, money=("unit_cost", "cost"))
     sheet(wb, "Schedule", data["schedule"])
     sheet(wb, "Orders", data["orders"], money=("subtotal", "discount", "tax", "tip", "total", "processing_fee"))
@@ -837,7 +856,9 @@ def write_json(data):
         "locations": [dict(id=l[0], name=l[1], type=l[2], neighbourhood=l[3], lat=l[4], lon=l[5],
                            flatFee=l[6], pctFee=l[7]) for l in LOCATIONS],
         "menu": [dict(id=m[0], name=m[1], category=m[2], standardItem=m[3], price=m[4],
-                      cost=data["cost_by_item"][m[0]]) for m in MENU],
+                      cost=data["cost_by_item"][m[0]], keyIngredient=key_ingredient(m[6])[0],
+                      keyIngredientQty=key_ingredient(m[6])[1], keyIngredientUnit=INGREDIENTS[key_ingredient(m[6])[0]][1],
+                      shelfLifeDays=INGREDIENTS[key_ingredient(m[6])[0]][3]) for m in MENU],
         "standardItems": [dict(id=s[0], label=s[1]) for s in STANDARD_ITEMS],
         "rivals": [dict(id=r[0], name=r[1], concept=r[2], tier=r[3], neighbourhood=r[4]) for r in RIVALS],
         "marketPrices": [dict(truckId=m["truck_id"], item=m["standard_item"], price=m["price"],

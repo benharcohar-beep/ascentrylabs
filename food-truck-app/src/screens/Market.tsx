@@ -12,14 +12,13 @@ export default function Market() {
 
   return (
     <>
-      <header className="top">
-        <h1>Market</h1>
-      </header>
-
-      <Card className="hero compact">
+      <section className="grad blue">
+        <header className="top">
+          <h1>Market</h1>
+        </header>
         <div className="label">Items priced under {trucks} other Milwaukee trucks</div>
         <div className="big">{below} <small>of {rows.length}</small></div>
-      </Card>
+      </section>
 
       {rows.map((b) => {
         const you = b.hero_price!

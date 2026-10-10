@@ -11,10 +11,19 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
 
   return (
     <>
-      <header className="top">
-        <h1>Spots</h1>
-        <Pills value={range} onChange={setRange} />
-      </header>
+      <section className="grad slate">
+        <header className="top">
+          <h1>Spots</h1>
+          <Pills value={range} onChange={setRange} />
+        </header>
+        {spots[0] && (
+          <>
+            <div className="label">Best spot, after fees</div>
+            <div className="big">{money(spots[0].netPerHour)}<small>/hr</small></div>
+            <div className="label">{spots[0].loc.name}</div>
+          </>
+        )}
+      </section>
 
       {spots.length === 0 && <Card>No trading days in this range.</Card>}
 

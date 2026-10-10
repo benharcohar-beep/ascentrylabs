@@ -30,7 +30,10 @@ export type Location = {
   id: string; name: string; type: string; neighbourhood: string
   lat: number; lon: number; flatFee: number; pctFee: number
 }
-export type MenuItem = { id: string; name: string; category: string; standardItem: string; price: number; cost: number }
+export type MenuItem = {
+  id: string; name: string; category: string; standardItem: string; price: number; cost: number
+  keyIngredient: string; keyIngredientQty: number; keyIngredientUnit: string; shelfLifeDays: number
+}
 export type Benchmark = {
   standard_item: string; item_label: string; n_trucks: number
   min: number; p25: number; median: number; p75: number; max: number
