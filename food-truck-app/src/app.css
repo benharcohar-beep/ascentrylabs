@@ -191,3 +191,15 @@ a.plain { text-decoration: none; color: inherit; }
 .checks.glass li span:not(.dot) { color: var(--ink-2); }
 
 .stock-row + .stock-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+
+/* rating as the hero */
+.rating-hero {
+  display: block; width: 100%; text-align: center; border: 0; background: transparent; color: #fff;
+  font: inherit; cursor: pointer; padding: 18px 0 10px;
+}
+.rating-hero .label { font-size: 15px; opacity: 0.9; }
+.rating-big { font-size: 56px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; margin: 4px 0 8px; }
+.rating-hero .rating-sum { font-size: 15px; color: #fff; opacity: 0.95; max-width: 300px; margin: 0 auto; line-height: 1.4; }
+.rating-why { margin-top: 10px; font-size: 13px; opacity: 0.85; }
+.grad .hero-row { margin-top: 18px; align-items: flex-start; }
+.grad .mid { font-size: 32px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; margin: 4px 0 2px; }

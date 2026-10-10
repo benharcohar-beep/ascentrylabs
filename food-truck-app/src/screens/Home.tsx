@@ -32,10 +32,11 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
           <div className="avatar" aria-hidden>{data.truck.owner[0]}</div>
         </header>
 
-        <button className={`rating-pill ${h.tone}`} onClick={() => setWhy(!why)} aria-expanded={why}>
-          <span className="dot" aria-hidden />
-          <span>Business is <b>{h.rating}</b></span>
-          <span className="chev">{why ? '▴' : '▾'}</span>
+        <button className={`rating-hero ${h.tone}`} onClick={() => setWhy(!why)} aria-expanded={why}>
+          <div className="label">Business is</div>
+          <div className="rating-big">{h.rating}</div>
+          <div className="rating-sum">{h.summary}</div>
+          <div className="rating-why">{why ? 'hide the checks ▴' : 'see the three checks ▾'}</div>
         </button>
         {why && (
           <ul className="checks glass">
@@ -49,11 +50,13 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
         )}
 
         <div className="row hero-row">
-          <div className="label">Sales this {label}</div>
+          <div>
+            <div className="label">Sales this {label}</div>
+            <div className="mid">{money(now.gross)}</div>
+            <Delta value={pctChange(now.gross, prev.gross)} suffix={`vs previous ${label}`} />
+          </div>
           <Pills value={range} onChange={setRange} />
         </div>
-        <div className="big">{money(now.gross)}</div>
-        <Delta value={pctChange(now.gross, prev.gross)} suffix={`vs previous ${label}`} />
 
         <div className="tiles">
           <Tile value={now.orders.toLocaleString()} label="orders" delta={pctChange(now.orders, prev.orders)} />
