@@ -136,6 +136,22 @@ export function Spark({ values }: { values: number[] }) {
   )
 }
 
+/** Small ring meter: value 0..1 of the ring filled, label inside. */
+export function Ring({ fill, tone, text, label }: { fill: number; tone: 'good' | 'info' | 'warn'; text: string; label: string }) {
+  const r = 22, c = 2 * Math.PI * r
+  const f = Math.max(0.04, Math.min(1, fill))
+  return (
+    <div className={`ring ${tone}`}>
+      <svg viewBox="0 0 56 56" width="56" height="56">
+        <circle cx="28" cy="28" r={r} className="ring-track" />
+        <circle cx="28" cy="28" r={r} className="ring-fill" strokeDasharray={`${c * f} ${c}`} transform="rotate(-90 28 28)" />
+      </svg>
+      <span className="ring-text">{text}</span>
+      <span className="ring-label">{label}</span>
+    </div>
+  )
+}
+
 export function Delta({ value, suffix = 'vs last' }: { value: number | null; suffix?: string }) {
   if (value === null) return <div className="delta muted">no comparison</div>
   return (

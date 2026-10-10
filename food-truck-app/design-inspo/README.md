@@ -12,6 +12,7 @@ Reference shots for the look and feel of the food truck performance app. These a
 | `04-nutrition-hero-number-blue.jpg` | Same design system in blue | Same layout reused with a different colour per section, a nice way to tell Sales vs Costs vs Market apart; "Advises" card style suits plain-English tips |
 | `05-fitness-home-week-strip.jpg` | Fitness home | Week strip with today highlighted in one accent colour (orange); 2x2 card grid; clear black "Start" / "Log" buttons |
 | `06-dark-finance-gradient-hero.jpg` | Dark-mode finance app (Spanish) | Dark surface with a soft yellow-to-green gradient behind the greeting and hero balance; same gradient reused on the "new goal" button; progress bars that fade from yellow to blue; cards in a slightly lighter dark grey |
+| `07-nutrition-serif-rings-today.jpg` | Nutrition app, light | Serif display headline ("Great job today"); gauge arc round the hero number; three small ring meters; a "Today" row of two short action tiles with hairline borders, no shadows; a log list with small coloured pills per row; floating + in the nav. The restraint is the point: this is the reference for not looking AI-generated |
 
 ## Shared style rules to carry forward
 

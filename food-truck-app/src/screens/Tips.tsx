@@ -18,7 +18,7 @@ export default function Tips() {
       </section>
       {stock.map((s) => (
         <Card key={s.id} className="insight warn">
-          <div className="eyebrow">Use it or lose it</div>
+          <div className="eyebrow"><span className="dot" aria-hidden /> Use it or lose it</div>
           <div className="insight-title">{s.item.name}: {s.unitsNow} sold this week, usually {s.unitsBase}</div>
           <p>Selling {pct(s.drop, false)} less than usual per order. About {s.surplusLabel} of {s.ingredient} a week is going unsold, worth {money(s.wastePerWeek)} in ingredients{s.shelfLifeDays <= 2 ? `, and it keeps ${s.shelfLifeDays} day${s.shelfLifeDays > 1 ? 's' : ''}` : ''}.</p>
           <p className="action">1. {s.prepLine}</p>
@@ -32,6 +32,7 @@ export default function Tips() {
       ))}
       {tips.map((t) => (
         <Card key={t.id} className={`insight ${t.tone}`}>
+          <div className="eyebrow"><span className="dot" aria-hidden /> {t.short}</div>
           <div className="insight-title">{t.title}</div>
           <p>{t.body}</p>
           {t.action && <p className="action">{t.action}</p>}
