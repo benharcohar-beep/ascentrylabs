@@ -11,6 +11,7 @@ Reference shots for the look and feel of the food truck performance app. These a
 | `03-activity-hero-number-gold.jpg` | Activity screen, warm gold gradient | Huge single hero number at the top; day picker strip; segmented tabs under it; range bars with a marker for "low / normal" |
 | `04-nutrition-hero-number-blue.jpg` | Same design system in blue | Same layout reused with a different colour per section, a nice way to tell Sales vs Costs vs Market apart; "Advises" card style suits plain-English tips |
 | `05-fitness-home-week-strip.jpg` | Fitness home | Week strip with today highlighted in one accent colour (orange); 2x2 card grid; clear black "Start" / "Log" buttons |
+| `06-dark-finance-gradient-hero.jpg` | Dark-mode finance app (Spanish) | Dark surface with a soft yellow-to-green gradient behind the greeting and hero balance; same gradient reused on the "new goal" button; progress bars that fade from yellow to blue; cards in a slightly lighter dark grey |
 
 ## Shared style rules to carry forward
 
