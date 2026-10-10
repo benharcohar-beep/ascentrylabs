@@ -153,14 +153,15 @@ a.plain { text-decoration: none; color: inherit; }
 
 /* gradient hero (full bleed, fades into the page) */
 .grad {
-  margin: -12px -16px 4px; padding: 14px 16px 20px; color: #fff;
-  background: linear-gradient(180deg, var(--g1) 0%, var(--g2) 78%, var(--bg) 100%);
+  margin: -12px -16px 0; padding: 14px 16px 44px; color: #fff;
+  background: linear-gradient(180deg, var(--g1) 0%, var(--g2) 45%, var(--g3) 72%, var(--bg) 100%);
 }
-.grad.gold { --g1: #de8a2c; --g2: #f1c15f; }
-.grad.blue { --g1: #3b6cb4; --g2: #9dbbe6; }
-.grad.sage { --g1: #2f8a5a; --g2: #9fd3b4; }
-.grad.slate { --g1: #4a5568; --g2: #a7b1c2; }
-.grad.warm { --g1: #c75a3a; --g2: #efb59e; }
+/* Mexican flag green and red, plus marigold, turquoise and rosa mexicano. */
+.grad.gold { --g1: #0f7a4a; --g2: #4fae7a; --g3: #b9e0c6; }
+.grad.blue { --g1: #c0392b; --g2: #e3756a; --g3: #f4c7c2; }
+.grad.sage { --g1: #e09a12; --g2: #f0bd55; --g3: #f9e2ab; }
+.grad.slate { --g1: #16858a; --g2: #5cb8bb; --g3: #bfe5e6; }
+.grad.warm { --g1: #c2185b; --g2: #e36a9e; --g3: #f5c4da; }
 .grad .top h1, .grad .eyebrow, .grad .label, .grad .sub { color: #fff; }
 .grad .eyebrow, .grad .label { opacity: 0.9; }
 .grad .avatar { background: rgba(255, 255, 255, 0.28); color: #fff; }
