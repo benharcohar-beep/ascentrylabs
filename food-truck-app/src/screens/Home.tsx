@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
 import { Bars, Card, Delta, Meter, Pills, Tile } from '../components/ui'
 import { RANGES, buckets, data, daysBetween, itemTotals, money, pctChange, rangeWindow, totals, type RangeKey } from '../lib/data'
+import { health } from '../lib/health'
 import { weeklyInsights } from '../lib/insights'
+import { useState } from 'react'
 
 export default function Home({ range, setRange }: { range: RangeKey; setRange: (k: RangeKey) => void }) {
   const w = rangeWindow(range)
@@ -14,6 +16,8 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
   const prevAvg = prev.orders ? prev.gross / prev.orders : 0
   const tips = weeklyInsights()
   const lead = tips.find((t) => t.id === 'fees') ?? tips[0]
+  const h = health()
+  const [why, setWhy] = useState(false)
 
   return (
     <>
@@ -24,6 +28,27 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
         </div>
         <div className="avatar" aria-hidden>{data.truck.owner[0]}</div>
       </header>
+
+      <Card className={`rating ${h.tone}`} onClick={() => setWhy(!why)}>
+        <div className="row">
+          <div>
+            <div className="label">Business is</div>
+            <div className="rating-word">{h.rating}</div>
+            <div className="rating-sum">{h.summary}</div>
+          </div>
+          <span className={`dot ${h.tone}`} aria-hidden />
+        </div>
+        {why && (
+          <ul className="checks">
+            {h.checks.map((c) => (
+              <li key={c.label} className={c.score > 0 ? 'good' : c.score < 0 ? 'warn' : 'info'}>
+                <span className="dot" aria-hidden />
+                <div><b>{c.label}</b><span>{c.detail}</span></div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
 
       <Card className="hero">
         <div className="row">
@@ -72,9 +97,6 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
         </ul>
       </Card>
 
-      <p className="foot">
-        {now.tradingDays} trading days, {now.hours} hours on the hatch. Data through {w.to}. Demo data, not a real truck.
-      </p>
     </>
   )
 }

@@ -135,3 +135,18 @@ a.plain { text-decoration: none; color: inherit; }
 }
 .nav a { font-size: 13px; padding: 9px 13px; border-radius: 999px; color: var(--ink-2); text-decoration: none; }
 .nav a.on { background: var(--ink); color: #fff; font-weight: 600; }
+
+/* rating */
+.rating { cursor: pointer; }
+.rating-word { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; margin: 2px 0; }
+.rating-sum { font-size: 13px; color: var(--ink-2); }
+.dot { width: 14px; height: 14px; border-radius: 50%; flex: none; background: var(--ink-3); }
+.dot.good, .good > .dot { background: var(--good); }
+.dot.warn, .warn > .dot { background: var(--warn); }
+.dot.info, .info > .dot { background: #3b6cb4; }
+.checks { list-style: none; margin: 14px 0 0; padding: 12px 0 0; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.checks li { display: flex; gap: 10px; align-items: flex-start; }
+.checks li .dot { width: 10px; height: 10px; margin-top: 4px; }
+.checks li div { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.checks li span:not(.dot) { color: var(--ink-2); }
+.tag { font-size: 12px; color: var(--ink-2); background: var(--card); padding: 5px 10px; border-radius: 999px; box-shadow: var(--shadow); }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Bars, Card, Meter, Pills } from '../components/ui'
-import { RANGES, hourLabel, hourlyFor, money, pct, rangeWindow, spotStats, type RangeKey } from '../lib/data'
+import { hourLabel, hourlyFor, money, pct, rangeWindow, spotStats, type RangeKey } from '../lib/data'
 
 export default function Spots({ range, setRange }: { range: RangeKey; setRange: (k: RangeKey) => void }) {
   const w = rangeWindow(range)
@@ -8,7 +8,6 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
   const [open, setOpen] = useState<string | null>(null)
   const maxNet = Math.max(1, ...spots.map((s) => s.netPerHour))
   const maxGross = Math.max(1, ...spots.map((s) => s.grossPerHour))
-  const label = RANGES.find((r) => r.key === range)!.label
 
   return (
     <>
@@ -16,7 +15,6 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
         <h1>Spots</h1>
         <Pills value={range} onChange={setRange} />
       </header>
-      <p className="lede">What each pitch earns per hour over the last {label}, after the fee the venue takes. Tap a spot for its best hours.</p>
 
       {spots.length === 0 && <Card>No trading days in this range.</Card>}
 

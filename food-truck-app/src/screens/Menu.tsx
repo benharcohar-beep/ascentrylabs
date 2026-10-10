@@ -1,5 +1,5 @@
 import { Card, Meter, Pills, Spark } from '../components/ui'
-import { RANGES, addDays, data, itemTotals, money, pct, rangeWindow, type RangeKey } from '../lib/data'
+import { addDays, data, itemTotals, money, pct, rangeWindow, type RangeKey } from '../lib/data'
 
 function weeklySeries(itemId: string, to: string, weeks = 12): number[] {
   const out: number[] = []
@@ -16,7 +16,6 @@ export default function Menu({ range, setRange }: { range: RangeKey; setRange: (
   const w = rangeWindow(range)
   const items = itemTotals(w.from, w.to)
   const max = items[0]?.revenue ?? 1
-  const label = RANGES.find((r) => r.key === range)!.label
   const total = items.reduce((a, i) => a + i.revenue, 0)
   const cogs = items.reduce((a, i) => a + i.cogs, 0)
 
@@ -26,9 +25,12 @@ export default function Menu({ range, setRange }: { range: RangeKey; setRange: (
         <h1>Menu</h1>
         <Pills value={range} onChange={setRange} />
       </header>
-      <p className="lede">
-        Every item over the last {label}. "Keeps" is what is left after ingredients, from your recipe costs. {total > 0 ? `Overall you keep ${pct(1 - cogs / total, false)} of ${money(total)}.` : 'Nothing sold in this range.'}
-      </p>
+      {total > 0 && (
+        <Card className="hero compact">
+          <div className="label">You keep, after ingredients</div>
+          <div className="big">{pct(1 - cogs / total, false)} <small>of {money(total)}</small></div>
+        </Card>
+      )}
 
       <Card>
         <ul className="list">
@@ -54,7 +56,6 @@ export default function Menu({ range, setRange }: { range: RangeKey; setRange: (
           })}
         </ul>
       </Card>
-      <p className="foot">Sparkline is the last 12 weeks of sales for each item. Green keeps 60% or more; amber is under 60% and worth a look.</p>
     </>
   )
 }

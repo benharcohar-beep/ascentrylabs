@@ -63,7 +63,10 @@ export function Bars({ bars, height = 120, highlightLast = true, format = (v: nu
   const gap = n > 20 ? 0.6 : 1.2
   const bw = (W - gap * (n - 1)) / n
   const labelEvery = n > 20 ? Math.ceil(n / 6) : 1
-  const active = sel ?? (highlightLast ? n - 1 : null)
+  // Default highlight: the last bar with anything in it, so a day off is not the headline.
+  let lastNonZero = n - 1
+  while (lastNonZero > 0 && bars[lastNonZero].value === 0) lastNonZero--
+  const active = sel ?? (highlightLast ? lastNonZero : null)
   return (
     <div className="bars">
       {active !== null && bars[active] && (

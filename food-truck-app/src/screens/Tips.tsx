@@ -8,8 +8,8 @@ export default function Tips() {
     <>
       <header className="top">
         <h1>Tips</h1>
+        <span className="tag">Week of {shortDate(TODAY)}</span>
       </header>
-      <p className="lede">Week of {shortDate(TODAY)}. Each one is worked out from your own numbers; tap "why" to see the sums behind it.</p>
       {tips.map((t) => (
         <Card key={t.id} className={`insight ${t.tone}`}>
           <div className="insight-title">{t.title}</div>
@@ -21,7 +21,6 @@ export default function Tips() {
           </details>
         </Card>
       ))}
-      <p className="foot">No AI involved: these are fixed rules over the data, so every claim can be checked.</p>
     </>
   )
 }

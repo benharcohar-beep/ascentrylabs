@@ -15,14 +15,10 @@ export default function Market() {
       <header className="top">
         <h1>Market</h1>
       </header>
-      <p className="lede">
-        Your price against {trucks} other Mexican trucks in Milwaukee, item for item. The grey bar is the range they charge, the tick is the middle, the dot is you.
-      </p>
 
       <Card className="hero compact">
-        <div className="label">Items priced under the market middle</div>
+        <div className="label">Items priced under {trucks} other Milwaukee trucks</div>
         <div className="big">{below} <small>of {rows.length}</small></div>
-        <div className="sub">Sorted from biggest gap to smallest. Tap an item to see who charges what.</div>
       </Card>
 
       {rows.map((b) => {
@@ -57,7 +53,6 @@ export default function Market() {
           </Card>
         )
       })}
-      <p className="foot">Portions differ between trucks, so treat a gap under 5% as noise. Prices are demo data.</p>
     </>
   )
 }
