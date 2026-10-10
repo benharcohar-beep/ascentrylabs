@@ -124,13 +124,29 @@ export function pctChange(now: number, before: number): number | null {
   return now / before - 1
 }
 
+export type Metric = 'sales' | 'orders' | 'avg' | 'tips'
+export const METRIC_LABEL: Record<Metric, string> = { sales: 'Sales', orders: 'Orders', avg: 'Average order', tips: 'Tips' }
+
+export function metricOf(t: Totals, m: Metric): number {
+  if (m === 'sales') return t.gross
+  if (m === 'orders') return t.orders
+  if (m === 'tips') return t.tips
+  return t.orders ? t.gross / t.orders : 0
+}
+
+export function formatMetric(v: number, m: Metric): string {
+  if (m === 'orders') return v.toLocaleString()
+  if (m === 'avg') return money(v, { cents: true })
+  return money(v)
+}
+
 /** Bars for the home chart: daily for 1W/1M, weekly for 3M, monthly for 1Y. */
-export function buckets(key: RangeKey, from: string, to: string): { label: string; value: number; sub?: string }[] {
+export function buckets(key: RangeKey, from: string, to: string, metric: Metric = 'sales'): { label: string; value: number; sub?: string }[] {
   const days = daysBetween(from, to)
   if (key === '1W' || key === '1M') {
     return days.map((d) => ({
       label: key === '1W' ? weekday(d.date) : d.date.slice(8),
-      value: d.gross_sales ?? 0,
+      value: metricOf(totals([d]), metric),
       sub: d.trading ? locationById.get(d.location_id!)?.name : 'Day off',
     }))
   }
@@ -138,7 +154,7 @@ export function buckets(key: RangeKey, from: string, to: string): { label: strin
   if (key === '3M') {
     for (let i = 0; i < days.length; i += 7) {
       const chunk = days.slice(i, i + 7)
-      out.push({ label: shortDate(chunk[0].date), value: totals(chunk).gross, sub: `w/c ${shortDate(chunk[0].date)}` })
+      out.push({ label: shortDate(chunk[0].date), value: metricOf(totals(chunk), metric), sub: `w/c ${shortDate(chunk[0].date)}` })
     }
     return out
   }
@@ -147,7 +163,17 @@ export function buckets(key: RangeKey, from: string, to: string): { label: strin
     const k = d.date.slice(0, 7)
     byMonth.set(k, [...(byMonth.get(k) ?? []), d])
   }
-  for (const [k, ds] of byMonth) out.push({ label: monthName(k), value: totals(ds).gross, sub: monthName(k, true) })
+  for (const [k, ds] of byMonth) out.push({ label: monthName(k), value: metricOf(totals(ds), metric), sub: monthName(k, true) })
+  return out
+}
+
+/** The last n whole weeks of a metric, oldest first, for sparklines. */
+export function weeklyHistory(metric: Metric, n = 8, end = TODAY): number[] {
+  const out: number[] = []
+  for (let i = n - 1; i >= 0; i--) {
+    const to = addDays(end, -7 * i), from = addDays(to, -6)
+    out.push(metricOf(totals(daysBetween(from, to)), metric))
+  }
   return out
 }
 

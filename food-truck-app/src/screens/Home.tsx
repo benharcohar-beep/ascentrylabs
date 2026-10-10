@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Bars, Card, Delta, Meter, Pills, Tile } from '../components/ui'
-import { RANGES, buckets, data, daysBetween, itemTotals, money, pctChange, rangeWindow, totals, type RangeKey } from '../lib/data'
+import { METRIC_LABEL, RANGES, buckets, data, daysBetween, formatMetric, itemTotals, money, pctChange, rangeWindow, totals, weeklyHistory, type Metric, type RangeKey } from '../lib/data'
 import { health } from '../lib/health'
 import { weeklyInsights } from '../lib/insights'
 import { stockAlerts } from '../lib/stock'
@@ -20,6 +20,8 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
   const h = health()
   const [why, setWhy] = useState(false)
   const stock = stockAlerts()
+  const [metric, setMetric] = useState<Metric>('sales')
+  const pick = (m: Metric) => setMetric(metric === m ? 'sales' : m)
 
   return (
     <>
@@ -59,14 +61,18 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
         </div>
 
         <div className="tiles">
-          <Tile value={now.orders.toLocaleString()} label="orders" delta={pctChange(now.orders, prev.orders)} />
-          <Tile value={money(avg, { cents: true })} label="avg order" delta={pctChange(avg, prevAvg)} />
-          <Tile value={money(now.tips)} label="tips" delta={pctChange(now.tips, prev.tips)} />
+          <Tile value={now.orders.toLocaleString()} label="orders" delta={pctChange(now.orders, prev.orders)} spark={weeklyHistory('orders')} on={metric === 'orders'} onClick={() => pick('orders')} />
+          <Tile value={money(avg, { cents: true })} label="avg order" delta={pctChange(avg, prevAvg)} spark={weeklyHistory('avg')} on={metric === 'avg'} onClick={() => pick('avg')} />
+          <Tile value={money(now.tips)} label="tips" delta={pctChange(now.tips, prev.tips)} spark={weeklyHistory('tips')} on={metric === 'tips'} onClick={() => pick('tips')} />
         </div>
       </section>
 
       <Card>
-        <Bars bars={buckets(range, w.from, w.to)} />
+        <div className="row">
+          <h2>{METRIC_LABEL[metric]} by {range === '1Y' ? 'month' : range === '3M' ? 'week' : 'day'}</h2>
+          {metric !== 'sales' && <button className="linkish" onClick={() => setMetric('sales')}>back to sales</button>}
+        </div>
+        <Bars bars={buckets(range, w.from, w.to, metric)} format={(v) => formatMetric(v, metric)} />
       </Card>
 
       {stock.length > 0 && (

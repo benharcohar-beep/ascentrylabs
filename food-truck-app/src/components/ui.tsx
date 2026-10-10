@@ -10,15 +10,19 @@ export function Card({ children, className = '', onClick }: { children: ReactNod
   )
 }
 
-export function Tile({ value, label, delta }: { value: string; label: string; delta?: number | null }) {
+export function Tile({ value, label, delta, spark, on, onClick }: {
+  value: string; label: string; delta?: number | null; spark?: number[]; on?: boolean; onClick?: () => void
+}) {
+  const Tag = onClick ? 'button' : 'div'
   return (
-    <div className="card tile">
+    <Tag className={`card tile ${on ? 'on' : ''}`} onClick={onClick} aria-pressed={onClick ? on : undefined}>
       <div className="num">{value}</div>
       <div className="label">{label}</div>
       {delta !== undefined && delta !== null && (
         <div className={`delta small ${delta >= 0 ? 'up' : 'down'}`}>{delta >= 0 ? '+' : ''}{Math.round(delta * 100)}%</div>
       )}
-    </div>
+      {spark && <Spark values={spark} />}
+    </Tag>
   )
 }
 
