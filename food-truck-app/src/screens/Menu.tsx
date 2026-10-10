@@ -1,3 +1,4 @@
+import { Brand } from '../components/Brand'
 import { Card, Meter, Pills, Spark } from '../components/ui'
 import { addDays, data, itemTotals, money, pct, rangeWindow, type RangeKey } from '../lib/data'
 
@@ -24,7 +25,7 @@ export default function Menu({ range, setRange }: { range: RangeKey; setRange: (
       <section className="grad sage">
         <header className="top">
           <h1>Menu</h1>
-          <Pills value={range} onChange={setRange} />
+          <div className="hstack"><Pills value={range} onChange={setRange} /><Brand /></div>
         </header>
         {total > 0 ? (
           <>

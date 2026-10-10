@@ -5,6 +5,7 @@ import { METRIC_LABEL, RANGES, buckets, data, daysBetween, formatMetric, itemTot
 import { health } from '../lib/health'
 import { weeklyInsights } from '../lib/insights'
 import { stockAlerts } from '../lib/stock'
+import { Brand } from '../components/Brand'
 
 const toneOf = (score: number): 'good' | 'info' | 'warn' => (score > 0 ? 'good' : score < 0 ? 'warn' : 'info')
 
@@ -37,7 +38,7 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
             <div className="eyebrow">Good morning,</div>
             <h1>{data.truck.owner.split(' ')[0]}</h1>
           </div>
-          <div className="avatar" aria-hidden>{data.truck.owner[0]}</div>
+          <Brand />
         </header>
 
         <div className="rating-hero">
@@ -81,7 +82,7 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
 
       <section className="block">
         <div className="row">
-          <h2>Today</h2>
+          <h2>Eventini insights</h2>
           <Link to="/tips" className="more">See all</Link>
         </div>
         <div className="today">

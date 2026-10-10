@@ -2,6 +2,7 @@ import { Card } from '../components/ui'
 import { TODAY, shortDate } from '../lib/data'
 import { weeklyInsights } from '../lib/insights'
 import { stockAlerts } from '../lib/stock'
+import { Brand } from '../components/Brand'
 import { money, pct } from '../lib/data'
 
 export default function Tips() {
@@ -12,13 +13,13 @@ export default function Tips() {
       <section className="grad warm">
         <header className="top">
           <h1>Tips</h1>
-          <span className="tag">Week of {shortDate(TODAY)}</span>
+          <div className="hstack"><span className="tag">Week of {shortDate(TODAY)}</span><Brand /></div>
         </header>
-        <div className="label">{tips.length + stock.length} things worth knowing this week</div>
+        <div className="label">{tips.length + stock.length} Eventini insights this week</div>
       </section>
       {stock.map((s) => (
         <Card key={s.id} className="insight warn">
-          <div className="eyebrow"><span className="dot" aria-hidden /> Use it or lose it</div>
+          <div className="eyebrow"><span className="dot" aria-hidden /> Eventini stock insight</div>
           <div className="insight-title">{s.item.name}: {s.unitsNow} sold this week, usually {s.unitsBase}</div>
           <p>Selling {pct(s.drop, false)} less than usual per order. About {s.surplusLabel} of {s.ingredient} a week is going unsold, worth {money(s.wastePerWeek)} in ingredients{s.shelfLifeDays <= 2 ? `, and it keeps ${s.shelfLifeDays} day${s.shelfLifeDays > 1 ? 's' : ''}` : ''}.</p>
           <p className="action">1. {s.prepLine}</p>
@@ -32,7 +33,7 @@ export default function Tips() {
       ))}
       {tips.map((t) => (
         <Card key={t.id} className={`insight ${t.tone}`}>
-          <div className="eyebrow"><span className="dot" aria-hidden /> {t.short}</div>
+          <div className="eyebrow"><span className="dot" aria-hidden /> Eventini insight</div>
           <div className="insight-title">{t.title}</div>
           <p>{t.body}</p>
           {t.action && <p className="action">{t.action}</p>}

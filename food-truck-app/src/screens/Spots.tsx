@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Brand } from '../components/Brand'
 import { Bars, Card, Meter, Pills } from '../components/ui'
 import { hourLabel, hourlyFor, money, pct, rangeWindow, spotStats, type RangeKey } from '../lib/data'
 
@@ -14,7 +15,7 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
       <section className="grad slate">
         <header className="top">
           <h1>Spots</h1>
-          <Pills value={range} onChange={setRange} />
+          <div className="hstack"><Pills value={range} onChange={setRange} /><Brand /></div>
         </header>
         {spots[0] && (
           <>

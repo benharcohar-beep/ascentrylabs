@@ -210,11 +210,8 @@ button.tile { font: inherit; border: 0; cursor: pointer; text-align: center; }
 .grad .tile.on { background: #fff; box-shadow: 0 0 0 2px var(--ink); }
 .linkish { border: 0; background: transparent; font: inherit; font-size: 13px; color: var(--ink-2); cursor: pointer; padding: 0; }
 
-/* rating word coloured by state, on a white chip so it reads on any header */
-.rating-big { display: inline-block; padding: 6px 22px; border-radius: 999px; background: rgba(255, 255, 255, 0.94); box-shadow: var(--shadow); }
-.rating-big.good { color: #0f7a4a; }
-.rating-big.info { color: #b7791f; }
-.rating-big.warn { color: #c0392b; }
+/* rating word: plain white, large; the rings below carry the state colours */
+.rating-big { color: #fff; }
 
 /* rings under the rating */
 .rings { display: flex; justify-content: center; gap: 18px; margin: 10px 0 4px; }
@@ -253,3 +250,15 @@ button.tile { font: inherit; border: 0; cursor: pointer; text-align: center; }
 .pill.grey { background: var(--line); color: var(--ink-2); }
 .pill.green { background: #e6f4ec; color: #15713d; }
 .pill.amber { background: #fdecd8; color: #9a4b0e; }
+
+/* brand */
+.hstack { display: flex; align-items: center; gap: 8px; }
+.brand-btn { display: inline-flex; align-items: center; gap: 6px; border: 0; background: rgba(255,255,255,0.92); color: var(--ink); padding: 6px 10px; border-radius: 999px; font: inherit; cursor: pointer; box-shadow: var(--shadow); }
+.wordmark { font-family: 'Fraunces', Georgia, serif; font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
+.brand-sep { font-size: 13px; color: var(--ink-2); }
+.concept-tag { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #9a4b0e; background: #fdecd8; padding: 2px 6px; border-radius: 999px; }
+.sheet-back { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
+.sheet { background: var(--card); color: var(--ink); border-radius: 24px 24px 0 0; padding: 22px 20px 32px; max-width: 430px; width: 100%; }
+.sheet h2 { font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: 22px; margin: 0 0 10px; }
+.sheet p { font-size: 14px; line-height: 1.5; color: var(--ink-2); margin: 0 0 10px; }
+.btn { border: 0; background: var(--ink); color: #fff; font: inherit; font-weight: 600; padding: 10px 18px; border-radius: 999px; cursor: pointer; margin-top: 6px; }
