@@ -2,14 +2,16 @@ import { useState } from 'react'
 import { Brand } from '../components/Brand'
 import { Card, RangeBar } from '../components/ui'
 import { data, money, pct, rivalById } from '../lib/data'
+import { pricingCheck } from '../lib/health'
 
 export default function Market() {
   const rows = data.benchmarks
     .filter((b) => b.hero_price !== null && b.n_trucks >= 3)
     .sort((a, b) => (a.hero_vs_median ?? 0) - (b.hero_vs_median ?? 0))
   const [open, setOpen] = useState<string | null>(null)
-  const below = rows.filter((r) => (r.hero_vs_median ?? 0) < -0.03).length
   const trucks = new Set(data.marketPrices.map((p) => p.truckId)).size
+  const pc = pricingCheck()
+  const under = rows.filter((r) => (r.hero_vs_median ?? 0) <= -0.1).length
 
   return (
     <>
@@ -18,8 +20,9 @@ export default function Market() {
           <h1>Market</h1>
           <Brand />
         </header>
-        <div className="label">Items priced under {trucks} other Milwaukee trucks</div>
-        <div className="big">{below} <small>of {rows.length}</small></div>
+        <div className="label">Items priced well under {trucks} other Milwaukee trucks</div>
+        <div className="big">{under} <small>of {rows.length}</small></div>
+        <div className="label">{pc.detail}</div>
       </section>
 
       {rows.map((b) => {

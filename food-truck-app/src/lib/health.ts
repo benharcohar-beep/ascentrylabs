@@ -33,6 +33,16 @@ export function health(): Health {
   else if (keep >= 0.12) checks.push({ label: 'Profit', detail: `${pct(keep, false)} of sales is profit after food, staff and fees, before fixed bills. Healthy is 25% or more.`, score: 0, value: kv, fill: kf })
   else checks.push({ label: 'Profit', detail: `Only ${pct(keep, false)} of sales is profit after food, staff and fees, before fixed bills.`, score: -1, value: kv, fill: kf })
 
+  const total = checks.reduce((a, c) => a + c.score, 0)
+  const weak = checks.filter((c) => c.score < 0)
+  if (weak.length) return { rating: 'Needs attention', tone: 'warn', summary: weak[0].label === 'Profit' ? 'Profit is thin after food, staff and fees.' : 'Sales have dropped on last week.', checks }
+  if (total >= 1) return { rating: 'Good', tone: 'good', summary: checks[0].score > 0 ? 'Sales are up and profit is healthy.' : 'Profit is healthy and sales are holding.', checks }
+  return { rating: 'Steady', tone: 'info', summary: checks[1]?.score > 0 ? 'Sales level with last week, profit healthy.' : 'Sales level with last week; profit could be better.', checks }
+}
+
+/** The market-side check, shown on the Market tab rather than Home. */
+export function pricingCheck(): Check {
+  const checks: Check[] = []
   // 3. Pricing against the market.
   const priced = data.benchmarks.filter((b) => b.hero_price !== null && b.n_trucks >= 3)
   const under = priced.filter((b) => (b.hero_vs_median ?? 0) <= -0.1).length
@@ -41,12 +51,7 @@ export function health(): Health {
   else if (under <= 2) checks.push({ label: 'Pricing', detail: `${priced.length - under} of ${priced.length} items are priced near other Milwaukee trucks; ${under} ${under > 1 ? 'are' : 'is'} more than 10% under.`, score: 0, value: pv, fill: pf })
   else checks.push({ label: 'Pricing', detail: `${priced.length - under} of ${priced.length} items are priced near other Milwaukee trucks; ${under} are more than 10% under.`, score: -1, value: pv, fill: pf })
 
-  const total = checks.reduce((a, c) => a + c.score, 0)
-  const weak = checks.filter((c) => c.score < 0)
-  if (total >= 2) return { rating: 'Good', tone: 'good', summary: 'Sales, profit and pricing all look healthy.', checks }
-  if (total <= -1 || weak.length >= 2)
-    return { rating: 'Needs attention', tone: 'warn', summary: `${weak.map((c) => c.label.toLowerCase()).join(' and ')} need${weak.length === 1 ? 's' : ''} a look.`, checks }
-  return { rating: 'Steady', tone: 'info', summary: weak.length ? `Fine overall, but ${weak[0].label.toLowerCase()} needs a look.` : 'Nothing urgent. One or two things could be better.', checks }
+  return checks[0]
 }
 
 function addWeeks(iso: string, n: number): string {
