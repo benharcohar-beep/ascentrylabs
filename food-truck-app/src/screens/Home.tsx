@@ -81,7 +81,7 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
         <Card className="line">
           <span className="fig warn">{tips.length + stock.length}</span>
           <span className="txt">
-            <b>Eventini insights this week</b>
+            <b>Eventini AI insights this week</b>
             <span>{stock[0] ? `${stock[0].item.name} has stopped selling. ` : ''}{tips.find((t) => t.id === 'fees')?.title ?? tips[0]?.title}</span>
           </span>
           <span className="chev">›</span>

@@ -20,7 +20,7 @@ export default function Insights() {
         </header>
         <div className="label">Week of {shortDate(TODAY)}</div>
         <div className="big">{tips.length + stock.length}</div>
-        <div className="label">worked out from your own numbers</div>
+        <div className="label">Eventini AI insights from your own numbers</div>
       </section>
 
       {stock.length > 0 && (
