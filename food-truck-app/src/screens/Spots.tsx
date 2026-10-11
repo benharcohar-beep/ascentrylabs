@@ -36,7 +36,7 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
             <div className="row">
               <div>
                 <div className="name">{i + 1}. {s.loc.name}</div>
-                <div className="sub">{s.loc.neighbourhood} · {s.days} {s.days === 1 ? 'day' : 'days'}{feeShare > 0.12 ? ` · fees take ${pct(feeShare, false)}` : ''}</div>
+                <div className="sub">{s.loc.neighbourhood} · {s.days} {s.days === 1 ? 'day' : 'days'}{feeShare > 0.12 ? ` · venue takes ${pct(feeShare, false)} of sales` : ''}</div>
               </div>
               <div className="val-stack">
                 <div className="val">{money(s.netPerHour)}<small>/hr</small></div>
@@ -52,7 +52,7 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
               <div className="detail">
                 <div className="facts">
                   <div><b>{money(s.gross)}</b><span>sales</span></div>
-                  <div><b>{money(s.fees)}</b><span>fees ({pct(feeShare, false)})</span></div>
+                  <div><b>{money(s.fees)}</b><span>in fees</span></div>
                   <div><b>{money(s.tips)}</b><span>tips</span></div>
                   <div><b>{s.orders.toLocaleString()}</b><span>orders</span></div>
                 </div>
