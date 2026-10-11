@@ -62,6 +62,8 @@ export function Bars({ bars, height = 120, highlightLast = true, format = (v: nu
 }) {
   const [sel, setSel] = useState<number | null>(null)
   const max = Math.max(1, ...bars.map((b) => b.value))
+  const min = Math.min(0, ...bars.map((b) => b.value))
+  const span = max - min || 1
   const n = bars.length
   const W = 100
   const gap = n > 20 ? 0.6 : 1.2
@@ -81,16 +83,19 @@ export function Bars({ bars, height = 120, highlightLast = true, format = (v: nu
       )}
       <svg viewBox={`0 0 ${W} ${height}`} preserveAspectRatio="none" width="100%" height={height} onMouseLeave={() => setSel(null)}>
         {bars.map((b, i) => {
-          const h = Math.max(b.value > 0 ? 2 : 1, (b.value / max) * (height - 4))
+          const base = height - 2 - ((0 - min) / span) * (height - 4)
+          const h = Math.max(b.value === 0 ? 1 : 2, (Math.abs(b.value) / span) * (height - 4))
+          const y = b.value >= 0 ? base - h : base
           const x = i * (bw + gap)
-          const cls = i === active ? 'bar on' : b.value === 0 ? 'bar zero' : 'bar'
+          const cls = i === active ? 'bar on' : b.value === 0 ? 'bar zero' : b.value < 0 ? 'bar neg' : 'bar'
           return (
             <g key={i} onClick={() => setSel(i === sel ? null : i)} onMouseEnter={() => setSel(i)}>
               <rect x={x} y={0} width={bw} height={height} fill="transparent" />
-              <rect className={cls} x={x} y={height - h} width={bw} height={h} rx={Math.min(1.5, bw / 2)} />
+              <rect className={cls} x={x} y={y} width={bw} height={h} rx={Math.min(1.5, bw / 2)} />
             </g>
           )
         })}
+        {min < 0 && <line x1={0} x2={W} y1={height - 2 - ((0 - min) / span) * (height - 4)} y2={height - 2 - ((0 - min) / span) * (height - 4)} className="baseline" />}
       </svg>
       <div className="bars-x">
         {bars.map((b, i) => (

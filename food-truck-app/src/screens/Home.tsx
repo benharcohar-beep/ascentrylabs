@@ -5,6 +5,7 @@ import { METRIC_LABEL, RANGES, buckets, data, daysBetween, formatMetric, itemTot
 import { health } from '../lib/health'
 import { weeklyInsights } from '../lib/insights'
 import { stockAlerts } from '../lib/stock'
+import { statementFor } from '../lib/money'
 import { Brand } from '../components/Brand'
 
 const toneOf = (score: number): 'good' | 'info' | 'warn' => (score > 0 ? 'good' : score < 0 ? 'warn' : 'info')
@@ -20,8 +21,9 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
   const tips = weeklyInsights()
   const stock = stockAlerts()
   const h = health()
-  const [why, setWhy] = useState<string | null>('Profit')
+  const [why] = useState<string | null>('Profit')
   const navigate = useNavigate()
+  const st = statementFor(range)
   const metric: Metric = 'sales'
   const pick = (m: Metric) => navigate(`/history/${m}`)
 
@@ -45,7 +47,7 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
 
         <div className="rings">
           {h.checks.filter((c) => c.label === 'Profit').map((c) => (
-            <button key={c.label} className="ring-btn" onClick={() => setWhy(c.label)} aria-pressed={why === c.label}>
+            <button key={c.label} className="ring-btn" onClick={() => navigate('/money')} aria-pressed={why === c.label}>
               <Ring fill={c.fill} tone={toneOf(c.score)} text={c.value} label={c.label} />
             </button>
           ))}
@@ -53,12 +55,20 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
         {why && <div className="ring-detail">{h.checks.find((c) => c.label === why)?.detail}</div>}
 
         <div className="row hero-row">
-          <div onClick={() => pick('sales')} role="link" style={{ cursor: 'pointer' }}>
-            <div className="label">Sales this {label}</div>
-            <div className="mid">{money(now.gross)}</div>
-            <Delta value={pctChange(now.gross, prev.gross)} suffix={`vs previous ${label}`} />
-          </div>
+          <div className="label">This {label}</div>
           <Pills value={range} onChange={setRange} />
+        </div>
+        <div className="two">
+          <div onClick={() => pick('sales')} role="link" style={{ cursor: 'pointer' }}>
+            <div className="label">Sales</div>
+            <div className="mid">{money(now.gross)}</div>
+            <Delta value={pctChange(now.gross, prev.gross)} suffix="" />
+          </div>
+          <div onClick={() => navigate('/money')} role="link" style={{ cursor: 'pointer' }}>
+            <div className="label">Profit</div>
+            <div className="mid">{st.now.profit < 0 ? '-' : ''}{money(Math.abs(st.now.profit))}</div>
+            <Delta value={pctChange(st.now.profit, st.prev.profit)} suffix="" />
+          </div>
         </div>
 
         <div className="tiles">

@@ -49,6 +49,9 @@ export type Monthly = {
   fixed_costs: number; operating_profit: number; food_cost_pct: number; labour_pct: number
 }
 
+export type Catering = { booking_id: string; date: string; type: string; heads: number; price_per_head: number; revenue: number; food_cost: number; staff_cost: number; source: string }
+export type FixedCost = { month: string; cost: string; amount: number; scaled_by_activity: boolean }
+
 type Data = {
   meta: { generated: string; start: string; end: string; fake: boolean; planted_stories: string[] }
   truck: { name: string; owner: string; concept: string; pos: string }
@@ -62,6 +65,8 @@ type Data = {
   hourly: Hourly[]
   itemDays: ItemDay[]
   monthly: Monthly[]
+  catering: Catering[]
+  fixedCosts: FixedCost[]
 }
 
 export const data = raw as unknown as Data
