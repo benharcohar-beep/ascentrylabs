@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, NavLink, useParams } from 'react-router-dom'
 import { Brand } from '../components/Brand'
 import { Bars, Card, Delta, Pills } from '../components/ui'
 import {
@@ -39,6 +39,11 @@ export default function History() {
           <Link to="/" className="back">‹ Home</Link>
           <Brand />
         </header>
+        <nav className="seg">
+          {VALID.map((k) => (
+            <NavLink key={k} to={`/history/${k}`} className={({ isActive }) => (isActive ? 'on' : '')}>{k === 'avg' ? 'Avg order' : METRIC_LABEL[k]}</NavLink>
+          ))}
+        </nav>
         <div className="row hero-row">
           <div>
             <div className="label">{METRIC_LABEL[metric]}, this {label}</div>
