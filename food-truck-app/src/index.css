@@ -5,10 +5,10 @@
   --ink-2: #6b6b6b;
   --ink-3: #a3a3a3;
   --line: #ececea;
-  --accent: #e8552b;
+  --accent: #f2906f;   /* soft coral, the saturated end of the Sales card colour */
   --good: #1f9d55;
   --bad: #d64545;
-  --warn: #e0962b;
+  --warn: #e6b04b;     /* marigold, matches the Menu block */
   --radius: 22px;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.05);
   font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
