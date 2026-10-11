@@ -40,7 +40,7 @@ export function Pills({ value, onChange }: { value: RangeKey; onChange: (k: Rang
 
 export function Nav() {
   const items = [
-    ['/', 'Home'], ['/spots', 'Spots'], ['/menu', 'Menu'], ['/market', 'Market'], ['/tips', 'Tips'],
+    ['/', 'Home'], ['/spots', 'Spots'], ['/menu', 'Menu'], ['/market', 'Market'], ['/insights', 'Insights'],
   ]
   return (
     <nav className="nav">

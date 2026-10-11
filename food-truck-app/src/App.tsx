@@ -6,7 +6,7 @@ import Home from './screens/Home'
 import Market from './screens/Market'
 import Menu from './screens/Menu'
 import Spots from './screens/Spots'
-import Tips from './screens/Tips'
+import Insights from './screens/Insights'
 import History from './screens/History'
 import './app.css'
 
@@ -21,7 +21,8 @@ export default function App() {
           <Route path="/spots" element={<Spots range={range} setRange={setRange} />} />
           <Route path="/menu" element={<Menu range={range} setRange={setRange} />} />
           <Route path="/market" element={<Market />} />
-          <Route path="/tips" element={<Tips />} />
+          <Route path="/insights" element={<Insights />} />
+          <Route path="/tips" element={<Insights />} />
           <Route path="/history/:metric" element={<History />} />
         </Routes>
         <Nav />

@@ -25,11 +25,6 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
   const metric: Metric = 'sales'
   const pick = (m: Metric) => navigate(`/history/${m}`)
 
-  // Today: the stock alert first, then the strongest tips, as short actions.
-  const today = [
-    ...stock.slice(0, 1).map((s) => ({ id: s.id, title: `Prep less ${s.ingredient}`, sub: `${s.item.name}: ${s.unitsNow} sold, usually ${s.unitsBase}`, tone: 'warn' as const })),
-    ...tips.filter((t) => t.id !== 'wow').map((t) => ({ id: t.id, title: t.short, sub: t.title, tone: t.tone })),
-  ].slice(0, 4)
 
   return (
     <>
@@ -81,21 +76,16 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
         <Bars bars={buckets(range, w.from, w.to, metric)} format={(v) => formatMetric(v, metric)} />
       </Card>
 
-      <section className="block">
-        <div className="row">
-          <h2>Eventini insights</h2>
-          <Link to="/tips" className="more">See all</Link>
-        </div>
-        <div className="today">
-          {today.map((t) => (
-            <Link key={t.id} to="/tips" className={`today-tile ${t.tone}`}>
-              <span className="dot" aria-hidden />
-              <b>{t.title}</b>
-              <span>{t.sub}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
+      <Link to="/insights" className="plain">
+        <Card className="line">
+          <span className="fig warn">{tips.length + stock.length}</span>
+          <span className="txt">
+            <b>Eventini insights this week</b>
+            <span>{stock[0] ? `${stock[0].item.name} has stopped selling. ` : ''}{tips.find((t) => t.id === 'fees')?.title ?? tips[0]?.title}</span>
+          </span>
+          <span className="chev">›</span>
+        </Card>
+      </Link>
 
       <section className="block">
         <div className="row">
