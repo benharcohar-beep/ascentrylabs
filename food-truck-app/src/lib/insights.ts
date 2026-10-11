@@ -103,9 +103,9 @@ export function weeklyInsights(): Insight[] {
     out.push({
       id: 'margin', tone: 'warn',
       short: `Trim the ${thin.item.name.toLowerCase().replace(/ \(.*\)/, '')} recipe`,
-      figure: pct(thin.margin, false), figureNote: 'profit', section: 'Menu',
-      title: `${thin.item.name} makes only ${pct(thin.margin, false)} profit`,
-      body: `Ingredients cost ${money(thin.item.cost, { cents: true })} of a ${money(thin.item.price, { cents: true })} sale.${fat ? ` ${fat.item.name} makes ${pct(fat.margin, false)}.` : ''}`,
+      figure: pct(thin.margin, false), figureNote: 'margin', section: 'Menu',
+      title: `${thin.item.name} has only a ${pct(thin.margin, false)} margin`,
+      body: `Ingredients cost ${money(thin.item.cost, { cents: true })} of a ${money(thin.item.price, { cents: true })} sale.${fat ? ` ${fat.item.name} is at ${pct(fat.margin, false)}.` : ''}`,
       evidence: `Based on your recipe costs and ${thin.qty.toLocaleString()} sold in the last 3 months.`,
       action: 'Check the portion on the dearest ingredient, or move the price up with the market gap above.',
     })

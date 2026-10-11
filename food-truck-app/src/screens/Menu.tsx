@@ -17,7 +17,7 @@ export default function Menu({ range, setRange }: { range: RangeKey; setRange: (
         </header>
         {total > 0 ? (
           <>
-            <div className="label">Profit after ingredients</div>
+            <div className="label">Margin after ingredients</div>
             <div className="big">{pct(1 - cogs / total, false)} <small>of {money(total)}</small></div>
           </>
         ) : (
@@ -40,7 +40,7 @@ export default function Menu({ range, setRange }: { range: RangeKey; setRange: (
                   <span>{i.qty.toLocaleString()} sold</span>
                 </div>
                 <div className="list-foot">
-                  <span className={`chip ${thin ? 'warn' : 'good'}`}>{pct(i.margin, false)} profit</span>
+                  <span className={`chip ${thin ? 'warn' : 'good'}`}>{pct(i.margin, false)} margin</span>
                   <span className="muted">costs {money(i.item.cost, { cents: true })} to make</span>
                 </div>
               </li>

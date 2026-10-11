@@ -121,7 +121,7 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
               <span className="val">{money(i.revenue)}</span>
               <span className="pills-sm">
                 <span className="pill grey">{i.qty.toLocaleString()} sold</span>
-                <span className={`pill ${i.margin < 0.6 ? 'amber' : 'green'}`}>{pct(i.margin, false)} profit</span>
+                <span className={`pill ${i.margin < 0.6 ? 'amber' : 'green'}`}>{pct(i.margin, false)} margin</span>
               </span>
             </li>
           ))}
