@@ -1,14 +1,11 @@
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Bars, Card, Delta, Pills, Ring, Tile } from '../components/ui'
-import { METRIC_LABEL, RANGES, buckets, data, daysBetween, formatMetric, itemTotals, money, pct, pctChange, rangeWindow, totals, weeklyHistory, type Metric, type RangeKey } from '../lib/data'
+import { Bars, Card, Delta, Pills, Tile } from '../components/ui'
+import { METRIC_LABEL, RANGES, buckets, data, daysBetween, formatMetric, itemTotals, money, pct, pctChange, rangeWindow, totals, type Metric, type RangeKey } from '../lib/data'
 import { health } from '../lib/health'
 import { weeklyInsights } from '../lib/insights'
 import { stockAlerts } from '../lib/stock'
 import { statementFor } from '../lib/money'
 import { Brand } from '../components/Brand'
-
-const toneOf = (score: number): 'good' | 'info' | 'warn' => (score > 0 ? 'good' : score < 0 ? 'warn' : 'info')
 
 export default function Home({ range, setRange }: { range: RangeKey; setRange: (k: RangeKey) => void }) {
   const w = rangeWindow(range)
@@ -21,7 +18,6 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
   const tips = weeklyInsights()
   const stock = stockAlerts()
   const h = health()
-  const [why] = useState<string | null>('Profit')
   const navigate = useNavigate()
   const st = statementFor(range)
   const metric: Metric = 'sales'
@@ -45,15 +41,6 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
           <div className="rating-sum">{h.summary}</div>
         </div>
 
-        <div className="rings">
-          {h.checks.filter((c) => c.label === 'Profit').map((c) => (
-            <button key={c.label} className="ring-btn" onClick={() => navigate('/money')} aria-pressed={why === c.label}>
-              <Ring fill={c.fill} tone={toneOf(c.score)} text={c.value} label={c.label} />
-            </button>
-          ))}
-        </div>
-        {why && <div className="ring-detail">{h.checks.find((c) => c.label === why)?.detail}</div>}
-
         <div className="row hero-row">
           <div className="label">This {label}</div>
           <Pills value={range} onChange={setRange} />
@@ -62,19 +49,19 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
           <div onClick={() => pick('sales')} role="link" style={{ cursor: 'pointer' }}>
             <div className="label">Sales</div>
             <div className="mid">{money(now.gross)}</div>
-            <Delta value={pctChange(now.gross, prev.gross)} suffix="" />
+            <Delta value={pctChange(now.gross, prev.gross)} suffix={`vs last ${label}`} />
           </div>
           <div onClick={() => navigate('/money')} role="link" style={{ cursor: 'pointer' }}>
             <div className="label">Profit</div>
             <div className="mid">{st.now.profit < 0 ? '-' : ''}{money(Math.abs(st.now.profit))}</div>
-            <Delta value={pctChange(st.now.profit, st.prev.profit)} suffix="" />
+            <Delta value={pctChange(st.now.profit, st.prev.profit)} suffix={`vs last ${label}`} />
           </div>
         </div>
 
         <div className="tiles">
-          <Tile value={now.orders.toLocaleString()} label="orders" delta={pctChange(now.orders, prev.orders)} spark={weeklyHistory('orders')} onClick={() => pick('orders')} />
-          <Tile value={money(avg, { cents: true })} label="avg order" delta={pctChange(avg, prevAvg)} spark={weeklyHistory('avg')} onClick={() => pick('avg')} />
-          <Tile value={money(now.tips)} label="tips" delta={pctChange(now.tips, prev.tips)} spark={weeklyHistory('tips')} onClick={() => pick('tips')} />
+          <Tile value={now.orders.toLocaleString()} label="orders" delta={pctChange(now.orders, prev.orders)} onClick={() => pick('orders')} />
+          <Tile value={money(avg, { cents: true })} label="avg order" delta={pctChange(avg, prevAvg)} onClick={() => pick('avg')} />
+          <Tile value={money(now.tips)} label="tips" delta={pctChange(now.tips, prev.tips)} onClick={() => pick('tips')} />
         </div>
       </section>
 
@@ -87,10 +74,9 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
       </Card>
 
       <Link to="/insights" className="plain">
-        <Card className="line">
-          <span className="fig warn">{tips.length + stock.length}</span>
+        <Card className="line noleft">
           <span className="txt">
-            <b>Eventini AI insights this week</b>
+            <b>{tips.filter((t) => t.id !== 'wow').length + stock.length} insights this week</b>
             <span>{stock[0] ? `${stock[0].item.name} has stopped selling. ` : ''}{tips.find((t) => t.id === 'fees')?.title ?? tips[0]?.title}</span>
           </span>
           <span className="chev">›</span>
@@ -109,7 +95,7 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
               <span className="val">{money(i.revenue)}</span>
               <span className="pills-sm">
                 <span className="pill grey">{i.qty.toLocaleString()} sold</span>
-                <span className={`pill ${i.margin < 0.6 ? 'amber' : 'green'}`}>keeps {pct(i.margin, false)}</span>
+                <span className={`pill ${i.margin < 0.6 ? 'amber' : 'green'}`}>{pct(i.margin, false)} profit</span>
               </span>
             </li>
           ))}

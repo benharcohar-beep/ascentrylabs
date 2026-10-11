@@ -159,7 +159,7 @@ export function buckets(key: RangeKey, from: string, to: string, metric: Metric 
   if (key === '3M') {
     for (let i = 0; i < days.length; i += 7) {
       const chunk = days.slice(i, i + 7)
-      out.push({ label: shortDate(chunk[0].date), value: metricOf(totals(chunk), metric), sub: `w/c ${shortDate(chunk[0].date)}` })
+      out.push({ label: shortDate(chunk[0].date), value: metricOf(totals(chunk), metric), sub: `Week of ${shortDate(chunk[0].date)}` })
     }
     return out
   }

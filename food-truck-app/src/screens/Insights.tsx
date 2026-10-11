@@ -9,7 +9,7 @@ const ORDER: Insight['section'][] = ['Sales', 'Spots', 'Menu', 'Market', 'Weathe
 export default function Insights() {
   const tips = weeklyInsights()
   const stock = stockAlerts()
-  const sections = ORDER.map((s) => ({ name: s, items: tips.filter((t) => t.section === s) })).filter((s) => s.items.length)
+  const sections = ORDER.map((s) => ({ name: s, items: tips.filter((t) => t.section === s && t.id !== 'wow') })).filter((s) => s.items.length)
 
   return (
     <>
@@ -19,8 +19,8 @@ export default function Insights() {
           <Brand />
         </header>
         <div className="label">Week of {shortDate(TODAY)}</div>
-        <div className="big">{tips.length + stock.length}</div>
-        <div className="label">Eventini AI insights from your own numbers</div>
+        <div className="big">{tips.filter((t) => t.id !== 'wow').length + stock.length}</div>
+        <div className="label">insights this week, from your own numbers</div>
       </section>
 
       {stock.length > 0 && (
@@ -30,7 +30,7 @@ export default function Insights() {
             {stock.map((s) => (
               <details key={s.id} className="irow">
                 <summary>
-                  <span className="fig">{money(s.wastePerWeek)}<small>/wk</small></span>
+                  <span className="fig">{money(s.wastePerWeek)}<em>a week in the bin</em></span>
                   <span className="txt">
                     <b>{s.item.name} has stopped selling</b>
                     <span>{s.unitsNow} this week against about {s.unitsBase} a week before. About {s.surplusLabel} of {s.ingredient} a week is going in the bin.</span>
@@ -55,7 +55,7 @@ export default function Insights() {
             {sec.items.map((t) => (
               <details key={t.id} className="irow">
                 <summary>
-                  <span className={`fig ${t.tone}`}>{t.figure}</span>
+                  <span className={`fig ${t.tone}`}>{t.figure}<em>{t.figureNote}</em></span>
                   <span className="txt">
                     <b>{t.title}</b>
                     <span>{t.body}</span>

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Brand } from '../components/Brand'
 import { Card, RangeBar } from '../components/ui'
 import { data, money, pct, rivalById } from '../lib/data'
-import { pricingCheck } from '../lib/health'
 
 export default function Market() {
   const rows = data.benchmarks
@@ -10,7 +9,6 @@ export default function Market() {
     .sort((a, b) => (a.hero_vs_median ?? 0) - (b.hero_vs_median ?? 0))
   const [open, setOpen] = useState<string | null>(null)
   const trucks = new Set(data.marketPrices.map((p) => p.truckId)).size
-  const pc = pricingCheck()
   const under = rows.filter((r) => (r.hero_vs_median ?? 0) <= -0.1).length
 
   return (
@@ -20,9 +18,8 @@ export default function Market() {
           <h1>Market</h1>
           <Brand />
         </header>
-        <div className="label">Items priced well under {trucks} other Milwaukee trucks</div>
+        <div className="label">Items priced well under the other {trucks} Milwaukee trucks</div>
         <div className="big">{under} <small>of {rows.length}</small></div>
-        <div className="label">{pc.detail}</div>
       </section>
 
       {rows.map((b) => {
@@ -34,7 +31,7 @@ export default function Market() {
           <Card key={b.standard_item} className="mkt" onClick={() => setOpen(isOpen ? null : b.standard_item)}>
             <div className="row">
               <div className="name">{b.item_label}</div>
-              <div className={`chip ${gap < -0.03 ? 'warn' : gap > 0.03 ? 'info' : 'good'}`}>{pct(gap)} vs middle</div>
+              <div className={`chip ${gap < -0.03 ? 'warn' : gap > 0.03 ? 'info' : 'good'}`}>{gap < -0.03 ? `${pct(Math.abs(gap), false)} cheaper than most` : gap > 0.03 ? `${pct(gap, false)} dearer than most` : 'about the same'}</div>
             </div>
             <RangeBar min={b.min} max={b.max} median={b.median} you={you} />
             <div className="range-labels">
@@ -51,7 +48,7 @@ export default function Market() {
                     <span className="num">{money(p.price, { cents: true })}</span>
                   </li>
                 ))}
-                <li className="muted small">Middle {money(b.median, { cents: true })} from {b.n_trucks} trucks. Sources: menu photos, Instagram, websites and pooled POS data.</li>
+                <li className="muted small">Most trucks charge about {money(b.median, { cents: true })} ({b.n_trucks} trucks). From menus, Instagram, websites and pooled POS data.</li>
               </ul>
             )}
           </Card>

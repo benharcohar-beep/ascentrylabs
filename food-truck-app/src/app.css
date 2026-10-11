@@ -315,3 +315,8 @@ button.tile { font: inherit; border: 0; cursor: pointer; text-align: center; }
 
 .bar.neg { fill: var(--bad); opacity: 0.85; }
 .baseline { stroke: var(--line); stroke-width: 0.5; }
+
+.dual-row.one { grid-template-columns: 1fr; }
+.fig em { display: block; font-style: normal; font-size: 11px; font-weight: 500; color: var(--ink-3); margin-top: 2px; letter-spacing: 0; }
+.line.noleft { grid-template-columns: 1fr 16px; }
+.stmt-line.head { font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.04em; padding: 0 0 6px; border-top: 0; }

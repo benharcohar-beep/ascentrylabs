@@ -61,9 +61,9 @@ export default function History() {
 
       {best && (
         <div className="tiles plain">
-          <div className="card tile"><div className="num">{formatMetric(best.value, metric)}</div><div className="label">best week</div><div className="sub">w/c {shortDate(best.from)}</div></div>
+          <div className="card tile"><div className="num">{formatMetric(best.value, metric)}</div><div className="label">best week</div><div className="sub">Week of {shortDate(best.from)}</div></div>
           <div className="card tile"><div className="num">{formatMetric(avgWeek, metric)}</div><div className="label">typical week</div><div className="sub">last 12</div></div>
-          <div className="card tile"><div className="num">{formatMetric(worst.value, metric)}</div><div className="label">worst week</div><div className="sub">w/c {shortDate(worst.from)}</div></div>
+          <div className="card tile"><div className="num">{formatMetric(worst.value, metric)}</div><div className="label">worst week</div><div className="sub">Week of {shortDate(worst.from)}</div></div>
         </div>
       )}
 
@@ -74,7 +74,7 @@ export default function History() {
             const ch = pctChange(x.value, x.prev)
             return (
               <li key={x.from}>
-                <span className="name">w/c {shortDate(x.from)} <small className="muted">{x.days} days</small></span>
+                <span className="name">Week of {shortDate(x.from)} <small className="muted">{x.days} days</small></span>
                 <span className="val">{formatMetric(x.value, metric)}</span>
                 <span className="pills-sm">
                   {ch !== null && <span className={`pill ${ch >= 0 ? 'green' : 'amber'}`}>{ch >= 0 ? '+' : ''}{Math.round(ch * 100)}% vs week before</span>}

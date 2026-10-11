@@ -1,17 +1,6 @@
 import { Brand } from '../components/Brand'
-import { Card, Meter, Pills, Spark } from '../components/ui'
-import { addDays, data, itemTotals, money, pct, rangeWindow, type RangeKey } from '../lib/data'
-
-function weeklySeries(itemId: string, to: string, weeks = 12): number[] {
-  const out: number[] = []
-  for (let i = weeks - 1; i >= 0; i--) {
-    const end = addDays(to, -7 * i), start = addDays(end, -6)
-    let v = 0
-    for (const r of data.itemDays) if (r.item_id === itemId && r.date >= start && r.date <= end) v += r.revenue
-    out.push(v)
-  }
-  return out
-}
+import { Card, Meter, Pills } from '../components/ui'
+import { itemTotals, money, pct, rangeWindow, type RangeKey } from '../lib/data'
 
 export default function Menu({ range, setRange }: { range: RangeKey; setRange: (k: RangeKey) => void }) {
   const w = rangeWindow(range)
@@ -29,7 +18,7 @@ export default function Menu({ range, setRange }: { range: RangeKey; setRange: (
         </header>
         {total > 0 ? (
           <>
-            <div className="label">You keep, after ingredients</div>
+            <div className="label">Profit after ingredients</div>
             <div className="big">{pct(1 - cogs / total, false)} <small>of {money(total)}</small></div>
           </>
         ) : (
@@ -52,9 +41,8 @@ export default function Menu({ range, setRange }: { range: RangeKey; setRange: (
                   <span>{i.qty.toLocaleString()} sold</span>
                 </div>
                 <div className="list-foot">
-                  <Spark values={weeklySeries(i.item.id, w.to)} />
-                  <span className={`chip ${thin ? 'warn' : 'good'}`}>keeps {pct(i.margin, false)}</span>
-                  <span className="muted">cost {money(i.item.cost, { cents: true })}</span>
+                  <span className={`chip ${thin ? 'warn' : 'good'}`}>{pct(i.margin, false)} profit</span>
+                  <span className="muted">costs {money(i.item.cost, { cents: true })} to make</span>
                 </div>
               </li>
             )

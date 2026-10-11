@@ -49,12 +49,13 @@ export default function Money() {
       <Card>
         <h2>Where the money went</h2>
         <ul className="stmt">
+          <li className="stmt-line head"><span className="stmt-label" /><span className="stmt-share">of sales</span><span className="stmt-val">amount</span><span className="stmt-ch">vs last</span></li>
           <Line label="Truck sales" value={now.truckSales} sales={now.sales} prev={prev.truckSales} />
           {now.catering > 0 && <Line label="Catering" value={now.catering} sales={now.sales} prev={prev.catering} />}
           <Line label="Food and packaging" value={now.food} sales={now.sales} prev={prev.food} sign="-" />
           <Line label="Staff wages" value={now.staff} sales={now.sales} prev={prev.staff} sign="-" />
           <Line label="Venue and card fees" value={now.fees} sales={now.sales} prev={prev.fees} sign="-" />
-          <Line label="Profit from trading" value={now.tradingProfit} sales={now.sales} prev={prev.tradingProfit} strong />
+          <Line label="Profit before fixed bills" value={now.tradingProfit} sales={now.sales} prev={prev.tradingProfit} strong />
           <li className="stmt-line clickable" onClick={() => setShowFixed(!showFixed)}>
             <span className="stmt-label">Fixed bills {showFixed ? '▴' : '▾'}</span>
             <span className="stmt-share">{pct(now.sales ? now.fixed / now.sales : 0, false)}</span>
@@ -66,18 +67,18 @@ export default function Money() {
               <span className="stmt-label">{f.name}</span><span className="stmt-share" /><span className="stmt-val">-{money(f.amount)}</span><span className="stmt-ch" />
             </li>
           ))}
-          <Line label="Yours" value={now.profit} sales={now.sales} prev={prev.profit} strong sign={now.profit < 0 ? '-' : ''} />
+          <Line label="Profit" value={now.profit} sales={now.sales} prev={prev.profit} strong sign={now.profit < 0 ? '-' : ''} />
         </ul>
         <p className="note">Fixed bills are spread evenly across the days of each month.</p>
       </Card>
 
       <Card>
-        <h2>Not yours</h2>
+        <h2>Set aside</h2>
         <ul className="stmt">
           <Line label="Sales tax collected" value={now.tax} sales={now.sales} muted />
           <Line label="Tips" value={now.tips} sales={now.sales} muted />
         </ul>
-        <p className="note">Sales tax (7.9%) belongs to the state and county; set it aside. Tips go to the people who worked.</p>
+        <p className="note">Sales tax (7.9%) goes to the state and county. Tips go to the people who worked.</p>
       </Card>
 
       <Card>

@@ -8,7 +8,6 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
   const spots = spotStats(w.from, w.to)
   const [open, setOpen] = useState<string | null>(null)
   const maxNet = Math.max(1, ...spots.map((s) => s.netPerHour))
-  const maxGross = Math.max(1, ...spots.map((s) => s.grossPerHour))
 
   return (
     <>
@@ -19,7 +18,7 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
         </header>
         {spots[0] && (
           <>
-            <div className="label">Best spot, after fees</div>
+            <div className="label">Best spot, per hour after fees</div>
             <div className="big">{money(spots[0].netPerHour)}<small>/hr</small></div>
             <div className="label">{spots[0].loc.name}</div>
           </>
@@ -37,23 +36,16 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
             <div className="row">
               <div>
                 <div className="name">{i + 1}. {s.loc.name}</div>
-                <div className="sub">{s.loc.neighbourhood} · {s.days} {s.days === 1 ? 'day' : 'days'}{feeShare > 0.12 ? ' · high fees' : ''}</div>
+                <div className="sub">{s.loc.neighbourhood} · {s.days} {s.days === 1 ? 'day' : 'days'}{feeShare > 0.12 ? ` · fees take ${pct(feeShare, false)}` : ''}</div>
               </div>
               <div className="val-stack">
                 <div className="val">{money(s.netPerHour)}<small>/hr</small></div>
-                <div className="sub">net of fees</div>
+                <div className="sub">per hour, after fees</div>
               </div>
             </div>
             <div className="dual">
-              <div className="dual-row">
-                <span>Gross</span>
-                <Meter value={s.grossPerHour} max={maxGross} tone="ink" />
-                <span className="num">{money(s.grossPerHour)}</span>
-              </div>
-              <div className="dual-row">
-                <span>Net</span>
+              <div className="dual-row one">
                 <Meter value={s.netPerHour} max={maxNet} tone={feeShare > 0.12 ? 'warn' : 'accent'} />
-                <span className="num">{money(s.netPerHour)}</span>
               </div>
             </div>
             {isOpen && (
@@ -69,7 +61,7 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
                 ) : (
                   <p className="note">No venue fee. Only card processing comes off.</p>
                 )}
-                <h3>Sales per hour of the day (all visits)</h3>
+                <h3>Sales by hour of the day, all visits</h3>
                 <Bars
                   bars={hourly.map((h) => ({ label: hourLabel(h.hour), value: h.days ? h.gross_sales / h.days : 0, sub: `${hourLabel(h.hour)}: ${money(h.days ? h.gross_sales / h.days : 0)} an hour on average` }))}
                   height={80}
