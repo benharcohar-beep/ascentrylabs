@@ -20,7 +20,8 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
   const tips = weeklyInsights()
   const stock = stockAlerts()
   const h = health()
-  const [why, setWhy] = useState<string | null>(null)
+  const weakest = [...h.checks].sort((a, b) => a.score - b.score)[0]?.label ?? null
+  const [why, setWhy] = useState<string | null>(weakest)
   const navigate = useNavigate()
   const metric: Metric = 'sales'
   const pick = (m: Metric) => navigate(`/history/${m}`)
@@ -45,7 +46,7 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
 
         <div className="rings">
           {h.checks.map((c) => (
-            <button key={c.label} className="ring-btn" onClick={() => setWhy(why === c.label ? null : c.label)} aria-pressed={why === c.label}>
+            <button key={c.label} className="ring-btn" onClick={() => setWhy(c.label)} aria-pressed={why === c.label}>
               <Ring fill={c.fill} tone={toneOf(c.score)} text={c.value} label={c.label} />
             </button>
           ))}

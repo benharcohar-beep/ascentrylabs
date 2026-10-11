@@ -16,10 +16,10 @@ export function health(): Health {
   const ch = pctChange(now.gross, prev.gross)
   const tv = ch === null ? '–' : pct(ch)
   const tf = ch === null ? 0.5 : Math.min(1, Math.max(0, 0.5 + ch))
-  if (ch === null) checks.push({ label: 'Trend', detail: 'Not enough history yet.', score: 0, value: tv, fill: tf })
-  else if (ch >= 0.05) checks.push({ label: 'Trend', detail: `Up ${pct(ch, false)} on last week.`, score: 1, value: tv, fill: tf })
-  else if (ch <= -0.1) checks.push({ label: 'Trend', detail: `Down ${pct(Math.abs(ch), false)} on last week.`, score: -1, value: tv, fill: tf })
-  else checks.push({ label: 'Trend', detail: `About level with last week (${pct(ch)}).`, score: 0, value: tv, fill: tf })
+  if (ch === null) checks.push({ label: 'This week', detail: 'Not enough history yet.', score: 0, value: tv, fill: tf })
+  else if (ch >= 0.05) checks.push({ label: 'This week', detail: `Sales up ${pct(ch, false)} on last week.`, score: 1, value: tv, fill: tf })
+  else if (ch <= -0.1) checks.push({ label: 'This week', detail: `Sales down ${pct(Math.abs(ch), false)} on last week.`, score: -1, value: tv, fill: tf })
+  else checks.push({ label: 'This week', detail: `Sales about level with last week (${pct(ch)}).`, score: 0, value: tv, fill: tf })
 
   // 2. What you keep: sales minus food, staff and fees over the last 4 weeks.
   const m = { from: addWeeks(w.to, -4), to: w.to }
@@ -28,22 +28,22 @@ export function health(): Health {
   const kept = ds.reduce((a, d) => a + (d.contribution ?? 0), 0)
   const keep = gross ? kept / gross : 0
   const kv = pct(keep, false), kf = Math.min(1, keep / 0.4)
-  if (!gross) checks.push({ label: 'Keep', detail: 'No sales in the last 4 weeks.', score: -1, value: '–', fill: 0 })
-  else if (keep >= 0.25) checks.push({ label: 'Keep', detail: `${pct(keep, false)} of sales left after food, staff and fees.`, score: 1, value: kv, fill: kf })
-  else if (keep >= 0.12) checks.push({ label: 'Keep', detail: `${pct(keep, false)} of sales left after food, staff and fees. Healthy is 25% or more.`, score: 0, value: kv, fill: kf })
-  else checks.push({ label: 'Keep', detail: `Only ${pct(keep, false)} of sales left after food, staff and fees.`, score: -1, value: kv, fill: kf })
+  if (!gross) checks.push({ label: 'Profit', detail: 'No sales in the last 4 weeks.', score: -1, value: '–', fill: 0 })
+  else if (keep >= 0.25) checks.push({ label: 'Profit', detail: `${pct(keep, false)} of sales is profit after food, staff and fees, before fixed bills like the loan and insurance.`, score: 1, value: kv, fill: kf })
+  else if (keep >= 0.12) checks.push({ label: 'Profit', detail: `${pct(keep, false)} of sales is profit after food, staff and fees, before fixed bills. Healthy is 25% or more.`, score: 0, value: kv, fill: kf })
+  else checks.push({ label: 'Profit', detail: `Only ${pct(keep, false)} of sales is profit after food, staff and fees, before fixed bills.`, score: -1, value: kv, fill: kf })
 
   // 3. Pricing against the market.
   const priced = data.benchmarks.filter((b) => b.hero_price !== null && b.n_trucks >= 3)
   const under = priced.filter((b) => (b.hero_vs_median ?? 0) <= -0.1).length
   const pv = `${priced.length - under}/${priced.length}`, pf = priced.length ? (priced.length - under) / priced.length : 0
-  if (under === 0) checks.push({ label: 'Pricing', detail: 'No item is more than 10% under the market middle.', score: 1, value: pv, fill: pf })
-  else if (under <= 2) checks.push({ label: 'Pricing', detail: `${under} item${under > 1 ? 's' : ''} more than 10% under the market middle.`, score: 0, value: pv, fill: pf })
-  else checks.push({ label: 'Pricing', detail: `${under} items priced more than 10% under the market middle.`, score: -1, value: pv, fill: pf })
+  if (under === 0) checks.push({ label: 'Pricing', detail: 'Every item is priced at or near what other Milwaukee trucks charge.', score: 1, value: pv, fill: pf })
+  else if (under <= 2) checks.push({ label: 'Pricing', detail: `${priced.length - under} of ${priced.length} items are priced near other Milwaukee trucks; ${under} ${under > 1 ? 'are' : 'is'} more than 10% under.`, score: 0, value: pv, fill: pf })
+  else checks.push({ label: 'Pricing', detail: `${priced.length - under} of ${priced.length} items are priced near other Milwaukee trucks; ${under} are more than 10% under.`, score: -1, value: pv, fill: pf })
 
   const total = checks.reduce((a, c) => a + c.score, 0)
   const weak = checks.filter((c) => c.score < 0)
-  if (total >= 2) return { rating: 'Good', tone: 'good', summary: 'Sales, margin and pricing all look healthy.', checks }
+  if (total >= 2) return { rating: 'Good', tone: 'good', summary: 'Sales, profit and pricing all look healthy.', checks }
   if (total <= -1 || weak.length >= 2)
     return { rating: 'Needs attention', tone: 'warn', summary: `${weak.map((c) => c.label.toLowerCase()).join(' and ')} need${weak.length === 1 ? 's' : ''} a look.`, checks }
   return { rating: 'Steady', tone: 'info', summary: weak.length ? `Fine overall, but ${weak[0].label.toLowerCase()} needs a look.` : 'Nothing urgent. One or two things could be better.', checks }
