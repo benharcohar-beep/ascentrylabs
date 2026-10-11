@@ -438,3 +438,8 @@ body, .shell { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; }
 .bento-card.mint { background: var(--mint); }
 .bento-card.pink { background: var(--pink); }
 .block-hero .tag { display: inline-block; width: auto; }
+
+.chg { font-size: 12px; font-weight: 700; }
+.chg.up { color: #15713d; }
+.chg.down { color: #b3261e; }
+.bento-card.small .chg { font-size: 11px; }

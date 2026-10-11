@@ -77,21 +77,21 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
         <button className="bento-card coral" onClick={() => navigate('/history/sales')}>
           <span className="tag">Sales</span>
           <span className="bento-num">{money(now.gross)}</span>
-          <span className="bento-sub">{deltaText(pctChange(now.gross, prev.gross), label)}</span>
+          <Chg v={pctChange(now.gross, prev.gross)} label={label} />
         </button>
         <button className="bento-card mint" onClick={() => navigate('/money')}>
           <span className="tag">Profit</span>
           <span className="bento-num">{st.now.profit < 0 ? '-' : ''}{money(Math.abs(st.now.profit))}</span>
-          <span className="bento-sub">{deltaText(pctChange(st.now.profit, st.prev.profit), label)}</span>
+          <Chg v={pctChange(st.now.profit, st.prev.profit)} label={label} />
         </button>
         <button className="bento-card small" onClick={() => navigate('/history/orders')}>
-          <span className="bento-num">{now.orders.toLocaleString()}</span><span className="bento-sub">orders {signed(pctChange(now.orders, prev.orders))}</span>
+          <span className="bento-num">{now.orders.toLocaleString()}</span><span className="bento-sub">orders</span><Chg v={pctChange(now.orders, prev.orders)} label={label} />
         </button>
         <button className="bento-card small" onClick={() => navigate('/history/avg')}>
-          <span className="bento-num">{money(avg, { cents: true })}</span><span className="bento-sub">avg order {signed(pctChange(avg, prevAvg))}</span>
+          <span className="bento-num">{money(avg, { cents: true })}</span><span className="bento-sub">avg order</span><Chg v={pctChange(avg, prevAvg)} label={label} />
         </button>
         <button className="bento-card small" onClick={() => navigate('/history/tips')}>
-          <span className="bento-num">{money(now.tips)}</span><span className="bento-sub">tips {signed(pctChange(now.tips, prev.tips))}</span>
+          <span className="bento-num">{money(now.tips)}</span><span className="bento-sub">tips</span><Chg v={pctChange(now.tips, prev.tips)} label={label} />
         </button>
         <Link to="/insights" className="bento-card pink wide">
           <span className="tag">Insights</span>
@@ -131,11 +131,7 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
   )
 }
 
-function deltaText(ch: number | null, label: string): string {
-  if (ch === null) return ''
-  return `${ch >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(ch * 100))}% vs last ${label}`
-}
-function signed(ch: number | null): string {
-  if (ch === null) return ''
-  return `${ch >= 0 ? '+' : ''}${Math.round(ch * 100)}%`
+function Chg({ v, label }: { v: number | null; label: string }) {
+  if (v === null) return null
+  return <span className={`chg ${v >= 0 ? 'up' : 'down'}`}>{v >= 0 ? '▲' : '▼'} {Math.abs(Math.round(v * 100))}% vs last {label}</span>
 }
