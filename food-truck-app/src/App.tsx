@@ -7,6 +7,7 @@ import Market from './screens/Market'
 import Menu from './screens/Menu'
 import Spots from './screens/Spots'
 import Tips from './screens/Tips'
+import History from './screens/History'
 import './app.css'
 
 export default function App() {
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="/menu" element={<Menu range={range} setRange={setRange} />} />
           <Route path="/market" element={<Market />} />
           <Route path="/tips" element={<Tips />} />
+          <Route path="/history/:metric" element={<History />} />
         </Routes>
         <Nav />
       </main>

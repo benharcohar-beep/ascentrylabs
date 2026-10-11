@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Bars, Card, Delta, Pills, Ring, Tile } from '../components/ui'
 import { METRIC_LABEL, RANGES, buckets, data, daysBetween, formatMetric, itemTotals, money, pct, pctChange, rangeWindow, totals, weeklyHistory, type Metric, type RangeKey } from '../lib/data'
 import { health } from '../lib/health'
@@ -21,8 +21,9 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
   const stock = stockAlerts()
   const h = health()
   const [why, setWhy] = useState<string | null>(null)
-  const [metric, setMetric] = useState<Metric>('sales')
-  const pick = (m: Metric) => setMetric(metric === m ? 'sales' : m)
+  const navigate = useNavigate()
+  const metric: Metric = 'sales'
+  const pick = (m: Metric) => navigate(`/history/${m}`)
 
   // Today: the stock alert first, then the strongest tips, as short actions.
   const today = [
@@ -57,7 +58,7 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
         {why && <div className="ring-detail">{h.checks.find((c) => c.label === why)?.detail}</div>}
 
         <div className="row hero-row">
-          <div>
+          <div onClick={() => pick('sales')} role="link" style={{ cursor: 'pointer' }}>
             <div className="label">Sales this {label}</div>
             <div className="mid">{money(now.gross)}</div>
             <Delta value={pctChange(now.gross, prev.gross)} suffix={`vs previous ${label}`} />
@@ -66,16 +67,16 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
         </div>
 
         <div className="tiles">
-          <Tile value={now.orders.toLocaleString()} label="orders" delta={pctChange(now.orders, prev.orders)} spark={weeklyHistory('orders')} on={metric === 'orders'} onClick={() => pick('orders')} />
-          <Tile value={money(avg, { cents: true })} label="avg order" delta={pctChange(avg, prevAvg)} spark={weeklyHistory('avg')} on={metric === 'avg'} onClick={() => pick('avg')} />
-          <Tile value={money(now.tips)} label="tips" delta={pctChange(now.tips, prev.tips)} spark={weeklyHistory('tips')} on={metric === 'tips'} onClick={() => pick('tips')} />
+          <Tile value={now.orders.toLocaleString()} label="orders" delta={pctChange(now.orders, prev.orders)} spark={weeklyHistory('orders')} onClick={() => pick('orders')} />
+          <Tile value={money(avg, { cents: true })} label="avg order" delta={pctChange(avg, prevAvg)} spark={weeklyHistory('avg')} onClick={() => pick('avg')} />
+          <Tile value={money(now.tips)} label="tips" delta={pctChange(now.tips, prev.tips)} spark={weeklyHistory('tips')} onClick={() => pick('tips')} />
         </div>
       </section>
 
       <Card>
         <div className="row">
           <h2>{METRIC_LABEL[metric]} by {range === '1Y' ? 'month' : range === '3M' ? 'week' : 'day'}</h2>
-          {metric !== 'sales' && <button className="linkish" onClick={() => setMetric('sales')}>back to sales</button>}
+          <Link to="/history/sales" className="more">Full history</Link>
         </div>
         <Bars bars={buckets(range, w.from, w.to, metric)} format={(v) => formatMetric(v, metric)} />
       </Card>
