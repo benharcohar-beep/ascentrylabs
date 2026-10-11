@@ -200,7 +200,7 @@ a.plain { text-decoration: none; color: inherit; }
 .rating-big { font-family: 'Fraunces', Georgia, serif; font-size: 56px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.05; margin: 4px 0 8px; }
 .rating-hero .rating-sum { font-size: 15px; color: #fff; opacity: 0.95; max-width: 300px; margin: 0 auto; line-height: 1.4; }
 .rating-why { margin-top: 10px; font-size: 13px; opacity: 0.85; }
-.grad .hero-row { margin-top: 18px; align-items: flex-start; }
+.grad .hero-row { margin-top: 18px; align-items: center; }
 .grad .mid { font-size: 32px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; margin: 4px 0 2px; }
 
 /* tiles with history */
@@ -294,8 +294,16 @@ button.tile { font: inherit; border: 0; cursor: pointer; text-align: center; }
 .line .chev { color: var(--ink-3); font-size: 22px; }
 
 /* sales + profit side by side */
-.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px; }
+.two {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;
+  background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(6px); border-radius: var(--radius); padding: 14px 16px;
+  color: var(--ink);
+}
+.two .label { color: var(--ink-2); }
 .two .mid { font-size: 30px; }
+.two .delta.up { color: var(--good); }
+.two .delta.down { color: var(--bad); }
+.two .delta.muted { color: var(--ink-3); }
 
 /* statement */
 .stmt { list-style: none; margin: 0; padding: 0; }
