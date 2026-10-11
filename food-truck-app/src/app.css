@@ -443,3 +443,22 @@ body, .shell { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; }
 .chg.up { color: #15713d; }
 .chg.down { color: #b3261e; }
 .bento-card.small .chg { font-size: 11px; }
+
+/* spots: horizontal bar chart */
+.hbars { padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 2px; }
+.hbar {
+  display: grid; grid-template-columns: 118px 1fr 58px; align-items: center; gap: 10px; padding: 7px 4px; border: 0; border-radius: 10px;
+  background: transparent; font: inherit; color: var(--ink); text-align: left; cursor: pointer;
+}
+.hbar.on { background: var(--bg); }
+.hbar-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hbar-track { height: 14px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.hbar-fill { display: block; height: 100%; background: var(--ink); border-radius: 999px; }
+.hbar-fill.warn { background: var(--warn); }
+.hbar.on .hbar-fill { background: var(--accent); }
+.hbar-val { font-size: 13px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.hbar-key { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-3); padding: 8px 4px 0; }
+.hbar-key .sw { width: 10px; height: 10px; border-radius: 3px; background: var(--ink); display: inline-block; }
+.hbar-key .sw.warn { background: var(--warn); margin-left: 8px; }
+.spot-detail h2 { margin-bottom: 2px; }
+.spot-detail .facts { margin-top: 14px; }
