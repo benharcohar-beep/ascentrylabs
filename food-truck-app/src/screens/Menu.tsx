@@ -1,4 +1,3 @@
-import { Brand } from '../components/Brand'
 import { Card, Meter, Pills } from '../components/ui'
 import { itemTotals, money, pct, rangeWindow, type RangeKey } from '../lib/data'
 
@@ -11,10 +10,10 @@ export default function Menu({ range, setRange }: { range: RangeKey; setRange: (
 
   return (
     <>
-      <section className="grad sage">
+      <section className="block-hero marigold page">
         <header className="top">
           <h1>Menu</h1>
-          <div className="hstack"><Pills value={range} onChange={setRange} /><Brand /></div>
+          <Pills value={range} onChange={setRange} />
         </header>
         {total > 0 ? (
           <>

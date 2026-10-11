@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link, NavLink, useParams } from 'react-router-dom'
-import { Brand } from '../components/Brand'
 import { Bars, Card, Delta, Pills } from '../components/ui'
 import {
   METRIC_LABEL, RANGES, TODAY, addDays, buckets, daysBetween, formatMetric, metricOf, pctChange, rangeWindow, shortDate, totals,
@@ -34,10 +33,9 @@ export default function History() {
 
   return (
     <>
-      <section className="grad gold">
+      <section className="block-hero mint page">
         <header className="top">
           <Link to="/" className="back">‹ Home</Link>
-          <Brand />
         </header>
         <nav className="seg">
           {VALID.map((k) => (

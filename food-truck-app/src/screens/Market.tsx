@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Brand } from '../components/Brand'
 import { Card, RangeBar } from '../components/ui'
 import { data, money, pct, rivalById } from '../lib/data'
 
@@ -13,10 +12,9 @@ export default function Market() {
 
   return (
     <>
-      <section className="grad blue">
+      <section className="block-hero coral page">
         <header className="top">
           <h1>Market</h1>
-          <Brand />
         </header>
         <div className="label">Items priced well under the other {trucks} Milwaukee trucks</div>
         <div className="big">{under} <small>of {rows.length}</small></div>

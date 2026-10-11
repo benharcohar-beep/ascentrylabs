@@ -1,5 +1,6 @@
-import { useState, type ReactNode } from 'react'
+import React, { useState, type ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
+import { Home as HomeIcon, MapPin, UtensilsCrossed, Store, Sparkles } from 'lucide-react'
 import { RANGES, money, type RangeKey } from '../lib/data'
 
 export function Card({ children, className = '', onClick }: { children: ReactNode; className?: string; onClick?: () => void }) {
@@ -39,14 +40,15 @@ export function Pills({ value, onChange }: { value: RangeKey; onChange: (k: Rang
 }
 
 export function Nav() {
-  const items = [
-    ['/', 'Home'], ['/spots', 'Spots'], ['/menu', 'Menu'], ['/market', 'Market'], ['/insights', 'Insights'],
+  const items: [string, string, React.ComponentType<{ size?: number; strokeWidth?: number }>][] = [
+    ['/', 'Home', HomeIcon], ['/spots', 'Spots', MapPin], ['/menu', 'Menu', UtensilsCrossed], ['/market', 'Market', Store], ['/insights', 'Insights', Sparkles],
   ]
   return (
     <nav className="nav">
-      {items.map(([to, label]) => (
-        <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => (isActive ? 'on' : '')}>
-          {label}
+      {items.map(([to, label, Icon]) => (
+        <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => (isActive ? 'on' : '')} aria-label={label}>
+          <Icon size={20} strokeWidth={2.2} />
+          <span>{label}</span>
         </NavLink>
       ))}
     </nav>

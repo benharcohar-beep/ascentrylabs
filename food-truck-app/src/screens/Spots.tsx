@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Brand } from '../components/Brand'
 import { Bars, Card, Meter, Pills } from '../components/ui'
 import { hourLabel, hourlyFor, money, pct, rangeWindow, spotStats, type RangeKey } from '../lib/data'
 
@@ -11,10 +10,10 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
 
   return (
     <>
-      <section className="grad slate">
+      <section className="block-hero turquoise page">
         <header className="top">
           <h1>Spots</h1>
-          <div className="hstack"><Pills value={range} onChange={setRange} /><Brand /></div>
+          <Pills value={range} onChange={setRange} />
         </header>
         {spots[0] && (
           <>
@@ -40,7 +39,6 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
               </div>
               <div className="val-stack">
                 <div className="val">{money(s.netPerHour)}<small>/hr</small></div>
-                <div className="sub">per hour, after fees</div>
               </div>
             </div>
             <div className="dual">

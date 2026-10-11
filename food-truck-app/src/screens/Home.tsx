@@ -1,11 +1,13 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Bars, Card, Delta, Pills, Tile } from '../components/ui'
-import { METRIC_LABEL, RANGES, buckets, data, daysBetween, formatMetric, itemTotals, money, pct, pctChange, rangeWindow, totals, type Metric, type RangeKey } from '../lib/data'
+import { ArrowRight, ArrowUpRight } from 'lucide-react'
+import { Brand } from '../components/Brand'
+import { Bars, Card } from '../components/ui'
+import { METRIC_LABEL, RANGES, TODAY, addDays, buckets, data, daysBetween, formatMetric, itemTotals, locationById, money, pct, pctChange, rangeWindow, shortDate, totals, weekday, type RangeKey } from '../lib/data'
 import { health } from '../lib/health'
 import { weeklyInsights } from '../lib/insights'
-import { stockAlerts } from '../lib/stock'
 import { statementFor } from '../lib/money'
-import { Brand } from '../components/Brand'
+import { stockAlerts } from '../lib/stock'
 
 export default function Home({ range, setRange }: { range: RangeKey; setRange: (k: RangeKey) => void }) {
   const w = rangeWindow(range)
@@ -15,55 +17,89 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
   const items = itemTotals(w.from, w.to).slice(0, 5)
   const avg = now.orders ? now.gross / now.orders : 0
   const prevAvg = prev.orders ? prev.gross / prev.orders : 0
-  const tips = weeklyInsights()
+  const tips = weeklyInsights().filter((t) => t.id !== 'wow')
   const stock = stockAlerts()
   const h = health()
-  const navigate = useNavigate()
   const st = statementFor(range)
-  const metric: Metric = 'sales'
-  const pick = (m: Metric) => navigate(`/history/${m}`)
+  const navigate = useNavigate()
 
+  // Day strip: this week, Monday to Sunday.
+  const week = daysBetween(addDays(TODAY, -6), TODAY)
+  const [sel, setSel] = useState<string>(week.filter((d) => d.trading).at(-1)?.date ?? TODAY)
+  const day = week.find((d) => d.date === sel)!
+
+  const metric = 'sales'
+  const tone = h.tone === 'good' ? 'mint' : h.tone === 'warn' ? 'coral' : 'marigold'
 
   return (
     <>
-      <section className="grad gold">
-        <header className="top">
-          <div>
-            <div className="eyebrow">Good morning,</div>
-            <h1>{data.truck.owner.split(' ')[0]}</h1>
-          </div>
-          <Brand />
-        </header>
+      <header className="top head3">
+        <div className="avatar" aria-hidden>{data.truck.owner[0]}</div>
+        <div className="head-mid">
+          <b>Hello {data.truck.owner.split(' ')[0]}</b>
+          <span>Today {shortDate(TODAY)}</span>
+        </div>
+        <Brand />
+      </header>
 
-        <div className="rating-hero">
-          <div className="label">Business is</div>
-          <div className={`rating-big ${h.tone}`}>{h.rating}</div>
-          <div className="rating-sum">{h.summary}</div>
-        </div>
+      <Link to="/money" className={`block-hero ${tone}`}>
+        <div className="tag">Business is</div>
+        <div className="block-title">{h.rating}</div>
+        <div className="block-sub">{h.summary}</div>
+        <ArrowUpRight className="corner" size={22} />
+      </Link>
 
-        <div className="row hero-row">
-          <div className="label">This {label}</div>
-          <Pills value={range} onChange={setRange} />
-        </div>
-        <div className="two">
-          <div onClick={() => pick('sales')} role="link" style={{ cursor: 'pointer' }}>
-            <div className="label">Sales</div>
-            <div className="mid">{money(now.gross)}</div>
-            <Delta value={pctChange(now.gross, prev.gross)} suffix={`vs last ${label}`} />
-          </div>
-          <div onClick={() => navigate('/money')} role="link" style={{ cursor: 'pointer' }}>
-            <div className="label">Profit</div>
-            <div className="mid">{st.now.profit < 0 ? '-' : ''}{money(Math.abs(st.now.profit))}</div>
-            <Delta value={pctChange(st.now.profit, st.prev.profit)} suffix={`vs last ${label}`} />
-          </div>
-        </div>
+      <div className="strip">
+        {week.map((d) => (
+          <button key={d.date} className={`day ${d.date === sel ? 'on' : ''}`} onClick={() => setSel(d.date)}>
+            <span className={`dot ${d.trading ? 'yes' : ''}`} />
+            <span className="dow">{weekday(d.date)}</span>
+            <span className="dom">{Number(d.date.slice(8))}</span>
+          </button>
+        ))}
+      </div>
+      <div className="strip-note">
+        {day.trading
+          ? <><b>{money(day.gross_sales ?? 0)}</b> at {locationById.get(day.location_id!)?.name} · {day.orders} orders · {day.condition}, {day.temp_f}°F</>
+          : <>Day off · {day.condition}, {day.temp_f}°F</>}
+      </div>
 
-        <div className="tiles">
-          <Tile value={now.orders.toLocaleString()} label="orders" delta={pctChange(now.orders, prev.orders)} onClick={() => pick('orders')} />
-          <Tile value={money(avg, { cents: true })} label="avg order" delta={pctChange(avg, prevAvg)} onClick={() => pick('avg')} />
-          <Tile value={money(now.tips)} label="tips" delta={pctChange(now.tips, prev.tips)} onClick={() => pick('tips')} />
+      <div className="row block-head">
+        <h2>Your {label}</h2>
+        <div className="pills">
+          {RANGES.map((r) => (
+            <button key={r.key} className={range === r.key ? 'on' : ''} onClick={() => setRange(r.key)}>{r.key}</button>
+          ))}
         </div>
-      </section>
+      </div>
+
+      <div className="bento">
+        <button className="bento-card coral" onClick={() => navigate('/history/sales')}>
+          <span className="tag">Sales</span>
+          <span className="bento-num">{money(now.gross)}</span>
+          <span className="bento-sub">{deltaText(pctChange(now.gross, prev.gross), label)}</span>
+        </button>
+        <button className="bento-card mint" onClick={() => navigate('/money')}>
+          <span className="tag">Profit</span>
+          <span className="bento-num">{st.now.profit < 0 ? '-' : ''}{money(Math.abs(st.now.profit))}</span>
+          <span className="bento-sub">{deltaText(pctChange(st.now.profit, st.prev.profit), label)}</span>
+        </button>
+        <button className="bento-card small" onClick={() => navigate('/history/orders')}>
+          <span className="bento-num">{now.orders.toLocaleString()}</span><span className="bento-sub">orders {signed(pctChange(now.orders, prev.orders))}</span>
+        </button>
+        <button className="bento-card small" onClick={() => navigate('/history/avg')}>
+          <span className="bento-num">{money(avg, { cents: true })}</span><span className="bento-sub">avg order {signed(pctChange(avg, prevAvg))}</span>
+        </button>
+        <button className="bento-card small" onClick={() => navigate('/history/tips')}>
+          <span className="bento-num">{money(now.tips)}</span><span className="bento-sub">tips {signed(pctChange(now.tips, prev.tips))}</span>
+        </button>
+        <Link to="/insights" className="bento-card pink wide">
+          <span className="tag">Insights</span>
+          <span className="bento-title">{tips.length + stock.length} things worth knowing this week</span>
+          <span className="bento-sub">{stock[0] ? `${stock[0].item.name} has stopped selling. ` : ''}{tips.find((t) => t.id === 'fees')?.short ?? tips[0]?.short}.</span>
+          <ArrowRight className="corner" size={20} />
+        </Link>
+      </div>
 
       <Card>
         <div className="row">
@@ -72,16 +108,6 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
         </div>
         <Bars bars={buckets(range, w.from, w.to, metric)} format={(v) => formatMetric(v, metric)} />
       </Card>
-
-      <Link to="/insights" className="plain">
-        <Card className="line noleft">
-          <span className="txt">
-            <b>{tips.filter((t) => t.id !== 'wow').length + stock.length} insights this week</b>
-            <span>{stock[0] ? `${stock[0].item.name} has stopped selling. ` : ''}{tips.find((t) => t.id === 'fees')?.title ?? tips[0]?.title}</span>
-          </span>
-          <span className="chev">›</span>
-        </Card>
-      </Link>
 
       <section className="block">
         <div className="row">
@@ -103,4 +129,13 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
       </section>
     </>
   )
+}
+
+function deltaText(ch: number | null, label: string): string {
+  if (ch === null) return ''
+  return `${ch >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(ch * 100))}% vs last ${label}`
+}
+function signed(ch: number | null): string {
+  if (ch === null) return ''
+  return `${ch >= 0 ? '+' : ''}${Math.round(ch * 100)}%`
 }

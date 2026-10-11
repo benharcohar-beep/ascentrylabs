@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Brand } from '../components/Brand'
 import { Bars, Card, Delta, Pills } from '../components/ui'
 import { RANGES, money, monthName, pct, pctChange, type RangeKey } from '../lib/data'
 import { months, statementFor } from '../lib/money'
@@ -28,10 +27,9 @@ export default function Money() {
 
   return (
     <>
-      <section className="grad gold">
+      <section className="block-hero mint page">
         <header className="top">
           <Link to="/" className="back">‹ Home</Link>
-          <Brand />
         </header>
         <div className="row hero-row">
           <div>

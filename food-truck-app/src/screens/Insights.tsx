@@ -1,5 +1,4 @@
 import { Card } from '../components/ui'
-import { Brand } from '../components/Brand'
 import { TODAY, money, shortDate } from '../lib/data'
 import { weeklyInsights, type Insight } from '../lib/insights'
 import { stockAlerts } from '../lib/stock'
@@ -13,10 +12,9 @@ export default function Insights() {
 
   return (
     <>
-      <section className="grad warm">
+      <section className="block-hero pink page">
         <header className="top">
           <h1>Insights</h1>
-          <Brand />
         </header>
         <div className="label">Week of {shortDate(TODAY)}</div>
         <div className="big">{tips.filter((t) => t.id !== 'wow').length + stock.length}</div>
