@@ -53,7 +53,7 @@ export type Catering = { booking_id: string; date: string; type: string; heads: 
 export type FixedCost = { month: string; cost: string; amount: number; scaled_by_activity: boolean }
 
 type Data = {
-  meta: { generated: string; start: string; end: string; fake: boolean; planted_stories: string[] }
+  meta: { generated: string; start: string; end: string; fake: boolean; planted_stories: string[]; opening_cash: number; tax_remit_day: number }
   truck: { name: string; owner: string; concept: string; pos: string }
   locations: Location[]
   menu: MenuItem[]

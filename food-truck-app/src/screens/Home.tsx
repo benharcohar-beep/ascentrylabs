@@ -6,7 +6,7 @@ import { Bars, Card } from '../components/ui'
 import { METRIC_LABEL, RANGES, TODAY, addDays, buckets, data, daysBetween, formatMetric, itemTotals, locationById, money, pct, pctChange, rangeWindow, shortDate, totals, weekday, type RangeKey } from '../lib/data'
 import { health } from '../lib/health'
 import { weeklyInsights } from '../lib/insights'
-import { statementFor } from '../lib/money'
+import { cashAt, statementFor } from '../lib/money'
 import { stockAlerts } from '../lib/stock'
 
 export default function Home({ range, setRange }: { range: RangeKey; setRange: (k: RangeKey) => void }) {
@@ -21,6 +21,7 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
   const stock = stockAlerts()
   const h = health()
   const st = statementFor(range)
+  const cash = cashAt()
   const navigate = useNavigate()
 
   // Day strip: this week, Monday to Sunday.
@@ -84,6 +85,11 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
           <span className="tag">Profit</span>
           <span className="bento-num">{st.now.profit < 0 ? '-' : ''}{money(Math.abs(st.now.profit))}</span>
           <Chg v={pctChange(st.now.profit, st.prev.profit)} label={label} />
+        </button>
+        <button className="bento-card marigold wide cash" onClick={() => navigate('/money')}>
+          <span className="tag">Cash in the bank</span>
+          <span className="bento-num">{money(cash.balance)}</span>
+          <span className="bento-sub">{money(cash.available)} is yours to spend. {money(cash.taxOwed)} is sales tax you owe{cash.nextRemittance ? `, due ${shortDate(cash.nextRemittance.date)}` : ''}.</span>
         </button>
         <button className="bento-card small" onClick={() => navigate('/history/orders')}>
           <span className="bento-num">{now.orders.toLocaleString()}</span><span className="bento-sub">orders</span><Chg v={pctChange(now.orders, prev.orders)} label={label} />

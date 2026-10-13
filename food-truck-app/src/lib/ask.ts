@@ -3,7 +3,7 @@
 import { TODAY, data, itemTotals, money, pct, rangeWindow, spotStats, totals, daysBetween } from './data'
 import { health } from './health'
 import { weeklyInsights } from './insights'
-import { statementFor, months } from './money'
+import { cashAt, statementFor, months } from './money'
 import { stockAlerts } from './stock'
 
 export type ChatMsg = { role: 'user' | 'assistant'; content: string }
@@ -22,6 +22,7 @@ export function factPack() {
   return {
     today: TODAY,
     truck: data.truck,
+    cash: (() => { const c = cashAt(); return { inTheBank: r2(c.balance), salesTaxOwed: r2(c.taxOwed), yoursToSpend: r2(c.available), nextTaxPayment: c.nextRemittance, basis: `rolled forward from ${money(c.opening)} opening balance; no bank feed` } })(),
     rating: { rating: h.rating, summary: h.summary, checks: h.checks.map((c) => ({ label: c.label, detail: c.detail })) },
     thisWeek: { ...stmt(wk.now), orders: week.orders, avgOrder: week.orders ? r2(week.gross / week.orders) : 0 },
     lastWeek: stmt(wk.prev),

@@ -76,6 +76,8 @@ ASSUMPTIONS = [
     ("Sales tax", f"{SALES_TAX:.1%}", "to verify", "WI 5% + Milwaukee County 0.9% + City of Milwaukee 2% on prepared food"),
     ("Card processing", f"{CARD_FEE_PCT:.1%} + ${CARD_FEE_FIXED:.2f} per card/tap order", "industry range", "Square-style flat rate; Eventini's own fee structure to be confirmed"),
     ("Demand scale", DEMAND_SCALE, "estimate", "multiplies base orders/hour at every location"),
+    ("Opening cash balance", 6500, "estimate", "cash in the business account on day one; the app rolls it forward from sales and costs"),
+    ("Sales tax remittance", "paid on the 20th of the following month", "to verify", "WI monthly filers; quarterly for small filers"),
     ("Target annual revenue", "$180k to $250k", "industry range", "single truck, one city, part-year"),
     ("Target average order", "$15 to $18", "industry range", ""),
     ("Target food cost", "28% to 33% of sales", "industry range", "driven by the Recipes tab"),
@@ -853,7 +855,8 @@ def write_xlsx(data):
 def write_json(data):
     out = {
         "meta": {"generated": date.today().isoformat(), "start": START.isoformat(), "end": END.isoformat(),
-                 "fake": True, "sales_tax": SALES_TAX, "planted_stories": PLANTED_STORIES},
+                 "fake": True, "sales_tax": SALES_TAX, "planted_stories": PLANTED_STORIES,
+                 "opening_cash": 6500, "tax_remit_day": 20},
         "truck": HERO,
         "locations": [dict(id=l[0], name=l[1], type=l[2], neighbourhood=l[3], lat=l[4], lon=l[5],
                            flatFee=l[6], pctFee=l[7]) for l in LOCATIONS],
