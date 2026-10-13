@@ -5,10 +5,6 @@ import { ask, getPasscode, setPasscode, type ChatMsg } from '../lib/ask'
 const STARTERS = ['What should I know this week?', 'How did this week go?', 'Which spot should I do more of?', 'Should I raise the birria taco price?', 'Write my weekly summary']
 
 export default function Insights() {
-  const tips = weeklyInsights().filter((t) => t.id !== 'wow')
-  const stock = stockAlerts()
-  const sections = ORDER.map((s) => ({ name: s, items: tips.filter((t) => t.section === s) })).filter((s) => s.items.length)
-
   const [msgs, setMsgs] = useState<ChatMsg[]>([])
   const [q, setQ] = useState('')
   const [busy, setBusy] = useState(false)
