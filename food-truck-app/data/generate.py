@@ -43,8 +43,10 @@ rng = random.Random(20261009)
 rng_market = random.Random(7)
 rng_weather = random.Random(11)
 
-START = date(2025, 10, 1)
-END = date(2026, 9, 30)
+# The data ends on the day the generator runs, so the app's 'today' is today.
+# Re-run the generator to bring the demo up to date.
+END = date.today()
+START = END - timedelta(days=364)
 
 # ---------------------------------------------------------------------------
 # Assumptions (also written to the Assumptions tab)
@@ -70,7 +72,7 @@ MONTH_RAIN_P = {1: 0.25, 2: 0.22, 3: 0.3, 4: 0.33, 5: 0.35, 6: 0.33,
                 7: 0.3, 8: 0.3, 9: 0.3, 10: 0.3, 11: 0.3, 12: 0.28}
 
 ASSUMPTIONS = [
-    ("Period", "1 Oct 2025 to 30 Sep 2026", "estimate", "12 months so seasonality shows"),
+    ("Period", f"{START.isoformat()} to {END.isoformat()}", "estimate", "12 months ending on the day the generator ran"),
     ("Sales tax", f"{SALES_TAX:.1%}", "to verify", "WI 5% + Milwaukee County 0.9% + City of Milwaukee 2% on prepared food"),
     ("Card processing", f"{CARD_FEE_PCT:.1%} + ${CARD_FEE_FIXED:.2f} per card/tap order", "industry range", "Square-style flat rate; Eventini's own fee structure to be confirmed"),
     ("Demand scale", DEMAND_SCALE, "estimate", "multiplies base orders/hour at every location"),
@@ -556,7 +558,7 @@ def make_catering(schedule):
             continue
         m = d.month
         p = {12: 0.14, 5: 0.12, 6: 0.15, 7: 0.13, 8: 0.15, 9: 0.13, 10: 0.08}.get(m, 0.03)
-        if d.weekday() in (4, 5, 6) and rng.random() < p * 1.6:
+        if d.weekday() in (4, 5, 6) and rng.random() < p * 2.4:
             n += 1
             heads = rng.choice([40, 50, 60, 75, 80, 100, 120, 150])
             per_head = rng.choice([18, 20, 22, 25])

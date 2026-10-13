@@ -76,8 +76,9 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
       <div className="bento">
         <button className="bento-card coral" onClick={() => navigate('/history/sales')}>
           <span className="tag">Sales</span>
-          <span className="bento-num">{money(now.gross)}</span>
-          <Chg v={pctChange(now.gross, prev.gross)} label={label} />
+          <span className="bento-num">{money(st.now.sales)}</span>
+          <Chg v={pctChange(st.now.sales, st.prev.sales)} label={label} />
+          {st.now.catering > 0 && <span className="bento-sub">incl. {money(st.now.catering)} catering</span>}
         </button>
         <button className="bento-card mint" onClick={() => navigate('/money')}>
           <span className="tag">Profit</span>

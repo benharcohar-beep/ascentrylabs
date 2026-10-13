@@ -81,13 +81,9 @@ export function addDays(iso: string, n: number): string {
   return d.toISOString().slice(0, 10)
 }
 
-// "Today" is the last Sunday in the dataset, so "this week" is a full Monday
-// to Sunday week and every range ends on a clean boundary.
-export const TODAY = (() => {
-  let d = data.meta.end
-  while (new Date(d + 'T00:00:00Z').getUTCDay() !== 0) d = addDays(d, -1)
-  return d
-})()
+// "Today" is the last day in the dataset (the generator ends the data on the
+// day it runs). "This week" means the last 7 days ending today.
+export const TODAY = data.meta.end
 
 export type RangeKey = '1W' | '1M' | '3M' | '1Y'
 export const RANGES: { key: RangeKey; days: number; label: string }[] = [
