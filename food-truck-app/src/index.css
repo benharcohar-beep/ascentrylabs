@@ -1,16 +1,18 @@
 :root {
-  --bg: #f4f4f2;
+  --bg: #ffffff;          /* Eventini app: white */
   --card: #ffffff;
-  --ink: #0f0f0f;
-  --ink-2: #5f6168;
-  --ink-3: #9a9ca3;
-  --line: #ebebe8;
-  --accent: #ef6a47;      /* one warm accent, used sparingly */
-  --accent-soft: #fde7df;
+  --panel: #f6f6f6;       /* light grey for chips and icon circles */
+  --ink: #111111;
+  --ink-2: #6a6a6a;
+  --ink-3: #9c9c9c;
+  --line: #e8e8e8;
+  --accent: #6fb3b0;      /* Eventini seafoam, used sparingly */
+  --accent-soft: #e3f1f0;
+  --accent-ink: #2f7f7b;
   --good: #1f9d55;
   --bad: #d64545;
   --warn: #e0a233;
-  --radius: 18px;
+  --radius: 14px;
   font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
 }

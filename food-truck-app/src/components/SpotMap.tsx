@@ -37,7 +37,7 @@ export function SpotMap({ spots, sel, onSelect }: { spots: SpotStat[]; sel: stri
       const m = L.circleMarker([s.loc.lat, s.loc.lon], {
         radius: on ? r + 3 : r,
         color: '#fff', weight: 2,
-        fillColor: on ? '#f2906f' : fee > 0.12 ? '#e6b04b' : '#111111',
+        fillColor: on ? '#6fb3b0' : fee > 0.12 ? '#e0a233' : '#111111',
         fillOpacity: 0.92,
       })
       m.bindTooltip(`${s.loc.name.replace(/ \(.*\)/, '')}: ${money(s.netPerHour)}/hr`, { direction: 'top', offset: [0, -r], opacity: 0.95 })
