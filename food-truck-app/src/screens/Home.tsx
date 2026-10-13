@@ -1,134 +1,121 @@
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowUpRight } from 'lucide-react'
+import { ChevronRight, Store, MapPin, Beer, Trophy, Briefcase, GraduationCap, Tent, Stethoscope, PartyPopper, Receipt, Landmark, HandCoins } from 'lucide-react'
 import { Brand } from '../components/Brand'
-import { Bars, Card } from '../components/ui'
-import { METRIC_LABEL, RANGES, TODAY, addDays, buckets, data, daysBetween, formatMetric, itemTotals, locationById, money, pct, pctChange, rangeWindow, shortDate, totals, weekday, type RangeKey } from '../lib/data'
+import { TODAY, data, daysBetween, locationById, money, pctChange, rangeWindow, shortDate, weekday, totals } from '../lib/data'
 import { health } from '../lib/health'
 import { cashAt, statementFor } from '../lib/money'
 
-export default function Home({ range, setRange }: { range: RangeKey; setRange: (k: RangeKey) => void }) {
-  const w = rangeWindow(range)
-  const now = totals(daysBetween(w.from, w.to))
-  const prev = totals(daysBetween(w.prevFrom, w.prevTo))
-  const label = RANGES.find((r) => r.key === range)!.label
-  const items = itemTotals(w.from, w.to).slice(0, 5)
-  const avg = now.orders ? now.gross / now.orders : 0
-  const prevAvg = prev.orders ? prev.gross / prev.orders : 0
-  const h = health()
-  const st = statementFor(range)
-  const cash = cashAt()
+const ICON: Record<string, React.ComponentType<{ size?: number }>> = {
+  food_park: Store, street: MapPin, brewery: Beer, event: Trophy, office: Briefcase, campus: GraduationCap,
+  festival: Tent, hospital: Stethoscope, market: PartyPopper,
+}
+
+export default function Home() {
   const navigate = useNavigate()
-
-  // Day strip: this week, Monday to Sunday.
-  const week = daysBetween(addDays(TODAY, -6), TODAY)
-  const [sel, setSel] = useState<string>(week.filter((d) => d.trading).at(-1)?.date ?? TODAY)
-  const day = week.find((d) => d.date === sel)!
-
-  const metric = 'sales'
-  const tone = h.tone === 'good' ? 'mint' : h.tone === 'warn' ? 'coral' : 'marigold'
+  const h = health()
+  const cash = cashAt()
+  const wk = statementFor('1W')
+  const w = rangeWindow('1W')
+  const week = totals(daysBetween(w.from, w.to))
+  const prevWeek = totals(daysBetween(w.prevFrom, w.prevTo))
+  const feed = daysBetween(rangeWindow('1M').from, TODAY).filter((d) => d.trading).reverse().slice(0, 12)
+  const billsMonth = data.fixedCosts.filter((f) => f.month === TODAY.slice(0, 7)).reduce((a, f) => a + f.amount, 0)
+  const first = data.truck.owner.split(' ')[0]
+  const hour = new Date().getHours()
+  const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
 
   return (
-    <>
-      <header className="top head3">
-        <div className="avatar" aria-hidden>{data.truck.owner[0]}</div>
+    <div className="screen">
+      <header className="top">
         <div className="head-mid">
-          <b>Hello {data.truck.owner.split(' ')[0]}</b>
-          <span>Today {shortDate(TODAY)}</span>
+          <span className="eyebrow">{greet}, {first}</span>
+          <b>{data.truck.name}</b>
         </div>
         <Brand />
       </header>
 
-      <Link to="/money" className={`block-hero ${tone}`}>
-        <div className="tag">Business is</div>
-        <div className="block-title">{h.rating}</div>
-        <div className="block-sub">{h.summary}</div>
-        <ArrowUpRight className="corner" size={22} />
-      </Link>
-
-      <div className="strip">
-        {week.map((d) => (
-          <button key={d.date} className={`day ${d.date === sel ? 'on' : ''}`} onClick={() => setSel(d.date)}>
-            <span className={`dot ${d.trading ? 'yes' : ''}`} />
-            <span className="dow">{weekday(d.date)}</span>
-            <span className="dom">{Number(d.date.slice(8))}</span>
-          </button>
-        ))}
-      </div>
-      <div className="strip-note">
-        {day.trading
-          ? <><b>{money(day.gross_sales ?? 0)}</b> at {locationById.get(day.location_id!)?.name} · {day.orders} orders · {day.condition}, {day.temp_f}°F</>
-          : <>Day off · {day.condition}, {day.temp_f}°F</>}
-      </div>
-
-      <div className="row block-head">
-        <h2>Your {label}</h2>
-        <div className="pills">
-          {RANGES.map((r) => (
-            <button key={r.key} className={range === r.key ? 'on' : ''} onClick={() => setRange(r.key)}>{r.key}</button>
-          ))}
+      <section className="hero" onClick={() => navigate('/money')} role="link">
+        <div className="label">Cash in the bank</div>
+        <div className="hero-num">{money(cash.balance)}</div>
+        <div className="hero-sub">
+          <span><b>{money(cash.available)}</b> yours to spend</span>
+          <span className="dot-sep">·</span>
+          <span><b>{money(cash.taxOwed)}</b> tax owed</span>
         </div>
-      </div>
+      </section>
 
-      <div className="bento">
-        <button className="bento-card coral" onClick={() => navigate('/history/sales')}>
-          <span className="tag">Sales</span>
-          <span className="bento-num">{money(st.now.sales)}</span>
-          <Chg v={pctChange(st.now.sales, st.prev.sales)} label={label} />
-          {st.now.catering > 0 && <span className="bento-sub">incl. {money(st.now.catering)} catering</span>}
+      <div className="swipe">
+        <button className="swipe-card" onClick={() => navigate('/history/sales')}>
+          <span className="label">Sales this week</span>
+          <span className="card-num">{money(wk.now.sales)}</span>
+          <Chg v={pctChange(wk.now.sales, wk.prev.sales)} />
         </button>
-        <button className="bento-card mint" onClick={() => navigate('/money')}>
-          <span className="tag">Profit</span>
-          <span className="bento-num">{st.now.profit < 0 ? '-' : ''}{money(Math.abs(st.now.profit))}</span>
-          <Chg v={pctChange(st.now.profit, st.prev.profit)} label={label} />
+        <button className="swipe-card" onClick={() => navigate('/money')}>
+          <span className="label">Profit this week</span>
+          <span className="card-num">{wk.now.profit < 0 ? '-' : ''}{money(Math.abs(wk.now.profit))}</span>
+          <Chg v={pctChange(wk.now.profit, wk.prev.profit)} />
         </button>
-        <button className="bento-card marigold wide cash" onClick={() => navigate('/money')}>
-          <span className="tag">Cash in the bank</span>
-          <span className="bento-num">{money(cash.balance)}</span>
-          <span className="bento-sub">{money(cash.available)} is yours to spend. {money(cash.taxOwed)} is sales tax you owe{cash.nextRemittance ? `, due ${shortDate(cash.nextRemittance.date)}` : ''}.</span>
+        <button className="swipe-card" onClick={() => navigate('/history/orders')}>
+          <span className="label">Orders this week</span>
+          <span className="card-num">{week.orders.toLocaleString()}</span>
+          <Chg v={pctChange(week.orders, prevWeek.orders)} />
         </button>
-        <button className="bento-card small" onClick={() => navigate('/history/orders')}>
-          <span className="bento-num">{now.orders.toLocaleString()}</span><span className="bento-sub">orders</span><Chg v={pctChange(now.orders, prev.orders)} label={label} />
-        </button>
-        <button className="bento-card small" onClick={() => navigate('/history/avg')}>
-          <span className="bento-num">{money(avg, { cents: true })}</span><span className="bento-sub">avg order</span><Chg v={pctChange(avg, prevAvg)} label={label} />
-        </button>
-        <button className="bento-card small" onClick={() => navigate('/history/tips')}>
-          <span className="bento-num">{money(now.tips)}</span><span className="bento-sub">tips</span><Chg v={pctChange(now.tips, prev.tips)} label={label} />
+        <button className={`swipe-card rating ${h.tone}`} onClick={() => navigate('/money')}>
+          <span className="label">Business is</span>
+          <span className="card-num">{h.rating}</span>
+          <span className="card-sub">{h.summary}</span>
         </button>
       </div>
-
-      <Card>
-        <div className="row">
-          <h2>{METRIC_LABEL[metric]} by {range === '1Y' ? 'month' : range === '3M' ? 'week' : 'day'}</h2>
-          <Link to="/history/sales" className="more">Full history</Link>
-        </div>
-        <Bars bars={buckets(range, w.from, w.to, metric)} format={(v) => formatMetric(v, metric)} />
-      </Card>
 
       <section className="block">
-        <div className="row">
-          <h2>Top sellers</h2>
-          <Link to="/menu" className="more">See all</Link>
+        <div className="row"><h2>Set aside</h2></div>
+        <div className="pots">
+          <div className="pot">
+            <span className="pot-ico"><Receipt size={18} /></span>
+            <span className="pot-name">Sales tax</span>
+            <span className="pot-amt">{money(cash.taxOwed)}</span>
+            <span className="pot-sub">{cash.nextRemittance ? `due ${shortDate(cash.nextRemittance.date)}` : 'nothing due'}</span>
+          </div>
+          <div className="pot">
+            <span className="pot-ico"><Landmark size={18} /></span>
+            <span className="pot-name">Bills this month</span>
+            <span className="pot-amt">{money(billsMonth)}</span>
+            <span className="pot-sub">loan, insurance, kitchen</span>
+          </div>
+          <div className="pot">
+            <span className="pot-ico"><HandCoins size={18} /></span>
+            <span className="pot-name">Tips to staff</span>
+            <span className="pot-amt">{money(wk.now.tips)}</span>
+            <span className="pot-sub">this week</span>
+          </div>
         </div>
-        <ul className="log">
-          {items.map((i) => (
-            <li key={i.item.id}>
-              <span className="name">{i.item.name}</span>
-              <span className="val">{money(i.revenue)}</span>
-              <span className="pills-sm">
-                <span className="pill grey">{i.qty.toLocaleString()} sold</span>
-                <span className={`pill ${i.margin < 0.6 ? 'amber' : 'green'}`}>{pct(i.margin, false)} margin</span>
-              </span>
-            </li>
-          ))}
+      </section>
+
+      <section className="block">
+        <div className="row"><h2>Trading days</h2><Link to="/history/sales" className="more">See all <ChevronRight size={14} /></Link></div>
+        <ul className="feed">
+          {feed.map((d) => {
+            const loc = locationById.get(d.location_id!)!
+            const Icon = ICON[loc.type] ?? MapPin
+            return (
+              <li key={d.date} className="feed-row" onClick={() => navigate('/spots')}>
+                <span className="feed-ico"><Icon size={18} /></span>
+                <span className="feed-main">
+                  <b>{loc.name.replace(/ \(.*\)/, '').split(',')[0]}</b>
+                  <span>{weekday(d.date)} {shortDate(d.date)} · {d.orders} orders · {d.condition}, {d.temp_f}°</span>
+                </span>
+                <span className="feed-amt">{money(d.gross_sales ?? 0)}</span>
+              </li>
+            )
+          })}
         </ul>
       </section>
-    </>
+    </div>
   )
 }
 
-function Chg({ v, label }: { v: number | null; label: string }) {
-  if (v === null) return null
-  return <span className={`chg ${v >= 0 ? 'up' : 'down'}`}>{v >= 0 ? '▲' : '▼'} {Math.abs(Math.round(v * 100))}% vs last {label}</span>
+function Chg({ v }: { v: number | null }) {
+  if (v === null) return <span className="chg flat">no comparison</span>
+  return <span className={`chg ${v >= 0 ? 'up' : 'down'}`}>{v >= 0 ? '▲' : '▼'} {Math.abs(Math.round(v * 100))}% vs last week</span>
 }
+

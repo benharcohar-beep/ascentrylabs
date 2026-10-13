@@ -32,11 +32,13 @@ export default function History() {
   const avgWeek = nonZero.length ? nonZero.reduce((a, b) => a + b.value, 0) / nonZero.length : 0
 
   return (
-    <>
-      <section className="block-hero mint page">
-        <header className="top">
-          <Link to="/" className="back">‹ Home</Link>
-        </header>
+    <div className="screen">
+      <header className="top">
+        <Link to="/" className="back">‹</Link>
+        <h1>{METRIC_LABEL[metric]}</h1>
+        <span />
+      </header>
+      <section className="hero compact">
         <nav className="seg">
           {VALID.map((k) => (
             <NavLink key={k} to={`/history/${k}`} className={({ isActive }) => (isActive ? 'on' : '')}>{k === 'avg' ? 'Avg order' : METRIC_LABEL[k]}</NavLink>
@@ -82,6 +84,6 @@ export default function History() {
           })}
         </ul>
       </section>
-    </>
+    </div>
   )
 }

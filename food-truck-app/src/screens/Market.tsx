@@ -15,12 +15,11 @@ export default function Market() {
   }
 
   return (
-    <>
-      <section className="block-hero coral page">
-        <header className="top">
-          <h1>Market</h1>
-        </header>
-      </section>
+    <div className="screen">
+      <header className="top">
+        <h1>Market</h1>
+        <span />
+      </header>
 
       <Card className="rows">
         <div className="price-head">
@@ -55,6 +54,6 @@ export default function Market() {
           )
         })}
       </Card>
-    </>
+    </div>
   )
 }

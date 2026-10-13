@@ -18,7 +18,7 @@ export default function App() {
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <main className="shell">
         <Routes>
-          <Route path="/" element={<Home range={range} setRange={setRange} />} />
+          <Route path="/" element={<Home />} />
           <Route path="/spots" element={<Spots range={range} setRange={setRange} />} />
           <Route path="/menu" element={<Menu range={range} setRange={setRange} />} />
           <Route path="/market" element={<Market />} />

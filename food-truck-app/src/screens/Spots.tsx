@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bars, Card, Pills } from '../components/ui'
+import { typeLabel } from '../lib/insights'
+import { Bars, Pills } from '../components/ui'
 import { SpotMap } from '../components/SpotMap'
 import { hourLabel, hourlyFor, money, pct, rangeWindow, spotStats, type RangeKey } from '../lib/data'
 
 export default function Spots({ range, setRange }: { range: RangeKey; setRange: (k: RangeKey) => void }) {
   const w = rangeWindow(range)
-  const spots = spotStats(w.from, w.to)
+  const all = spotStats(w.from, w.to)
+  const [kind, setKind] = useState<string | null>(null)
+  const kinds = [...new Set(all.map((s) => s.loc.type))]
+  const spots = kind ? all.filter((s) => s.loc.type === kind) : all
   const [sel, setSel] = useState<string | null>(null)
   const max = Math.max(1, ...spots.map((s) => s.netPerHour))
   const s = spots.find((x) => x.loc.id === sel) ?? null
@@ -16,46 +20,50 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
   const short = (n: string) => n.replace(/ \(.*\)/, '').split(',')[0]
 
   return (
-    <>
-      <section className="block-hero turquoise page">
-        <header className="top">
-          <h1>Spots</h1>
-          <Pills value={range} onChange={setRange} />
-        </header>
-        <div className="label">What each spot makes per hour, after fees. Tap a dot or a bar.</div>
-      </section>
+    <div className="screen">
+      <header className="top">
+        <h1>Spots</h1>
+        <Pills value={range} onChange={setRange} />
+      </header>
+      <div className="chips">
+        <button className={`chip-btn ${kind === null ? 'on' : ''}`} onClick={() => setKind(null)}>All</button>
+        {kinds.map((k) => <button key={k} className={`chip-btn ${kind === k ? 'on' : ''}`} onClick={() => setKind(kind === k ? null : k)}>{typeLabel(k)}</button>)}
+      </div>
 
       {spots.length > 0 && (
-        <Card className="mapcard">
+        <div className="card mapcard">
           <SpotMap spots={spots} sel={sel} onSelect={setSel} />
-          <div className="hbar-key"><span className="sw" /> no or low fees <span className="sw warn" /> venue takes over 12% <span className="sw sel" /> selected · bigger dot, more per hour</div>
-        </Card>
+          <div className="hbar-key"><span className="sw" /> low fees <span className="sw warn" /> venue takes over 12% <span className="sw sel" /> selected</div>
+        </div>
       )}
 
-      {spots.length === 0 && <Card>No trading days in this range.</Card>}
+      {spots.length === 0 && <section className="card empty">No trading days in this range.</section>}
 
       {spots.length > 0 && (
-        <Card className="hbars">
-          {spots.map((x) => {
+        <ul className="feed card-feed">
+          {spots.map((x, i) => {
             const fee = x.gross ? x.fees / x.gross : 0
             const on = x.loc.id === sel
             return (
-              <button key={x.loc.id} className={`hbar ${on ? 'on' : ''}`} onClick={() => setSel(on ? null : x.loc.id)}>
-                <span className="hbar-name">{short(x.loc.name)}</span>
-                <span className="hbar-track">
-                  <span className={`hbar-fill ${fee > 0.12 ? 'warn' : ''}`} style={{ width: `${Math.max(3, (x.netPerHour / max) * 100)}%` }} />
+              <li key={x.loc.id} className={`feed-row ${on ? 'on' : ''}`} onClick={() => setSel(on ? null : x.loc.id)}>
+                <span className="feed-rank">{i + 1}</span>
+                <span className="feed-main">
+                  <b>{short(x.loc.name)}</b>
+                  <span>{x.days} {x.days === 1 ? 'day' : 'days'}{fee > 0.12 ? ` · venue takes ${pct(fee, false)}` : ''}</span>
                 </span>
-                <span className="hbar-val">{money(x.netPerHour)}</span>
-              </button>
+                <span className="feed-right">
+                  <span className="feed-amt">{money(x.netPerHour)}<small>/hr</small></span>
+                  <span className="feed-bar"><span className={fee > 0.12 ? 'warn' : ''} style={{ width: `${Math.max(3, (x.netPerHour / max) * 100)}%` }} /></span>
+                </span>
+              </li>
             )
           })}
-          <div className="hbar-key"><span className="sw" /> no or low fees <span className="sw warn" /> venue takes over 12%</div>
-        </Card>
+        </ul>
       )}
 
       {s && (
         <div ref={detailRef} style={{ scrollMarginTop: 12 }}>
-        <Card className="spot-detail">
+        <section className="card spot-detail">
           <div className="row">
             <div>
               <h2>{s.loc.name}</h2>
@@ -83,9 +91,9 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
             height={80}
             highlightLast={false}
           />
-        </Card>
+        </section>
         </div>
       )}
-    </>
+    </div>
   )
 }

@@ -1,115 +1,96 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Bars, Card, Delta, Pills } from '../components/ui'
-import { RANGES, money, monthName, pct, pctChange, shortDate, type RangeKey } from '../lib/data'
-import { cashAt, months, statementFor } from '../lib/money'
+import { Bars } from '../components/ui'
+import { TODAY, daysBetween, money, monthName, pct, pctChange, shortDate } from '../lib/data'
+import { cashAt, months, statement } from '../lib/money'
 
-function Line({ label, value, sales, prev, sign = '', strong = false, muted = false }: {
-  label: string; value: number; sales: number; prev?: number; sign?: string; strong?: boolean; muted?: boolean
-}) {
+function Line({ label, value, sales, prev, sign = '', strong = false }: { label: string; value: number; sales: number; prev?: number; sign?: string; strong?: boolean }) {
   const ch = prev !== undefined ? pctChange(value, prev) : null
+  const share = sales ? Math.abs(value) / sales : 0
   return (
-    <li className={`stmt-line ${strong ? 'strong' : ''} ${muted ? 'muted' : ''}`}>
-      <span className="stmt-label">{label}</span>
-      <span className="stmt-share">{sales && !muted ? pct(value / sales, false) : ''}</span>
-      <span className="stmt-val">{sign}{money(Math.abs(value))}</span>
-      <span className={`stmt-ch ${ch === null ? '' : ch >= 0 ? 'up' : 'down'}`}>{ch === null ? '' : `${ch >= 0 ? '+' : ''}${Math.round(ch * 100)}%`}</span>
+    <li className={`bd-row ${strong ? 'strong' : ''}`}>
+      <span className="bd-label">{label}</span>
+      <span className="bd-bar"><span style={{ width: `${Math.min(100, share * 100)}%` }} /></span>
+      <span className="bd-share">{pct(share, false)}</span>
+      <span className="bd-val">{sign}{money(Math.abs(value))}</span>
+      <span className={`bd-ch ${ch === null ? '' : ch >= 0 ? 'up' : 'down'}`}>{ch === null ? '' : `${ch >= 0 ? '+' : ''}${Math.round(ch * 100)}%`}</span>
     </li>
   )
 }
 
 export default function Money() {
-  const [range, setRange] = useState<RangeKey>('1M')
-  const { now, prev } = statementFor(range)
-  const label = RANGES.find((r) => r.key === range)!.label
-  const ms = months()
-  const [showFixed, setShowFixed] = useState(false)
+  const ms = months() // newest first
+  const [ym, setYm] = useState(ms[0].month)
+  const idx = ms.findIndex((m) => m.month === ym)
+  const prevYm = ms[idx + 1]?.month
+  const first = `${ym}-01`
+  const last = ym === TODAY.slice(0, 7) ? TODAY : `${ym}-${new Date(Date.UTC(Number(ym.slice(0, 4)), Number(ym.slice(5, 7)), 0)).getUTCDate()}`
+  const now = statement(first, last)
+  const partial = ym === TODAY.slice(0, 7)
+  const prev = partial || !prevYm ? null : statement(`${prevYm}-01`, `${prevYm}-${new Date(Date.UTC(Number(prevYm.slice(0, 4)), Number(prevYm.slice(5, 7)), 0)).getUTCDate()}`)
   const cash = cashAt()
+  const [showFixed, setShowFixed] = useState(false)
+  const days = daysBetween(first, last)
 
   return (
-    <>
-      <section className="block-hero mint page">
-        <header className="top">
-          <Link to="/" className="back">‹ Home</Link>
-        </header>
-        <div className="row hero-row">
-          <div>
-            <div className="label">Profit this {label}</div>
-            <div className="big">{now.profit < 0 ? '-' : ''}{money(Math.abs(now.profit))}</div>
-            <Delta value={pctChange(now.profit, prev.profit)} suffix={`vs previous ${label}`} />
-          </div>
-          <Pills value={range} onChange={setRange} />
-        </div>
-        <div className="label" style={{ marginTop: 10 }}>
-          {pct(now.sales ? now.profit / now.sales : 0, false)} of {money(now.sales)} sales, after every cost. {now.tradingDays} trading days.
+    <div className="screen">
+      <header className="top">
+        <Link to="/" className="back">‹</Link>
+        <h1>Money</h1>
+        <span />
+      </header>
+
+      <div className="chips">
+        {ms.map((m) => (
+          <button key={m.month} className={`chip-btn ${m.month === ym ? 'on' : ''}`} onClick={() => setYm(m.month)}>{monthName(m.month, true).split(' ')[0].slice(0, 3)} {m.month.slice(2, 4)}</button>
+        ))}
+      </div>
+
+      <section className="hero">
+        <div className="label">Profit, {monthName(ym, true)}{partial ? ' so far' : ''}</div>
+        <div className="hero-num">{now.profit < 0 ? '-' : ''}{money(Math.abs(now.profit))}</div>
+        <div className="hero-sub">
+          <span>{pct(now.sales ? now.profit / now.sales : 0, false)} of {money(now.sales)} sales</span>
+          <span className="dot-sep">·</span>
+          <span>{now.tradingDays} trading days</span>
         </div>
       </section>
 
-      <Card>
-        <h2>Cash</h2>
-        <ul className="stmt">
-          <li className="stmt-line strong"><span className="stmt-label">In the bank today</span><span className="stmt-share" /><span className="stmt-val">{money(cash.balance)}</span><span className="stmt-ch" /></li>
-          <li className="stmt-line"><span className="stmt-label">Sales tax you owe{cash.nextRemittance ? ` (due ${shortDate(cash.nextRemittance.date)})` : ''}</span><span className="stmt-share" /><span className="stmt-val">-{money(cash.taxOwed)}</span><span className="stmt-ch" /></li>
-          <li className="stmt-line strong"><span className="stmt-label">Yours to spend</span><span className="stmt-share" /><span className="stmt-val">{money(cash.available)}</span><span className="stmt-ch" /></li>
-        </ul>
-        <p className="note">Rolled forward from {money(cash.opening)} on day one: everything through the till and catering, less food, staff, fees and fixed bills, less sales tax when it is paid{cash.lastRemittance ? ` (last paid ${money(cash.lastRemittance.amount)} on ${shortDate(cash.lastRemittance.date)})` : ''}. Connect the bank for the real figure.</p>
-      </Card>
+      <section className="card">
+        <h2>Sales by day</h2>
+        <Bars bars={days.map((d) => ({ label: String(Number(d.date.slice(8))), value: d.gross_sales ?? 0, sub: d.trading ? `${shortDate(d.date)}` : 'Day off' }))} height={110} highlightLast />
+      </section>
 
-      <Card>
-        <h2>Where the money went</h2>
-        <ul className="stmt">
-          <li className="stmt-line head"><span className="stmt-label" /><span className="stmt-share">of sales</span><span className="stmt-val">amount</span><span className="stmt-ch">vs last</span></li>
-          <Line label="Truck sales" value={now.truckSales} sales={now.sales} prev={prev.truckSales} />
-          {now.catering > 0 && <Line label="Catering" value={now.catering} sales={now.sales} prev={prev.catering} />}
-          <Line label="Food and packaging" value={now.food} sales={now.sales} prev={prev.food} sign="-" />
-          <Line label="Staff wages" value={now.staff} sales={now.sales} prev={prev.staff} sign="-" />
-          <Line label="Venue and card fees" value={now.fees} sales={now.sales} prev={prev.fees} sign="-" />
-          <Line label="Profit before fixed bills" value={now.tradingProfit} sales={now.sales} prev={prev.tradingProfit} strong />
-          <li className="stmt-line clickable" onClick={() => setShowFixed(!showFixed)}>
-            <span className="stmt-label">Fixed bills {showFixed ? '▴' : '▾'}</span>
-            <span className="stmt-share">{pct(now.sales ? now.fixed / now.sales : 0, false)}</span>
-            <span className="stmt-val">-{money(now.fixed)}</span>
-            <span className="stmt-ch" />
+      <section className="card">
+        <h2>Breakdown</h2>
+        <ul className="bd">
+          <Line label="Sales" value={now.sales} sales={now.sales} prev={prev?.sales} strong />
+          <Line label="Food and packaging" value={now.food} sales={now.sales} prev={prev?.food} sign="-" />
+          <Line label="Staff wages" value={now.staff} sales={now.sales} prev={prev?.staff} sign="-" />
+          <Line label="Venue and card fees" value={now.fees} sales={now.sales} prev={prev?.fees} sign="-" />
+          <li className="bd-row clickable" onClick={() => setShowFixed(!showFixed)}>
+            <span className="bd-label">Fixed bills {showFixed ? '▴' : '▾'}</span>
+            <span className="bd-bar"><span style={{ width: `${Math.min(100, (now.sales ? now.fixed / now.sales : 0) * 100)}%` }} /></span>
+            <span className="bd-share">{pct(now.sales ? now.fixed / now.sales : 0, false)}</span>
+            <span className="bd-val">-{money(now.fixed)}</span>
+            <span className="bd-ch" />
           </li>
           {showFixed && now.fixedLines.map((f) => (
-            <li key={f.name} className="stmt-line sub">
-              <span className="stmt-label">{f.name}</span><span className="stmt-share" /><span className="stmt-val">-{money(f.amount)}</span><span className="stmt-ch" />
-            </li>
+            <li key={f.name} className="bd-row plain sub"><span className="bd-label">{f.name}</span><span className="bd-val">-{money(f.amount)}</span></li>
           ))}
-          <Line label="Profit" value={now.profit} sales={now.sales} prev={prev.profit} strong sign={now.profit < 0 ? '-' : ''} />
+          <Line label="Profit" value={now.profit} sales={now.sales} prev={prev?.profit} strong sign={now.profit < 0 ? '-' : ''} />
         </ul>
-        <p className="note">Fixed bills are spread evenly across the days of each month.</p>
-      </Card>
+      </section>
 
-      <Card>
+      <section className="card">
         <h2>Set aside</h2>
-        <ul className="stmt">
-          <Line label="Sales tax collected" value={now.tax} sales={now.sales} muted />
-          <Line label="Tips" value={now.tips} sales={now.sales} muted />
+        <ul className="bd">
+          <li className="bd-row plain"><span className="bd-label">Sales tax collected</span><span className="bd-val">{money(now.tax)}</span></li>
+          <li className="bd-row plain"><span className="bd-label">Tips to staff</span><span className="bd-val">{money(now.tips)}</span></li>
+          <li className="bd-row plain strong"><span className="bd-label">Cash in the bank today</span><span className="bd-val">{money(cash.balance)}</span></li>
         </ul>
-        <p className="note">Sales tax (7.9%) goes to the state and county. Tips go to the people who worked.</p>
-      </Card>
-
-      <Card>
-        <h2>Profit by month</h2>
-        <Bars
-          bars={ms.slice().reverse().map((m) => ({ label: monthName(m.month), value: m.operating_profit, sub: monthName(m.month, true) }))}
-          height={120}
-          format={(v) => `${v < 0 ? '-' : ''}${money(Math.abs(v))}`}
-        />
-        <ul className="log">
-          {ms.map((m) => (
-            <li key={m.month}>
-              <span className="name">{monthName(m.month, true)} <small className="muted">{m.trading_days} days</small></span>
-              <span className={`val ${m.operating_profit < 0 ? 'down' : ''}`}>{m.operating_profit < 0 ? '-' : ''}{money(Math.abs(m.operating_profit))}</span>
-              <span className="pills-sm">
-                <span className="pill grey">{money(m.total_sales)} sales</span>
-                <span className={`pill ${m.operating_profit >= 0 ? 'green' : 'amber'}`}>{m.operating_profit >= 0 ? 'profit' : 'loss'}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
-      </Card>
-    </>
+        <p className="note">Sales tax is paid on the 20th of the following month. Cash is rolled forward from {money(cash.opening)} on day one; connect the bank for the real figure.</p>
+      </section>
+    </div>
   )
 }
