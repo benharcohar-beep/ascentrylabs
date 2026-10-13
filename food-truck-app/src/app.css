@@ -47,15 +47,6 @@ h2 { font-size: 16px; font-weight: 700; }
 .block { display: flex; flex-direction: column; gap: 8px; }
 .block > .row { padding: 0 2px; }
 
-/* ===== Swipe cards ===== */
-.swipe { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px; padding: 2px 16px 6px; scrollbar-width: none; }
-.swipe::-webkit-scrollbar { display: none; }
-.swipe-card {
-  flex: 0 0 62%; scroll-snap-align: start; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left;
-  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; font: inherit; color: var(--ink); cursor: pointer; min-height: 112px;
-}
-.card-num { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; margin-top: 2px; }
-.card-sub { font-size: 12px; color: var(--ink-2); line-height: 1.35; }
 /* ===== Business status: first thing on Home. Green = good, red = needs attention, plain = steady ===== */
 .status { display: flex; flex-direction: column; gap: 2px; padding: 20px 18px; border-radius: var(--radius); background: var(--ink); color: var(--on-ink); cursor: pointer; }
 .status .label, .status-sub { color: inherit; opacity: 0.78; }
@@ -63,18 +54,28 @@ h2 { font-size: 16px; font-weight: 700; }
 .status-sub { font-size: 14px; line-height: 1.4; }
 .status.good { background: var(--good-fill); color: #fff; }
 .status.warn { background: var(--bad-fill); color: #fff; }
-.chg { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 999px; margin-top: 4px; }
+
+/* ===== Week cards: three across, nothing hidden off screen ===== */
+.swipe { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.swipe-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px; text-align: left; min-width: 0;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 12px; font: inherit; color: var(--ink); cursor: pointer;
+}
+.swipe-card .label { font-size: 12px; line-height: 1.25; }
+.card-num { font-size: 22px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; margin-top: 2px; }
+.card-sub { font-size: 12px; color: var(--ink-2); line-height: 1.35; }
+.chg-vs { font-size: 11px; color: var(--ink-3); }
+.chg { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 999px; margin-top: 4px; white-space: nowrap; }
 .chg.up { background: var(--good-soft); color: var(--good-ink); }
 .chg.down { background: var(--bad-soft); color: var(--bad-ink); }
 .chg.flat { color: var(--ink-3); font-weight: 500; padding-left: 0; }
 
-/* ===== Pots ===== */
-.pots { display: flex; gap: 10px; overflow-x: auto; margin: 0 -16px; padding: 0 16px 4px; scrollbar-width: none; }
-.pots::-webkit-scrollbar { display: none; }
-.pot { flex: 0 0 150px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 2px; }
-.pot-ico { width: 34px; height: 34px; border-radius: 50%; background: var(--panel); display: grid; place-items: center; margin-bottom: 8px; }
+/* ===== Pots: three across ===== */
+.pots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pot { min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; }
+.pot-ico { width: 30px; height: 30px; border-radius: 50%; background: var(--panel); display: grid; place-items: center; margin-bottom: 6px; }
 .pot-name { font-size: 12px; color: var(--ink-2); }
-.pot-amt { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
+.pot-amt { font-size: 17px; font-weight: 800; letter-spacing: -0.02em; }
 .pot-sub { font-size: 11px; color: var(--ink-3); }
 
 /* ===== Feed (one list style everywhere) ===== */
@@ -108,7 +109,7 @@ h2 { font-size: 16px; font-weight: 700; }
 .pills { display: inline-flex; gap: 2px; padding: 3px; background: var(--panel); border-radius: 999px; }
 .pills button { border: 0; background: transparent; font: inherit; font-size: 12px; font-weight: 700; color: var(--ink-2); padding: 7px 10px; border-radius: 999px; cursor: pointer; min-height: 32px; }
 .pills button.on { background: var(--ink); color: var(--on-ink); }
-.seg { display: flex; gap: 4px; padding: 4px; background: var(--panel); border-radius: 999px; }
+.seg { display: flex; gap: 4px; padding: 4px; background: var(--panel); border-radius: 999px; margin-bottom: 16px; }
 .seg a { flex: 1; text-align: center; font-size: 13px; font-weight: 700; color: var(--ink-2); text-decoration: none; padding: 9px 0; border-radius: 999px; }
 .seg a.on { background: var(--ink); color: var(--on-ink); }
 

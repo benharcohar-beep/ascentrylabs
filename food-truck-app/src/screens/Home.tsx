@@ -51,41 +51,44 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="block">
+      <div className="row"><h2>This week</h2></div>
       <div className="swipe">
         <button className="swipe-card" onClick={() => navigate('/history/sales')}>
-          <span className="label">Sales this week</span>
+          <span className="label">Sales</span>
           <span className="card-num">{money(wk.now.sales)}</span>
           <Chg v={pctChange(wk.now.sales, wk.prev.sales)} />
         </button>
         <button className="swipe-card" onClick={() => navigate('/money')}>
-          <span className="label">Profit this week</span>
+          <span className="label">Profit</span>
           <span className="card-num">{wk.now.profit < 0 ? '-' : ''}{money(Math.abs(wk.now.profit))}</span>
           <Chg v={pctChange(wk.now.profit, wk.prev.profit)} />
         </button>
         <button className="swipe-card" onClick={() => navigate('/history/orders')}>
-          <span className="label">Orders this week</span>
+          <span className="label">Orders</span>
           <span className="card-num">{week.orders.toLocaleString()}</span>
           <Chg v={pctChange(week.orders, prevWeek.orders)} />
         </button>
       </div>
+      </section>
 
       <section className="block">
         <div className="row"><h2>Set aside</h2></div>
         <div className="pots">
           <div className="pot">
-            <span className="pot-ico"><Receipt size={18} /></span>
+            <span className="pot-ico"><Receipt size={16} /></span>
             <span className="pot-name">Sales tax</span>
             <span className="pot-amt">{money(cash.taxOwed)}</span>
             <span className="pot-sub">{cash.nextRemittance ? `due ${shortDate(cash.nextRemittance.date)}` : 'nothing due'}</span>
           </div>
           <div className="pot">
-            <span className="pot-ico"><Landmark size={18} /></span>
+            <span className="pot-ico"><Landmark size={16} /></span>
             <span className="pot-name">Bills this month</span>
             <span className="pot-amt">{money(billsMonth)}</span>
             <span className="pot-sub">loan, insurance, kitchen</span>
           </div>
           <div className="pot">
-            <span className="pot-ico"><HandCoins size={18} /></span>
+            <span className="pot-ico"><HandCoins size={16} /></span>
             <span className="pot-name">Tips to staff</span>
             <span className="pot-amt">{money(wk.now.tips)}</span>
             <span className="pot-sub">this week</span>
@@ -118,6 +121,11 @@ export default function Home() {
 
 function Chg({ v }: { v: number | null }) {
   if (v === null) return <span className="chg flat">no comparison</span>
-  return <span className={`chg ${v >= 0 ? 'up' : 'down'}`}>{v >= 0 ? '▲' : '▼'} {Math.abs(Math.round(v * 100))}% vs last week</span>
+  return (
+    <>
+      <span className={`chg ${v >= 0 ? 'up' : 'down'}`}>{v >= 0 ? '▲' : '▼'} {Math.abs(Math.round(v * 100))}%</span>
+      <span className="chg-vs">vs last week</span>
+    </>
+  )
 }
 
