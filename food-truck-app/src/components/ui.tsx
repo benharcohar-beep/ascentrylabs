@@ -1,6 +1,6 @@
 import React, { useState, type ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
-import { Home as HomeIcon, MapPin, UtensilsCrossed, Store, Sparkles, MessageCircle } from 'lucide-react'
+import { Home as HomeIcon, MapPin, UtensilsCrossed, Store, Sparkles } from 'lucide-react'
 import { RANGES, money, type RangeKey } from '../lib/data'
 
 export function Card({ children, className = '', onClick }: { children: ReactNode; className?: string; onClick?: () => void }) {
@@ -41,7 +41,7 @@ export function Pills({ value, onChange }: { value: RangeKey; onChange: (k: Rang
 
 export function Nav() {
   const items: [string, string, React.ComponentType<{ size?: number; strokeWidth?: number }>][] = [
-    ['/', 'Home', HomeIcon], ['/spots', 'Spots', MapPin], ['/menu', 'Menu', UtensilsCrossed], ['/market', 'Market', Store], ['/insights', 'Insights', Sparkles], ['/ask', 'Ask', MessageCircle],
+    ['/', 'Home', HomeIcon], ['/spots', 'Spots', MapPin], ['/menu', 'Menu', UtensilsCrossed], ['/market', 'Market', Store], ['/insights', 'AI', Sparkles],
   ]
   return (
     <nav className="nav">

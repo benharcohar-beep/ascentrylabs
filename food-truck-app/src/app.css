@@ -479,3 +479,12 @@ body, .shell { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; }
 .passbox { display: flex; flex-direction: column; gap: 8px; }
 .passbox input { flex: 1; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font: inherit; }
 .nav a { padding: 8px 10px; }
+
+/* insights as the AI's opening message */
+.bubble.opener { max-width: 100%; align-self: stretch; padding: 14px 14px 6px; }
+.opener-lead { margin: 0 0 6px; font-weight: 700; font-size: 15px; }
+.opener .sec h3 { margin: 10px 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3); }
+.opener .irow summary { grid-template-columns: 76px 1fr; padding: 10px 0; }
+.opener .fig { font-size: 18px; }
+.opener .irow-body { padding-left: 88px; }
+.nav a { padding: 8px 12px; }

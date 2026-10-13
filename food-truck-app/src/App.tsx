@@ -9,7 +9,6 @@ import Spots from './screens/Spots'
 import Insights from './screens/Insights'
 import History from './screens/History'
 import Money from './screens/Money'
-import Ask from './screens/Ask'
 import './app.css'
 
 export default function App() {
@@ -27,7 +26,7 @@ export default function App() {
           <Route path="/tips" element={<Insights />} />
           <Route path="/history/:metric" element={<History />} />
           <Route path="/money" element={<Money />} />
-          <Route path="/ask" element={<Ask />} />
+          <Route path="/ask" element={<Insights />} />
         </Routes>
         <Nav />
       </main>

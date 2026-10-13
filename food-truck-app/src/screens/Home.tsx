@@ -94,7 +94,7 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
           <span className="bento-num">{money(now.tips)}</span><span className="bento-sub">tips</span><Chg v={pctChange(now.tips, prev.tips)} label={label} />
         </button>
         <Link to="/insights" className="bento-card pink wide">
-          <span className="tag">Insights</span>
+          <span className="tag">Eventini AI</span>
           <span className="bento-title">{tips.length + stock.length} things worth knowing this week</span>
           <span className="bento-sub">{stock[0] ? `${stock[0].item.name} has stopped selling. ` : ''}{tips.find((t) => t.id === 'fees')?.short ?? tips[0]?.short}.</span>
           <ArrowRight className="corner" size={20} />
