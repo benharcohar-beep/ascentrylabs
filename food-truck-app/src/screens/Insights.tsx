@@ -1,12 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { SendHorizontal } from 'lucide-react'
-import { TODAY, money, shortDate } from '../lib/data'
-import { weeklyInsights, type Insight } from '../lib/insights'
-import { stockAlerts } from '../lib/stock'
 import { ask, getPasscode, setPasscode, type ChatMsg } from '../lib/ask'
 
-const ORDER: Insight['section'][] = ['Sales', 'Spots', 'Menu', 'Market', 'Weather', 'Tips']
-const STARTERS = ['How did this week go?', 'Which spot should I do more of?', 'Should I raise the birria taco price?', 'Write my weekly summary']
+const STARTERS = ['What should I know this week?', 'How did this week go?', 'Which spot should I do more of?', 'Should I raise the birria taco price?', 'Write my weekly summary']
 
 export default function Insights() {
   const tips = weeklyInsights().filter((t) => t.id !== 'wow')
@@ -39,7 +35,6 @@ export default function Insights() {
     <>
       <section className="block-hero lilac page">
         <header className="top"><h1>Eventini AI</h1></header>
-        <div className="label">Week of {shortDate(TODAY)}. Ask anything; answers come from your own numbers.</div>
       </section>
 
       {needPass && (
@@ -54,46 +49,6 @@ export default function Insights() {
       )}
 
       <div className="chat">
-        {/* The AI's opening message: this week's findings */}
-        <div className="bubble assistant opener">
-          <p className="opener-lead">{tips.length + stock.length} things worth knowing this week.</p>
-          {stock.length > 0 && (
-            <div className="sec">
-              <h3>Stock</h3>
-              {stock.map((s) => (
-                <details key={s.id} className="irow">
-                  <summary>
-                    <span className="fig">{money(s.wastePerWeek)}<em>a week in the bin</em></span>
-                    <span className="txt"><b>{s.item.name} has stopped selling</b><span>{s.unitsNow} this week against about {s.unitsBase} a week before. About {s.surplusLabel} of {s.ingredient} a week is going in the bin.</span></span>
-                  </summary>
-                  <div className="irow-body">
-                    <p><b>First:</b> {s.prepLine}</p>
-                    <p><b>This week:</b> {s.dealLine}</p>
-                    <p><b>Or:</b> {s.freeLine}</p>
-                  </div>
-                </details>
-              ))}
-            </div>
-          )}
-          {sections.map((sec) => (
-            <div className="sec" key={sec.name}>
-              <h3>{sec.name}</h3>
-              {sec.items.map((t) => (
-                <details key={t.id} className="irow">
-                  <summary>
-                    <span className={`fig ${t.tone}`}>{t.figure}<em>{t.figureNote}</em></span>
-                    <span className="txt"><b>{t.title}</b><span>{t.body}</span></span>
-                  </summary>
-                  <div className="irow-body">
-                    {t.action && <p>{t.action}</p>}
-                    <p className="muted">How: {t.evidence}</p>
-                  </div>
-                </details>
-              ))}
-            </div>
-          ))}
-        </div>
-
         {msgs.length === 0 && (
           <div className="starters">
             {STARTERS.map((s) => <button key={s} className="starter" onClick={() => send(s)}>{s}</button>)}
