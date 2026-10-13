@@ -29,9 +29,7 @@ export default function Insights() {
 
   return (
     <>
-      <section className="block-hero lilac page">
-        <header className="top"><h1>Eventini AI</h1></header>
-      </section>
+      <header className="top plain-head"><h1>Eventini AI</h1></header>
 
       {needPass && (
         <div className="card passbox">
