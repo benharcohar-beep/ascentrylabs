@@ -9,9 +9,8 @@ export function Brand() {
   return (
     <>
       <button className="brand-btn" onClick={() => setAbout(true)} aria-label="About this concept">
-        {HAS_LOGO ? <img src={`${import.meta.env.BASE_URL}eventini-logo.svg`} alt="Eventini" height="20" /> : <span className="wordmark">eventini</span>}
+        {HAS_LOGO ? <img src={`${import.meta.env.BASE_URL}eventini-logo.svg`} alt="Eventini" height="20" /> : <span className="wordmark">Eventini</span>}
         <span className="brand-sep">AI</span>
-        <span className="concept-tag">Concept</span>
       </button>
       {about && (
         <div className="sheet-back" onClick={() => setAbout(false)}>
