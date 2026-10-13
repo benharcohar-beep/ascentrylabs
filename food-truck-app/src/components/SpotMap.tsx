@@ -3,7 +3,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { money, type SpotStat } from '../lib/data'
 
-// Milwaukee map of the spots. Dot size = what the spot makes per hour after
+// Milwaukee map of the spots. Tiles are slightly desaturated in CSS so the dots stand out. Dot size = what the spot makes per hour after
 // fees; amber = the venue takes over 12%; the selected spot is coral.
 export function SpotMap({ spots, sel, onSelect }: { spots: SpotStat[]; sel: string | null; onSelect: (id: string | null) => void }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -13,9 +13,10 @@ export function SpotMap({ spots, sel, onSelect }: { spots: SpotStat[]; sel: stri
   useEffect(() => {
     if (!ref.current || mapRef.current) return
     const map = L.map(ref.current, { zoomControl: false, attributionControl: true, scrollWheelZoom: false })
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      subdomains: 'abcd', maxZoom: 19,
+    // OpenStreetMap's own tiles: free, no key. Fine for a demo's traffic.
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 19,
     }).addTo(map)
     L.control.zoom({ position: 'bottomright' }).addTo(map)
     map.setView([43.035, -87.93], 11)

@@ -501,3 +501,5 @@ body, .shell { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; }
 .leaflet-container { font-family: inherit; }
 .leaflet-tooltip { font-family: inherit; font-size: 12px; font-weight: 600; border-radius: 10px; border: 0; box-shadow: 0 4px 14px rgba(0,0,0,0.12); padding: 6px 10px; }
 .leaflet-control-attribution { font-size: 9px; }
+
+.spotmap .leaflet-tile { filter: saturate(0.55) brightness(1.04); }
