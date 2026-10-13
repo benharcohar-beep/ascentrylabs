@@ -492,3 +492,12 @@ body, .shell { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; }
 .bento-card.marigold { background: var(--marigold); }
 .bento-card.cash { grid-column: 1 / -1; }
 .bento-card.cash .bento-sub { font-size: 13px; }
+
+/* spots map */
+.mapcard { padding: 0; overflow: hidden; }
+.spotmap { height: 280px; width: 100%; background: #eef0f2; }
+.mapcard .hbar-key { padding: 8px 14px 10px; flex-wrap: wrap; row-gap: 4px; }
+.hbar-key .sw.sel { background: var(--accent); margin-left: 8px; }
+.leaflet-container { font-family: inherit; }
+.leaflet-tooltip { font-family: inherit; font-size: 12px; font-weight: 600; border-radius: 10px; border: 0; box-shadow: 0 4px 14px rgba(0,0,0,0.12); padding: 6px 10px; }
+.leaflet-control-attribution { font-size: 9px; }

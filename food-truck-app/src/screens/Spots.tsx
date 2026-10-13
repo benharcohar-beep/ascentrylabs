@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Bars, Card, Pills } from '../components/ui'
+import { SpotMap } from '../components/SpotMap'
 import { hourLabel, hourlyFor, money, pct, rangeWindow, spotStats, type RangeKey } from '../lib/data'
 
 export default function Spots({ range, setRange }: { range: RangeKey; setRange: (k: RangeKey) => void }) {
@@ -21,8 +22,15 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
           <h1>Spots</h1>
           <Pills value={range} onChange={setRange} />
         </header>
-        <div className="label">What each spot makes per hour, after fees. Tap one.</div>
+        <div className="label">What each spot makes per hour, after fees. Tap a dot or a bar.</div>
       </section>
+
+      {spots.length > 0 && (
+        <Card className="mapcard">
+          <SpotMap spots={spots} sel={sel} onSelect={setSel} />
+          <div className="hbar-key"><span className="sw" /> no or low fees <span className="sw warn" /> venue takes over 12% <span className="sw sel" /> selected · bigger dot, more per hour</div>
+        </Card>
+      )}
 
       {spots.length === 0 && <Card>No trading days in this range.</Card>}
 

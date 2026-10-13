@@ -1,0 +1,53 @@
+import { useEffect, useRef } from 'react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import { money, type SpotStat } from '../lib/data'
+
+// Milwaukee map of the spots. Dot size = what the spot makes per hour after
+// fees; amber = the venue takes over 12%; the selected spot is coral.
+export function SpotMap({ spots, sel, onSelect }: { spots: SpotStat[]; sel: string | null; onSelect: (id: string | null) => void }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<L.Map | null>(null)
+  const layerRef = useRef<L.LayerGroup | null>(null)
+
+  useEffect(() => {
+    if (!ref.current || mapRef.current) return
+    const map = L.map(ref.current, { zoomControl: false, attributionControl: true, scrollWheelZoom: false })
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd', maxZoom: 19,
+    }).addTo(map)
+    L.control.zoom({ position: 'bottomright' }).addTo(map)
+    map.setView([43.035, -87.93], 11)
+    mapRef.current = map
+    layerRef.current = L.layerGroup().addTo(map)
+    return () => { map.remove(); mapRef.current = null }
+  }, [])
+
+  useEffect(() => {
+    const map = mapRef.current, layer = layerRef.current
+    if (!map || !layer) return
+    layer.clearLayers()
+    const max = Math.max(1, ...spots.map((s) => s.netPerHour))
+    for (const s of spots) {
+      const fee = s.gross ? s.fees / s.gross : 0
+      const on = s.loc.id === sel
+      const r = 4 + 9 * Math.sqrt(s.netPerHour / max)
+      const m = L.circleMarker([s.loc.lat, s.loc.lon], {
+        radius: on ? r + 3 : r,
+        color: '#fff', weight: 2,
+        fillColor: on ? '#f2906f' : fee > 0.12 ? '#e6b04b' : '#111111',
+        fillOpacity: 0.92,
+      })
+      m.bindTooltip(`${s.loc.name.replace(/ \(.*\)/, '')}: ${money(s.netPerHour)}/hr`, { direction: 'top', offset: [0, -r], opacity: 0.95 })
+      m.on('click', () => onSelect(on ? null : s.loc.id))
+      m.addTo(layer)
+    }
+    if (spots.length) {
+      const b = L.latLngBounds(spots.map((s) => [s.loc.lat, s.loc.lon] as [number, number]))
+      map.fitBounds(b.pad(0.25), { maxZoom: 13 })
+    }
+  }, [spots, sel, onSelect])
+
+  return <div ref={ref} className="spotmap" />
+}
