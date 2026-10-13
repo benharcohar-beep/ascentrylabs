@@ -505,9 +505,9 @@ body, .shell { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; }
 .spotmap .leaflet-tile { filter: saturate(0.55) brightness(1.04); }
 
 /* market: two numbers per item */
-.price-head, .price-main { display: grid; grid-template-columns: 1fr 72px 84px; gap: 8px; align-items: center; }
+.price-head, .price-main { display: grid; grid-template-columns: 1fr 64px 76px 54px; gap: 6px; align-items: center; }
 .price-head { font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.04em; padding: 10px 0 6px; }
-.price-head span:not(:first-child), .price-you, .price-avg { text-align: right; font-variant-numeric: tabular-nums; }
+.price-head span:not(:first-child), .price-you, .price-avg, .price-diff { text-align: right; font-variant-numeric: tabular-nums; }
 .price-row { border-top: 1px solid var(--line); padding: 12px 0; cursor: pointer; }
 .price-name { font-weight: 600; font-size: 15px; display: flex; flex-direction: column; gap: 2px; }
 .price-name em { font-style: normal; font-size: 12px; font-weight: 600; }
@@ -517,3 +517,11 @@ body, .shell { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; }
 .price-you { font-weight: 800; font-size: 17px; }
 .price-avg { font-weight: 600; font-size: 15px; color: var(--ink-2); }
 .price-row .rivals { margin-top: 10px; }
+
+.price-diff { font-size: 13px; font-weight: 700; }
+.price-diff.down { color: #b3261e; }
+.price-diff.up { color: #15713d; }
+.price-diff.flat { color: var(--ink-3); }
+.price-name { font-size: 14px; }
+.price-you { font-size: 16px; }
+.price-avg { font-size: 14px; }
