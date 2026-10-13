@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { typeLabel } from '../lib/insights'
 import { Bars, Pills } from '../components/ui'
 import { SpotMap } from '../components/SpotMap'
 import { hourLabel, hourlyFor, money, pct, rangeWindow, spotStats, type RangeKey } from '../lib/data'
@@ -9,6 +8,7 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
   const all = spotStats(w.from, w.to)
   const [kind, setKind] = useState<string | null>(null)
   const kinds = [...new Set(all.map((s) => s.loc.type))]
+  const KIND: Record<string, string> = { campus: 'Campus', office: 'Offices', market: 'Markets', street: 'Street', brewery: 'Breweries', event: 'Games', festival: 'Festivals', food_park: 'Food park', hospital: 'Hospital' }
   const spots = kind ? all.filter((s) => s.loc.type === kind) : all
   const [sel, setSel] = useState<string | null>(null)
   const max = Math.max(1, ...spots.map((s) => s.netPerHour))
@@ -27,7 +27,7 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
       </header>
       <div className="chips">
         <button className={`chip-btn ${kind === null ? 'on' : ''}`} onClick={() => setKind(null)}>All</button>
-        {kinds.map((k) => <button key={k} className={`chip-btn ${kind === k ? 'on' : ''}`} onClick={() => setKind(kind === k ? null : k)}>{typeLabel(k)}</button>)}
+        {kinds.map((k) => <button key={k} className={`chip-btn ${kind === k ? 'on' : ''}`} onClick={() => setKind(kind === k ? null : k)}>{KIND[k] ?? k}</button>)}
       </div>
 
       {spots.length > 0 && (
