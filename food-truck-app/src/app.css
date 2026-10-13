@@ -462,3 +462,20 @@ body, .shell { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; }
 .hbar-key .sw.warn { background: var(--warn); margin-left: 8px; }
 .spot-detail h2 { margin-bottom: 2px; }
 .spot-detail .facts { margin-top: 14px; }
+
+/* ask */
+.chat { display: flex; flex-direction: column; gap: 8px; padding: 4px 2px; min-height: 40vh; }
+.starters { display: flex; flex-wrap: wrap; gap: 8px; }
+.starter { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 9px 14px; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer; }
+.bubble { max-width: 88%; padding: 12px 14px; border-radius: 18px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+.bubble.user { align-self: flex-end; background: var(--ink); color: #fff; border-bottom-right-radius: 6px; }
+.bubble.assistant { align-self: flex-start; background: var(--card); border: 1px solid var(--line); border-bottom-left-radius: 6px; }
+.bubble.thinking { color: var(--ink-3); letter-spacing: 2px; }
+.bubble.error { align-self: flex-start; background: #fdecd8; color: #9a4b0e; }
+.askbar { position: sticky; bottom: 92px; display: flex; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 6px 6px 6px 16px; }
+.askbar input { flex: 1; border: 0; background: transparent; font: inherit; font-size: 15px; outline: none; }
+.askbar button { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--ink); color: #fff; display: grid; place-items: center; cursor: pointer; }
+.askbar button:disabled { opacity: 0.35; }
+.passbox { display: flex; flex-direction: column; gap: 8px; }
+.passbox input { flex: 1; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font: inherit; }
+.nav a { padding: 8px 10px; }

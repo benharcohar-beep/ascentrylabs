@@ -1,8 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "cd food-truck-app && npm ci",
+  "installCommand": "npm ci && npm ci --prefix food-truck-app",
   "buildCommand": "cd food-truck-app && npm run build",
   "outputDirectory": "food-truck-app/dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
+  "rewrites": [
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/"
+    }
+  ]
 }
