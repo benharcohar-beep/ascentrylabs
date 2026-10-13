@@ -429,7 +429,7 @@ def make_schedule(events):
                 if lid == "L01":
                     w = 3.0 if dow in (4, 5, 6) else 1.8
                 if lid == "L21":
-                    w = 4.0 if dow in (0, 1, 2, 3) else 2.0
+                    w = 9.0 if dow in (0, 1, 2, 3) else 3.0
                     if m in (6, 7, 8):
                         w = 1.2  # summer break: campus is quiet
                 cands.append((lid, w))
