@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { money, type SpotStat } from '../lib/data'
+import { token, useTheme } from '../lib/theme'
 
 // Milwaukee map of the spots. Tiles are slightly desaturated in CSS so the dots stand out. Dot size = what the spot makes per hour after
 // fees; amber = the venue takes over 12%; the selected spot is coral.
@@ -9,6 +10,7 @@ export function SpotMap({ spots, sel, onSelect }: { spots: SpotStat[]; sel: stri
   const ref = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const layerRef = useRef<L.LayerGroup | null>(null)
+  const [theme] = useTheme()
 
   useEffect(() => {
     if (!ref.current || mapRef.current) return
@@ -30,14 +32,15 @@ export function SpotMap({ spots, sel, onSelect }: { spots: SpotStat[]; sel: stri
     if (!map || !layer) return
     layer.clearLayers()
     const max = Math.max(1, ...spots.map((s) => s.netPerHour))
+    const ink = token('--ink') || '#111111', accent = token('--accent') || '#6fb3b0', warn = token('--warn') || '#e0a233', ring = token('--card') || '#fff'
     for (const s of spots) {
       const fee = s.gross ? s.fees / s.gross : 0
       const on = s.loc.id === sel
       const r = 4 + 9 * Math.sqrt(s.netPerHour / max)
       const m = L.circleMarker([s.loc.lat, s.loc.lon], {
         radius: on ? r + 3 : r,
-        color: '#fff', weight: 2,
-        fillColor: on ? '#6fb3b0' : fee > 0.12 ? '#e0a233' : '#111111',
+        color: ring, weight: 2,
+        fillColor: on ? accent : fee > 0.12 ? warn : ink,
         fillOpacity: 0.92,
       })
       m.bindTooltip(`${s.loc.name.replace(/ \(.*\)/, '')}: ${money(s.netPerHour)}/hr`, { direction: 'top', offset: [0, -r], opacity: 0.95 })
@@ -48,7 +51,7 @@ export function SpotMap({ spots, sel, onSelect }: { spots: SpotStat[]; sel: stri
       const b = L.latLngBounds(spots.map((s) => [s.loc.lat, s.loc.lon] as [number, number]))
       map.fitBounds(b.pad(0.25), { maxZoom: 13 })
     }
-  }, [spots, sel, onSelect])
+  }, [spots, sel, onSelect, theme])
 
   return <div ref={ref} className="spotmap" />
 }

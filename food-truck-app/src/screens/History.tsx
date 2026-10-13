@@ -77,7 +77,7 @@ export default function History() {
                 <span className="name">Week of {shortDate(x.from)} <small className="muted">{x.days} days</small></span>
                 <span className="val">{formatMetric(x.value, metric)}</span>
                 <span className="pills-sm">
-                  {ch !== null && <span className={`pill ${ch >= 0 ? 'green' : 'amber'}`}>{ch >= 0 ? '+' : ''}{Math.round(ch * 100)}% vs week before</span>}
+                  {ch !== null && <span className={`pill ${ch >= 0 ? 'green' : 'red'}`}>{ch >= 0 ? '+' : ''}{Math.round(ch * 100)}% vs week before</span>}
                 </span>
               </li>
             )

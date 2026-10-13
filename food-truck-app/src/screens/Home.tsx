@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { ChevronRight, Store, MapPin, Beer, Trophy, Briefcase, GraduationCap, Tent, Stethoscope, PartyPopper, Receipt, Landmark, HandCoins } from 'lucide-react'
 import { Brand } from '../components/Brand'
+import { ThemeToggle } from '../components/ThemeToggle'
 import { TODAY, data, daysBetween, locationById, money, pctChange, rangeWindow, shortDate, weekday, totals } from '../lib/data'
 import { health } from '../lib/health'
 import { cashAt, statementFor } from '../lib/money'
@@ -31,7 +32,7 @@ export default function Home() {
           <span className="eyebrow">{greet}, {first}</span>
           <b>{data.truck.name}</b>
         </div>
-        <Brand />
+        <div className="head-right"><ThemeToggle /><Brand /></div>
       </header>
 
       <section className="hero" onClick={() => navigate('/money')} role="link">
