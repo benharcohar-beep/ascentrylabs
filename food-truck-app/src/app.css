@@ -503,3 +503,17 @@ body, .shell { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; }
 .leaflet-control-attribution { font-size: 9px; }
 
 .spotmap .leaflet-tile { filter: saturate(0.55) brightness(1.04); }
+
+/* market: two numbers per item */
+.price-head, .price-main { display: grid; grid-template-columns: 1fr 72px 84px; gap: 8px; align-items: center; }
+.price-head { font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.04em; padding: 10px 0 6px; }
+.price-head span:not(:first-child), .price-you, .price-avg { text-align: right; font-variant-numeric: tabular-nums; }
+.price-row { border-top: 1px solid var(--line); padding: 12px 0; cursor: pointer; }
+.price-name { font-weight: 600; font-size: 15px; display: flex; flex-direction: column; gap: 2px; }
+.price-name em { font-style: normal; font-size: 12px; font-weight: 600; }
+.price-name em.warn { color: #9a4b0e; }
+.price-name em.good { color: #15713d; }
+.price-name em.info { color: #2f4e7e; }
+.price-you { font-weight: 800; font-size: 17px; }
+.price-avg { font-weight: 600; font-size: 15px; color: var(--ink-2); }
+.price-row .rivals { margin-top: 10px; }
