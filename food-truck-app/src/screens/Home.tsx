@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 import { Brand } from '../components/Brand'
 import { Bars, Card } from '../components/ui'
 import { METRIC_LABEL, RANGES, TODAY, addDays, buckets, data, daysBetween, formatMetric, itemTotals, locationById, money, pct, pctChange, rangeWindow, shortDate, totals, weekday, type RangeKey } from '../lib/data'
 import { health } from '../lib/health'
-import { weeklyInsights } from '../lib/insights'
 import { cashAt, statementFor } from '../lib/money'
-import { stockAlerts } from '../lib/stock'
 
 export default function Home({ range, setRange }: { range: RangeKey; setRange: (k: RangeKey) => void }) {
   const w = rangeWindow(range)
@@ -17,8 +15,6 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
   const items = itemTotals(w.from, w.to).slice(0, 5)
   const avg = now.orders ? now.gross / now.orders : 0
   const prevAvg = prev.orders ? prev.gross / prev.orders : 0
-  const tips = weeklyInsights().filter((t) => t.id !== 'wow')
-  const stock = stockAlerts()
   const h = health()
   const st = statementFor(range)
   const cash = cashAt()
@@ -100,12 +96,6 @@ export default function Home({ range, setRange }: { range: RangeKey; setRange: (
         <button className="bento-card small" onClick={() => navigate('/history/tips')}>
           <span className="bento-num">{money(now.tips)}</span><span className="bento-sub">tips</span><Chg v={pctChange(now.tips, prev.tips)} label={label} />
         </button>
-        <Link to="/insights" className="bento-card pink wide">
-          <span className="tag">Eventini AI</span>
-          <span className="bento-title">{tips.length + stock.length} things worth knowing this week</span>
-          <span className="bento-sub">{stock[0] ? `${stock[0].item.name} has stopped selling. ` : ''}{tips.find((t) => t.id === 'fees')?.short ?? tips[0]?.short}.</span>
-          <ArrowRight className="corner" size={20} />
-        </Link>
       </div>
 
       <Card>
