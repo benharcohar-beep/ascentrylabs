@@ -35,6 +35,12 @@ export default function Home() {
         <div className="head-right"><ThemeToggle /><Brand /></div>
       </header>
 
+      <section className={`status ${h.tone}`} onClick={() => navigate('/money')} role="link">
+        <span className="label">Business is</span>
+        <span className="status-word">{h.rating}</span>
+        <span className="status-sub">{h.summary}</span>
+      </section>
+
       <section className="hero" onClick={() => navigate('/money')} role="link">
         <div className="label">Cash in the bank</div>
         <div className="hero-num">{money(cash.balance)}</div>
@@ -60,11 +66,6 @@ export default function Home() {
           <span className="label">Orders this week</span>
           <span className="card-num">{week.orders.toLocaleString()}</span>
           <Chg v={pctChange(week.orders, prevWeek.orders)} />
-        </button>
-        <button className={`swipe-card rating ${h.tone}`} onClick={() => navigate('/money')}>
-          <span className="label">Business is</span>
-          <span className="card-num">{h.rating}</span>
-          <span className="card-sub">{h.summary}</span>
         </button>
       </div>
 

@@ -30,7 +30,7 @@ h2 { font-size: 16px; font-weight: 700; }
 .icon-btn { width: 34px; height: 34px; border-radius: 50%; border: 0; background: var(--panel); color: var(--ink); display: grid; place-items: center; cursor: pointer; padding: 0; }
 
 /* ===== Hero figure ===== */
-.hero { padding: 10px 4px 4px; cursor: pointer; }
+.hero { padding: 6px 4px 4px; cursor: pointer; }
 .hero.compact { padding-top: 4px; }
 .hero-num { font-size: 40px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; margin: 4px 0 6px; }
 .hero-sub { font-size: 13px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 6px; }
@@ -56,11 +56,13 @@ h2 { font-size: 16px; font-weight: 700; }
 }
 .card-num { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; margin-top: 2px; }
 .card-sub { font-size: 12px; color: var(--ink-2); line-height: 1.35; }
-.swipe-card.rating { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
-.swipe-card.rating .label, .swipe-card.rating .card-sub { color: inherit; opacity: 0.72; }
-/* Green = good, red = needs attention, plain = steady */
-.swipe-card.rating.warn { background: var(--bad-fill); border-color: var(--bad-fill); color: #fff; }
-.swipe-card.rating.good { background: var(--good-fill); border-color: var(--good-fill); color: #fff; }
+/* ===== Business status: first thing on Home. Green = good, red = needs attention, plain = steady ===== */
+.status { display: flex; flex-direction: column; gap: 2px; padding: 20px 18px; border-radius: var(--radius); background: var(--ink); color: var(--on-ink); cursor: pointer; }
+.status .label, .status-sub { color: inherit; opacity: 0.78; }
+.status-word { font-size: 34px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin: 2px 0 4px; }
+.status-sub { font-size: 14px; line-height: 1.4; }
+.status.good { background: var(--good-fill); color: #fff; }
+.status.warn { background: var(--bad-fill); color: #fff; }
 .chg { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 999px; margin-top: 4px; }
 .chg.up { background: var(--good-soft); color: var(--good-ink); }
 .chg.down { background: var(--bad-soft); color: var(--bad-ink); }
