@@ -251,6 +251,8 @@ LOCATIONS = [
     ("L18", "Wisconsin State Fair",             "festival",  "West Allis",      43.0186, -88.0100, 300,  0.18, 28, {0, 1, 2, 3, 4, 5, 6}, (11, 21), "warm"),
     ("L19", "UWM campus, Kenwood Blvd",         "campus",    "East Side",       43.0760, -87.8820,  75,  0.00, 15, {1, 2, 3},       (11, 15), "all"),
     ("L20", "Bastille Days, Cathedral Square",  "festival",  "East Town",       43.0412, -87.9044, 200,  0.15, 30, {0, 1, 2, 3, 4, 5, 6}, (12, 22), "warm"),
+    # Marquette: the truck's home lunch pitch, most weekdays in term time, all year.
+    ("L21", "Marquette campus, Wisconsin Ave",   "campus",    "Marquette",       43.0386, -87.9313,   0,  0.00, 24, {0, 1, 2, 3, 4}, (11, 15), "all"),
 ]
 LOC = {l[0]: l for l in LOCATIONS}
 TIP_MEAN = {"brewery": 0.20, "street": 0.12, "food_park": 0.15, "event": 0.09,
@@ -426,6 +428,10 @@ def make_schedule(events):
                     w = 2.0 if dow in (4, 5) else 1.4
                 if lid == "L01":
                     w = 3.0 if dow in (4, 5, 6) else 1.8
+                if lid == "L21":
+                    w = 4.0 if dow in (0, 1, 2, 3) else 2.0
+                    if m in (6, 7, 8):
+                        w = 1.2  # summer break: campus is quiet
                 cands.append((lid, w))
             if not cands:
                 rows.append({"date": d.isoformat(), "trading": False, "location_id": None, "reason": "no slot"})
