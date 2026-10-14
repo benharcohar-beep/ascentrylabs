@@ -14,7 +14,7 @@ export function factPack() {
   const q = rangeWindow('3M'), y = rangeWindow('1Y')
   const r2 = (n: number) => Math.round(n * 100) / 100
   const stmt = (s: typeof wk.now) => ({
-    from: s.from, to: s.to, tradingDays: s.tradingDays, sales: r2(s.sales), truckSales: r2(s.truckSales), catering: r2(s.catering),
+    from: s.from, to: s.to, workingDays: s.tradingDays, sales: r2(s.sales), truckSales: r2(s.truckSales), catering: r2(s.catering),
     food: r2(s.food), staff: r2(s.staff), fees: r2(s.fees), profitBeforeFixedBills: r2(s.tradingProfit), fixedBills: r2(s.fixed),
     profit: r2(s.profit), salesTaxCollected: r2(s.tax), tips: r2(s.tips),
   })
@@ -28,7 +28,7 @@ export function factPack() {
     lastWeek: stmt(wk.prev),
     last30Days: stmt(mo.now), previous30Days: stmt(mo.prev),
     last12Months: stmt(yr.now),
-    byMonth: months().map((m) => ({ month: m.month, tradingDays: m.trading_days, sales: m.total_sales, profit: m.operating_profit })),
+    byMonth: months().map((m) => ({ month: m.month, workingDays: m.trading_days, sales: m.total_sales, profit: m.operating_profit })),
     last7Days: daysBetween(rangeWindow('1W').from, TODAY).map((d) => ({
       date: d.date, trading: d.trading, spot: d.location_id ? data.locations.find((l) => l.id === d.location_id)?.name : null,
       sales: d.gross_sales ?? 0, orders: d.orders ?? 0, weather: `${d.condition}, ${d.temp_f}F`,

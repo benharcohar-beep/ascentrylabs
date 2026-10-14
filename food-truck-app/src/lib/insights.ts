@@ -36,7 +36,7 @@ export function weeklyInsights(): Insight[] {
       body: best
         ? `${money(now.gross)} this week against ${money(prev.gross)} last week. Best day was ${weekday(best.date)} at ${locationById.get(best.location_id!)?.name} (${money(best.gross_sales ?? 0)}).`
         : `${money(now.gross)} this week against ${money(prev.gross)} last week.`,
-      evidence: `${now.tradingDays} trading days vs ${prev.tradingDays}; ${now.orders} orders vs ${prev.orders}.`,
+      evidence: `${now.tradingDays} working days vs ${prev.tradingDays}; ${now.orders} orders vs ${prev.orders}.`,
     })
   }
 
@@ -57,7 +57,7 @@ export function weeklyInsights(): Insight[] {
       title: `${feeHeavy.loc.name} looks busy but earns less than ${noFee.loc.name}`,
       body: `It takes ${money(feeHeavy.grossPerHour)} an hour at the till, more than any no-fee spot. After the ${pct(feeHeavy.loc.pctFee, false)} cut and ${money(feeHeavy.loc.flatFee)} pitch fee you are left with ${money(feeHeavy.netPerHour)} an hour. ${noFee.loc.name} has no fee and makes ${money(noFee.netPerHour)}.`,
       evidence: `Last 12 months: ${feeHeavy.days} days there, ${money(feeHeavy.fees)} in fees on ${money(feeHeavy.gross)} of sales.`,
-      action: 'Worth asking for a lower cut, or trading there only on the biggest game nights.',
+      action: 'Worth asking for a lower cut, or working there only on the biggest game nights.',
     })
   }
 
@@ -70,7 +70,7 @@ export function weeklyInsights(): Insight[] {
       figure: `${money(bestNet.netPerHour)}/hr`, figureNote: 'after fees', section: 'Spots',
       title: `${bestNet.loc.name} is your best regular slot`,
       body: `${money(bestNet.netPerHour)} an hour after fees over the last 12 months, from ${bestNet.days} visits.`,
-      evidence: `Ranked on net sales per trading hour; festivals, markets, game days and spots with fewer than 8 visits excluded.`,
+      evidence: `Ranked on net sales per working hour; festivals, markets, game days and spots with fewer than 8 visits excluded.`,
       action: 'If there is a free day, this is where to put it.',
     })
   }

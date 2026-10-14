@@ -57,7 +57,7 @@ export default function Home() {
       </section>
 
       <section className="panel">
-        <div className="panel-head"><h2>This week</h2><span className="panel-note">{weekDays} {weekDays === 1 ? 'day' : 'days'} traded · last week {prevDays}</span></div>
+        <div className="panel-head"><h2>This week</h2><span className="panel-note">{weekDays} {weekDays === 1 ? 'day' : 'days'} worked · last week {prevDays}</span></div>
         <div className="swipe">
           <button className="swipe-card" onClick={() => navigate('/history/sales')}>
             <span className="label">Sales</span>

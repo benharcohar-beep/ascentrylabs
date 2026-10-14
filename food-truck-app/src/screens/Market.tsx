@@ -31,6 +31,8 @@ export default function Market() {
           const you = b.hero_price!
           const a = avg(b.standard_item)
           const gap = a ? you / a - 1 : 0
+          const gp = Math.round(gap * 100) // direction follows the rounded figure, so a shown 0% is always grey
+          const dir = gp > 0 ? 'up' : gp < 0 ? 'down' : 'flat'
           const isOpen = open === b.standard_item
           const prices = data.marketPrices.filter((p) => p.item === b.standard_item).sort((x, y) => x.price - y.price)
           return (
@@ -39,7 +41,7 @@ export default function Market() {
                 <span className="price-name">{b.item_label}</span>
                 <span className="price-you">{money(you, { cents: true })}</span>
                 <span className="price-avg">{money(a, { cents: true })}</span>
-                <span className={`price-diff ${gap < -0.03 ? 'down' : gap > 0.03 ? 'up' : 'flat'}`}>{gap < -0.03 ? '▼' : gap > 0.03 ? '▲' : ''} {Math.abs(Math.round(gap * 100))}%</span>
+                <span className={`price-diff ${dir}`}>{dir === 'down' ? '▼ ' : dir === 'up' ? '▲ ' : ''}{Math.abs(gp)}%</span>
               </div>
               {isOpen && (
                 <ul className="rivals">

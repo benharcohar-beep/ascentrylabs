@@ -37,7 +37,7 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
         </div>
       )}
 
-      {spots.length === 0 && <section className="card empty">No trading days in this range.</section>}
+      {spots.length === 0 && <section className="card empty">No working days in this range.</section>}
 
       {spots.length > 0 && (
         <ul className="feed flat">

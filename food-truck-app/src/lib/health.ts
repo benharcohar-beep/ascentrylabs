@@ -13,13 +13,13 @@ export function health(): Health {
   const w = rangeWindow('1W')
   const now = totals(daysBetween(w.from, w.to))
   const prev = totals(daysBetween(w.prevFrom, w.prevTo))
-  // If the two weeks had a different number of trading days, compare sales per trading day instead, and say so.
+  // If the two weeks had a different number of working days, compare sales per working day instead, and say so.
   const nd = daysBetween(w.from, w.to).filter((d) => d.trading).length
   const pd = daysBetween(w.prevFrom, w.prevTo).filter((d) => d.trading).length
   const perDay = nd !== pd && nd > 0 && pd > 0
   const ch = perDay ? pctChange(now.gross / nd, prev.gross / pd) : pctChange(now.gross, prev.gross)
-  const unit = perDay ? ' a trading day' : ''
-  const daysNote = perDay ? ` (${nd} days traded against ${pd})` : ''
+  const unit = perDay ? ' a working day' : ''
+  const daysNote = perDay ? ` (${nd} days worked against ${pd})` : ''
   const tv = ch === null ? '–' : pct(ch)
   const tf = ch === null ? 0.5 : Math.min(1, Math.max(0, 0.5 + ch))
   if (ch === null) checks.push({ label: 'This week', detail: 'Not enough history yet.', score: 0, value: tv, fill: tf })

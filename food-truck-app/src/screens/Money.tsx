@@ -52,7 +52,7 @@ export default function Money() {
         <div className="hero-sub">
           <span>{pct(now.sales ? now.profit / now.sales : 0, false)} of {money(now.sales)} sales</span>
           <span className="dot-sep">·</span>
-          <span>{now.tradingDays} trading days</span>
+          <span>{now.tradingDays} working days</span>
         </div>
       </section>
 
