@@ -61,7 +61,7 @@ export default function Market() {
         <div className="row"><h2>Not on your menu</h2></div>
         <p className="sub" style={{ margin: '0 0 4px' }}>What other trucks sell that you don't. Tap one to see who sells it.</p>
         <Card className="rows">
-          <div className="price-head">
+          <div className="price-head gaps">
             <span>Item</span><span>Trucks</span><span>Market</span><span>Range</span>
           </div>
           {missing.map((b) => {
@@ -70,11 +70,11 @@ export default function Market() {
             const a = avg(b.standard_item)
             return (
               <div key={b.standard_item} className={`price-row ${isOpen ? 'open' : ''}`} onClick={() => setOpen(isOpen ? null : b.standard_item)}>
-                <div className="price-main">
+                <div className="price-main gaps">
                   <span className="price-name">{b.item_label}</span>
                   <span className="price-avg">{b.n_trucks} of {data.rivals.length}</span>
                   <span className="price-you">{money(a, { cents: true })}</span>
-                  <span className="price-range">{money(b.min, { cents: true })}<br />{money(b.max, { cents: true })}</span>
+                  <span className="price-range">{money(b.min, { cents: true })} to {money(b.max, { cents: true })}</span>
                 </div>
                 {isOpen && (
                   <ul className="rivals">

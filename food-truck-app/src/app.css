@@ -197,13 +197,14 @@ h2 { font-size: 16px; font-weight: 700; }
 /* ===== Market table ===== */
 .rows { padding: 0 2px; }
 .price-head, .price-main { display: grid; grid-template-columns: 1fr 60px 72px 62px; gap: 6px; align-items: center; }
-.price-head { font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.04em; padding: 10px 0 6px; }
+.price-head { font-size: 12px; font-weight: 700; color: var(--ink-2); padding: 10px 0 6px; }
+.price-head.gaps, .price-main.gaps { grid-template-columns: 1fr 54px 64px 92px; }
 .price-head span:not(:first-child), .price-you, .price-avg, .price-diff { text-align: right; font-variant-numeric: tabular-nums; }
 .price-row { border-top: 1px solid var(--line); padding: 12px 0; cursor: pointer; min-height: 48px; }
 .price-name { font-weight: 600; font-size: 14px; }
 .price-you { font-weight: 800; font-size: 16px; }
 .price-avg { font-weight: 600; font-size: 14px; color: var(--ink-2); }
-.price-range { font-size: 11px; color: var(--ink-3); text-align: right; line-height: 1.3; font-variant-numeric: tabular-nums; }
+.price-range { font-size: 12px; font-weight: 600; color: var(--ink-2); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .price-diff { font-size: 12px; font-weight: 700; border-radius: 999px; border: 1px solid transparent; padding: 1px 6px; justify-self: end; text-align: center !important; white-space: nowrap; }
 .price-diff.down { color: var(--bad); border-color: var(--bad); }
 .price-diff.up { color: var(--good); border-color: var(--good); }

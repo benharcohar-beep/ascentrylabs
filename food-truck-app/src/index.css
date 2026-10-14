@@ -4,8 +4,8 @@
   --card: #ffffff;
   --panel: #f6f6f6;       /* light grey for chips and icon circles */
   --ink: #111111;
-  --ink-2: #6a6a6a;
-  --ink-3: #9c9c9c;
+  --ink-2: #4b4b4b;
+  --ink-3: #777777;
   --line: #e8e8e8;
   --on-ink: #ffffff;      /* text sitting on an --ink background */
   --accent: #6fb3b0;      /* Eventini seafoam, used sparingly */
@@ -24,7 +24,7 @@
   :root:not([data-theme="light"]) {
     color-scheme: dark;
     --bg: #0f0f0f; --card: #171717; --panel: #242424;
-    --ink: #f2f2f2; --ink-2: #a3a3a3; --ink-3: #707070; --line: #2a2a2a;
+    --ink: #f2f2f2; --ink-2: #bdbdbd; --ink-3: #8f8f8f; --line: #2a2a2a;
     --on-ink: #111111;
     --accent-soft: #1b2f2e; --accent-ink: #8fd0cc;
     --good: #3fcf7a; --good-soft: #15321f; --good-ink: #6fe0a0; --good-fill: #23945a;
@@ -36,7 +36,7 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #0f0f0f; --card: #171717; --panel: #242424;
-  --ink: #f2f2f2; --ink-2: #a3a3a3; --ink-3: #707070; --line: #2a2a2a;
+  --ink: #f2f2f2; --ink-2: #bdbdbd; --ink-3: #8f8f8f; --line: #2a2a2a;
   --on-ink: #111111;
   --accent-soft: #1b2f2e; --accent-ink: #8fd0cc;
   --good: #3fcf7a; --good-soft: #15321f; --good-ink: #6fe0a0; --good-fill: #23945a;
