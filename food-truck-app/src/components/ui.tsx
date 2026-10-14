@@ -167,3 +167,15 @@ export function Delta({ value, suffix = 'vs last' }: { value: number | null; suf
     </div>
   )
 }
+
+/** Money the way banking apps show it: small raised $, big dollars, small cents. */
+export function Amt({ v, cents = true, signed = false }: { v: number; cents?: boolean; signed?: boolean }) {
+  const neg = v < 0
+  const [whole, dec] = Math.abs(v).toFixed(2).split('.')
+  const sign = neg ? '-' : signed && v > 0 ? '+' : ''
+  return (
+    <span className="amt">
+      {sign}<span className="cur">$</span>{Number(whole).toLocaleString('en-US')}{cents && <span className="dec">.{dec}</span>}
+    </span>
+  )
+}

@@ -1,4 +1,4 @@
-import { Pills } from '../components/ui'
+import { Amt, Pills } from '../components/ui'
 
 // A face for each dish so the list is not twenty identical rows.
 const FACE: [RegExp, string][] = [[/quesabirria|birria/i, '🥘'], [/taco plate/i, '🍽️'], [/taco/i, '🌮'], [/burrito/i, '🌯'], [/quesadilla/i, '🧀'], [/torta/i, '🥪'], [/elote/i, '🌽'], [/guac/i, '🥑'], [/salsa/i, '🌶️'], [/churro/i, '🍩'], [/agua/i, '🍹'], [/jarritos|soda/i, '🥤'], [/water/i, '💧']]
@@ -21,7 +21,7 @@ export default function Menu({ range, setRange }: { range: RangeKey; setRange: (
       <section className="hero compact">
         <div className="label">Left after ingredients</div>
         <div className="hero-num">{total > 0 ? pct(1 - cogs / total, false) : '–'}</div>
-        <div className="hero-sub"><span>on {money(total)} of sales</span></div>
+        <div className="hero-sub"><span>on <b><Amt v={total} cents={false} /></b> of sales</span></div>
       </section>
 
       <ul className="feed flat">
@@ -33,7 +33,7 @@ export default function Menu({ range, setRange }: { range: RangeKey; setRange: (
               <span>{i.qty.toLocaleString()} sold · {money(i.item.price, { cents: true })} · costs {money(i.item.cost, { cents: true })}</span>
             </span>
             <span className="feed-right">
-              <span className="feed-amt">{money(i.revenue)}</span>
+              <span className="feed-amt"><Amt v={i.revenue} /></span>
               <span className={`feed-tag ${i.margin < 0.6 ? 'warn' : 'good'}`}>{pct(i.margin, false)} margin</span>
             </span>
           </li>

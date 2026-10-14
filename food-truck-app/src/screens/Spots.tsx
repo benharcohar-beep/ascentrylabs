@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bars, Pills } from '../components/ui'
+import { Amt, Bars, Pills } from '../components/ui'
 import { SpotMap } from '../components/SpotMap'
 import { hourLabel, hourlyFor, money, pct, rangeWindow, spotStats, type RangeKey } from '../lib/data'
 
@@ -52,7 +52,7 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
                   <span>{x.days} {x.days === 1 ? 'day' : 'days'}{fee > 0.12 ? ` · venue takes ${pct(fee, false)}` : ''}</span>
                 </span>
                 <span className="feed-right">
-                  <span className="feed-amt">{money(x.netPerHour)}<small>/hr</small></span>
+                  <span className="feed-amt"><Amt v={x.netPerHour} /><small>/hr</small></span>
                   <span className="feed-bar"><span className={fee > 0.12 ? 'warn' : ''} style={{ width: `${Math.max(3, (x.netPerHour / max) * 100)}%` }} /></span>
                 </span>
               </li>
@@ -70,7 +70,7 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
               <div className="sub">{s.loc.neighbourhood} · {s.days} {s.days === 1 ? 'day' : 'days'} this {range === '1W' ? 'week' : range === '1M' ? 'month' : range === '3M' ? 'quarter' : 'year'}</div>
             </div>
             <div className="val-stack">
-              <div className="val">{money(s.netPerHour)}<small>/hr</small></div>
+              <div className="val"><Amt v={s.netPerHour} /><small>/hr</small></div>
               <div className="sub">after the venue's cut</div>
             </div>
           </div>

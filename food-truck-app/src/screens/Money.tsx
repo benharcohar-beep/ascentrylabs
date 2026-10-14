@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Bars } from '../components/ui'
+import { Amt, Bars } from '../components/ui'
 import { TODAY, daysBetween, money, monthName, pct, pctChange, shortDate } from '../lib/data'
 import { cashAt, months, statement } from '../lib/money'
 
@@ -48,7 +48,7 @@ export default function Money() {
 
       <section className="hero">
         <div className="label">Profit, {monthName(ym, true)}{partial ? ' so far' : ''}</div>
-        <div className="hero-num">{now.profit < 0 ? '-' : ''}{money(Math.abs(now.profit))}</div>
+        <div className="hero-num"><Amt v={now.profit} /></div>
         <div className="hero-sub">
           <span>{pct(now.sales ? now.profit / now.sales : 0, false)} of {money(now.sales)} sales</span>
           <span className="dot-sep">·</span>

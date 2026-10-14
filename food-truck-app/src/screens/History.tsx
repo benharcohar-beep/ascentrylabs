@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, NavLink, useParams } from 'react-router-dom'
-import { Bars, Card, Delta, Pills } from '../components/ui'
+import { Amt, Bars, Card, Delta, Pills } from '../components/ui'
 import {
   METRIC_LABEL, RANGES, TODAY, addDays, buckets, daysBetween, formatMetric, metricOf, pctChange, rangeWindow, shortDate, totals,
   type Metric, type RangeKey,
@@ -47,7 +47,7 @@ export default function History() {
         <div className="row hero-row">
           <div>
             <div className="label">{METRIC_LABEL[metric]}, this {label}</div>
-            <div className="big">{formatMetric(now, metric)}</div>
+            <div className="big">{metric === 'orders' ? formatMetric(now, metric) : <Amt v={now} cents={metric === 'avg'} />}</div>
             <Delta value={pctChange(now, prev)} suffix={`vs previous ${label}`} />
           </div>
           <Pills value={range} onChange={setRange} />

@@ -14,7 +14,7 @@ export function currentTheme(): Theme { return stored() ?? system() }
 
 export function applyTheme(t: Theme) {
   document.documentElement.dataset.theme = t
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'dark' ? '#0f0f0f' : '#ffffff')
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'dark' ? '#0b1413' : '#f2f3f3')
   window.dispatchEvent(new Event('themechange'))
 }
 export function setTheme(t: Theme) {
