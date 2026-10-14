@@ -56,12 +56,12 @@ export default function Money() {
         </div>
       </section>
 
-      <section className="card">
+      <section className="card flat">
         <h2>Sales by day</h2>
         <Bars bars={days.map((d) => ({ label: String(Number(d.date.slice(8))), value: d.gross_sales ?? 0, sub: d.trading ? `${shortDate(d.date)}` : 'Day off' }))} height={110} highlightLast />
       </section>
 
-      <section className="card">
+      <section className="card flat">
         <h2>Breakdown</h2>
         <ul className="bd">
           <Line label="Sales" value={now.sales} sales={now.sales} prev={prev?.sales} strong />
@@ -82,11 +82,11 @@ export default function Money() {
         </ul>
       </section>
 
-      <section className="card">
-        <h2>Set aside</h2>
+      <section className="card flat">
+        <h2>Put away</h2>
         <ul className="bd">
           <li className="bd-row plain"><span className="bd-label">Sales tax collected</span><span className="bd-val">{money(now.tax)}</span></li>
-          <li className="bd-row plain"><span className="bd-label">Tips to staff</span><span className="bd-val">{money(now.tips)}</span></li>
+          <li className="bd-row plain"><span className="bd-label">Staff tips</span><span className="bd-val">{money(now.tips)}</span></li>
           <li className="bd-row plain strong"><span className="bd-label">Cash in the bank today</span><span className="bd-val">{money(cash.balance)}</span></li>
         </ul>
         <p className="note">Sales tax is paid on the 20th of the following month. Cash is rolled forward from {money(cash.opening)} on day one; connect the bank for the real figure.</p>

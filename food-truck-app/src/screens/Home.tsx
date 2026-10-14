@@ -21,15 +21,12 @@ export default function Home() {
   const prevWeek = totals(daysBetween(w.prevFrom, w.prevTo))
   const feed = daysBetween(rangeWindow('1M').from, TODAY).filter((d) => d.trading).reverse().slice(0, 12)
   const billsMonth = data.fixedCosts.filter((f) => f.month === TODAY.slice(0, 7)).reduce((a, f) => a + f.amount, 0)
-  const first = data.truck.owner.split(' ')[0]
-  const hour = new Date().getHours()
-  const greet = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
 
   return (
     <div className="screen">
       <header className="top">
         <div className="head-mid">
-          <span className="eyebrow">{greet}, {first}</span>
+          <span className="eyebrow">Numbers to {weekday(TODAY)} {shortDate(TODAY)}</span>
           <b>{data.truck.name}</b>
         </div>
         <div className="head-right"><ThemeToggle /><Brand /></div>
@@ -42,12 +39,12 @@ export default function Home() {
       </section>
 
       <section className="hero" onClick={() => navigate('/money')} role="link">
-        <div className="label">Cash in the bank</div>
+        <div className="label">In the bank today</div>
         <div className="hero-num">{money(cash.balance)}</div>
         <div className="hero-sub">
           <span><b>{money(cash.available)}</b> yours to spend</span>
           <span className="dot-sep">·</span>
-          <span><b>{money(cash.taxOwed)}</b> tax owed</span>
+          <span><b>{money(cash.taxOwed)}</b> owed in sales tax</span>
         </div>
       </section>
 
@@ -73,32 +70,29 @@ export default function Home() {
       </section>
 
       <section className="block">
-        <div className="row"><h2>Set aside</h2></div>
-        <div className="pots">
-          <div className="pot">
-            <span className="pot-ico"><Receipt size={16} /></span>
-            <span className="pot-name">Sales tax</span>
-            <span className="pot-amt">{money(cash.taxOwed)}</span>
-            <span className="pot-sub">{cash.nextRemittance ? `due ${shortDate(cash.nextRemittance.date)}` : 'nothing due'}</span>
-          </div>
-          <div className="pot">
-            <span className="pot-ico"><Landmark size={16} /></span>
-            <span className="pot-name">Bills this month</span>
-            <span className="pot-amt">{money(billsMonth)}</span>
-            <span className="pot-sub">loan, insurance, kitchen</span>
-          </div>
-          <div className="pot">
-            <span className="pot-ico"><HandCoins size={16} /></span>
-            <span className="pot-name">Tips to staff</span>
-            <span className="pot-amt">{money(wk.now.tips)}</span>
-            <span className="pot-sub">this week</span>
-          </div>
-        </div>
+        <div className="row"><h2>Put away</h2><Link to="/money" className="more">Money <ChevronRight size={14} /></Link></div>
+        <ul className="feed flat">
+          <li className="feed-row" onClick={() => navigate('/money')}>
+            <span className="feed-ico"><Receipt size={18} /></span>
+            <span className="feed-main"><b>Sales tax</b><span>{cash.nextRemittance ? `due ${shortDate(cash.nextRemittance.date)}` : 'nothing due'}</span></span>
+            <span className="feed-amt">{money(cash.taxOwed)}</span>
+          </li>
+          <li className="feed-row" onClick={() => navigate('/money')}>
+            <span className="feed-ico"><Landmark size={18} /></span>
+            <span className="feed-main"><b>Bills due this month</b><span>loan, insurance, kitchen</span></span>
+            <span className="feed-amt">{money(billsMonth)}</span>
+          </li>
+          <li className="feed-row" onClick={() => navigate('/history/tips')}>
+            <span className="feed-ico"><HandCoins size={18} /></span>
+            <span className="feed-main"><b>Staff tips</b><span>this week</span></span>
+            <span className="feed-amt">{money(wk.now.tips)}</span>
+          </li>
+        </ul>
       </section>
 
       <section className="block">
-        <div className="row"><h2>Trading days</h2><Link to="/history/sales" className="more">See all <ChevronRight size={14} /></Link></div>
-        <ul className="feed">
+        <div className="row"><h2>Where we parked</h2><Link to="/history/sales" className="more">See all <ChevronRight size={14} /></Link></div>
+        <ul className="feed flat">
           {feed.map((d) => {
             const loc = locationById.get(d.location_id!)!
             const Icon = ICON[loc.type] ?? MapPin

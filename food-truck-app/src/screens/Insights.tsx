@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { SendHorizontal } from 'lucide-react'
 import { ask, getPasscode, setPasscode, type ChatMsg } from '../lib/ask'
 import { TODAY, shortDate } from '../lib/data'
+import { MARK } from '../components/Brand'
 
 const STARTERS = ['What should I know this week?', 'How did this week go?', 'Which spot should I do more of?', 'Should I raise the birria taco price?', 'Write my weekly summary']
 
@@ -47,7 +48,7 @@ export default function Insights() {
       <div className="chat">
         {msgs.length === 0 && (
           <div className="welcome">
-            <span className="ai-avatar big">E</span>
+            <span className="ai-avatar big"><img src={MARK} alt="" className="mark" /></span>
             <b>Ask me anything about the truck.</b>
             <span>I know your numbers up to {today}.</span>
           </div>
@@ -59,11 +60,11 @@ export default function Insights() {
         )}
         {msgs.map((m, i) => (
           <div key={i} className={`msg ${m.role}`}>
-            {m.role === 'assistant' && <span className="ai-avatar">E</span>}
+            {m.role === 'assistant' && <span className="ai-avatar"><img src={MARK} alt="" className="mark" /></span>}
             <div className={`bubble ${m.role}`}>{m.content}</div>
           </div>
         ))}
-        {busy && <div className="msg assistant"><span className="ai-avatar">E</span><div className="bubble assistant typing"><i /><i /><i /></div></div>}
+        {busy && <div className="msg assistant"><span className="ai-avatar"><img src={MARK} alt="" className="mark" /></span><div className="bubble assistant typing"><i /><i /><i /></div></div>}
         {err && <div className="bubble error">{err}</div>}
         <div ref={endRef} />
       </div>

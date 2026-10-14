@@ -40,7 +40,7 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
       {spots.length === 0 && <section className="card empty">No trading days in this range.</section>}
 
       {spots.length > 0 && (
-        <ul className="feed card-feed">
+        <ul className="feed flat">
           {spots.map((x, i) => {
             const fee = x.gross ? x.fees / x.gross : 0
             const on = x.loc.id === sel
@@ -71,7 +71,7 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
             </div>
             <div className="val-stack">
               <div className="val">{money(s.netPerHour)}<small>/hr</small></div>
-              <div className="sub">after fees</div>
+              <div className="sub">after the venue's cut</div>
             </div>
           </div>
           <div className="facts">
