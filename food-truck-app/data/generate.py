@@ -162,7 +162,17 @@ STANDARD_ITEMS = [
     ("soda_bottle",        "Bottled soda (Jarritos etc.)",   2.50, {"Classic taqueria", "Street snacks", "Birria specialist", "Tortas", "Seafood", "Fast casual", "Mexican fusion"}),
     ("water",              "Bottled water",                  1.50, {"Classic taqueria", "Street snacks", "Birria specialist", "Tortas", "Seafood", "Fast casual", "Mexican fusion"}),
     ("churros",            "Churros",                        4.50, {"Classic taqueria", "Street snacks", "Mexican fusion"}),
+    # Items rivals sell that the hero truck does not (so the Market tab can show what's missing from the menu).
+    ("horchata",           "Horchata",                       4.00, {"Classic taqueria", "Street snacks", "Birria specialist", "Tortas", "Fast casual"}),
+    ("tamales_2",          "Tamales, 2",                     8.00, {"Classic taqueria", "Street snacks", "Tortas"}),
+    ("sopes_2",            "Sopes, 2",                       9.00, {"Classic taqueria", "Street snacks"}),
+    ("birria_ramen",       "Birria ramen",                  14.00, {"Birria specialist", "Mexican fusion"}),
+    ("esquites",           "Esquites (corn in a cup)",       5.00, {"Street snacks", "Classic taqueria", "Mexican fusion"}),
+    ("mangonada",          "Mangonada",                      6.50, {"Street snacks", "Seafood", "Mexican fusion"}),
+    ("tres_leches",        "Tres leches cake",               5.50, {"Classic taqueria", "Tortas", "Fast casual"}),
 ]
+EXTRA_ITEMS = {"horchata", "tamales_2", "sopes_2", "birria_ramen", "esquites", "mangonada", "tres_leches"}
+rng_extra = random.Random(11)  # own stream so adding these does not reshuffle the existing market prices
 
 # Ingredients: (id, name, unit, cost per unit $, shelf life in days once prepped/opened)
 INGREDIENTS = {
@@ -603,15 +613,16 @@ def make_market():
         for sid, label, med, concepts in STANDARD_ITEMS:
             if concept not in concepts:
                 continue
+            rg = rng_extra if sid in EXTRA_ITEMS else rng_market
             if concept == "Birria specialist" and sid in ("taco_single", "burrito_std", "burrito_cali"):
-                if rng_market.random() < 0.5:
+                if rg.random() < 0.5:
                     continue
-            if rng_market.random() < 0.12:
+            if rg.random() < 0.12:
                 continue
-            price = quarter(med * TIER_MULT[tier] * rng_market.lognormvariate(0, 0.07))
-            seen = START + timedelta(days=rng_market.randrange(0, (END - START).days))
+            price = quarter(med * TIER_MULT[tier] * rg.lognormvariate(0, 0.07))
+            seen = START + timedelta(days=rg.randrange(0, (END - START).days))
             rows.append({"truck_id": tid, "truck": name, "standard_item": sid, "item_label": label,
-                         "price": price, "date_seen": seen.isoformat(), "source": rng_market.choice(sources)})
+                         "price": price, "date_seen": seen.isoformat(), "source": rg.choice(sources)})
     return rows
 
 

@@ -43,6 +43,9 @@ export function factPack() {
     marketPrices: data.benchmarks.filter((b) => b.hero_price !== null).map((b) => ({
       item: b.item_label, you: b.hero_price, otherTrucksMin: b.min, otherTrucksTypical: b.median, otherTrucksMax: b.max, trucksCompared: b.n_trucks,
     })),
+    notOnYourMenu: data.benchmarks.filter((b) => b.hero_price === null && b.n_trucks >= 2).map((b) => ({
+      item: b.item_label, trucksSelling: b.n_trucks, typicalPrice: b.median, min: b.min, max: b.max,
+    })),
     insights: weeklyInsights().map((t) => ({ title: t.title, detail: t.body, action: t.action ?? null, evidence: t.evidence })),
     stockAlerts: stockAlerts().map((s) => ({ item: s.item.name, soldThisWeek: s.unitsNow, usualWeekly: s.unitsBase, ingredient: s.ingredient, surplusPerWeek: s.surplusLabel, wastePerWeek: r2(s.wastePerWeek), prepLine: s.prepLine, dealLine: s.dealLine })),
     note: 'Fixed bills are spread evenly across the days of each month. Sales tax is 7.9% and belongs to the state. Tips go to staff.',

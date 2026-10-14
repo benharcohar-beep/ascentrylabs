@@ -7,6 +7,8 @@ export default function Market() {
     .filter((b) => b.hero_price !== null && b.n_trucks >= 3)
     .sort((a, b) => (a.hero_vs_median ?? 0) - (b.hero_vs_median ?? 0))
   const [open, setOpen] = useState<string | null>(null)
+  // Items other trucks sell that this truck does not. Needs at least 2 trucks so it is a real gap, not one truck's quirk.
+  const missing = data.benchmarks.filter((b) => b.hero_price === null && b.n_trucks >= 2).sort((a, b) => b.n_trucks - a.n_trucks)
 
   // Market average = the plain mean of the other trucks' prices for the item.
   const avg = (item: string) => {
@@ -54,6 +56,42 @@ export default function Market() {
           )
         })}
       </Card>
+
+      <section className="block">
+        <div className="row"><h2>Not on your menu</h2></div>
+        <p className="sub" style={{ margin: '0 0 4px' }}>What other trucks sell that you don't. Tap one to see who sells it.</p>
+        <Card className="rows">
+          <div className="price-head">
+            <span>Item</span><span>Trucks</span><span>Market avg</span><span>Range</span>
+          </div>
+          {missing.map((b) => {
+            const isOpen = open === b.standard_item
+            const prices = data.marketPrices.filter((p) => p.item === b.standard_item).sort((x, y) => x.price - y.price)
+            const a = avg(b.standard_item)
+            return (
+              <div key={b.standard_item} className={`price-row ${isOpen ? 'open' : ''}`} onClick={() => setOpen(isOpen ? null : b.standard_item)}>
+                <div className="price-main">
+                  <span className="price-name">{b.item_label}</span>
+                  <span className="price-avg">{b.n_trucks} of {data.rivals.length}</span>
+                  <span className="price-you">{money(a, { cents: true })}</span>
+                  <span className="price-range">{money(b.min, { cents: true })}<br />{money(b.max, { cents: true })}</span>
+                </div>
+                {isOpen && (
+                  <ul className="rivals">
+                    {prices.map((p) => (
+                      <li key={p.truckId + p.seen}>
+                        <span>{rivalById.get(p.truckId)?.name}</span>
+                        <span className="muted">{rivalById.get(p.truckId)?.neighbourhood}</span>
+                        <span className="num">{money(p.price, { cents: true })}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )
+          })}
+        </Card>
+      </section>
     </div>
   )
 }

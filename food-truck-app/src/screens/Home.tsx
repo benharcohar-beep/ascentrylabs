@@ -19,6 +19,8 @@ export default function Home() {
   const w = rangeWindow('1W')
   const week = totals(daysBetween(w.from, w.to))
   const prevWeek = totals(daysBetween(w.prevFrom, w.prevTo))
+  const weekDays = daysBetween(w.from, w.to).filter((d) => d.trading).length
+  const prevDays = daysBetween(w.prevFrom, w.prevTo).filter((d) => d.trading).length
   const feed = daysBetween(rangeWindow('1M').from, TODAY).filter((d) => d.trading).reverse().slice(0, 12)
   const billsMonth = data.fixedCosts.filter((f) => f.month === TODAY.slice(0, 7)).reduce((a, f) => a + f.amount, 0)
 
@@ -49,7 +51,7 @@ export default function Home() {
       </section>
 
       <section className="block">
-      <div className="row"><h2>This week</h2></div>
+      <div className="row"><h2>This week</h2><span className="sub">{weekDays} {weekDays === 1 ? 'day' : 'days'} traded · last week {prevDays}</span></div>
       <div className="swipe">
         <button className="swipe-card" onClick={() => navigate('/history/sales')}>
           <span className="label">Sales</span>

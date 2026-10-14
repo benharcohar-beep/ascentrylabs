@@ -13,13 +13,19 @@ export function health(): Health {
   const w = rangeWindow('1W')
   const now = totals(daysBetween(w.from, w.to))
   const prev = totals(daysBetween(w.prevFrom, w.prevTo))
-  const ch = pctChange(now.gross, prev.gross)
+  // If the two weeks had a different number of trading days, compare sales per trading day instead, and say so.
+  const nd = daysBetween(w.from, w.to).filter((d) => d.trading).length
+  const pd = daysBetween(w.prevFrom, w.prevTo).filter((d) => d.trading).length
+  const perDay = nd !== pd && nd > 0 && pd > 0
+  const ch = perDay ? pctChange(now.gross / nd, prev.gross / pd) : pctChange(now.gross, prev.gross)
+  const unit = perDay ? ' a trading day' : ''
+  const daysNote = perDay ? ` (${nd} days traded against ${pd})` : ''
   const tv = ch === null ? '–' : pct(ch)
   const tf = ch === null ? 0.5 : Math.min(1, Math.max(0, 0.5 + ch))
   if (ch === null) checks.push({ label: 'This week', detail: 'Not enough history yet.', score: 0, value: tv, fill: tf })
-  else if (ch >= 0.05) checks.push({ label: 'This week', detail: `Sales up ${pct(ch, false)} on last week.`, score: 1, value: tv, fill: tf })
-  else if (ch <= -0.1) checks.push({ label: 'This week', detail: `Sales down ${pct(Math.abs(ch), false)} on last week.`, score: -1, value: tv, fill: tf })
-  else checks.push({ label: 'This week', detail: `Sales about level with last week (${pct(ch)}).`, score: 0, value: tv, fill: tf })
+  else if (ch >= 0.05) checks.push({ label: 'This week', detail: `Sales${unit} up ${pct(ch, false)} on last week${daysNote}.`, score: 1, value: tv, fill: tf })
+  else if (ch <= -0.1) checks.push({ label: 'This week', detail: `Sales${unit} down ${pct(Math.abs(ch), false)} on last week${daysNote}.`, score: -1, value: tv, fill: tf })
+  else checks.push({ label: 'This week', detail: `Sales${unit} about level with last week (${pct(ch)})${daysNote}.`, score: 0, value: tv, fill: tf })
 
   // 2. What you keep: sales minus food, staff and fees over the last 4 weeks.
   const m = { from: addWeeks(w.to, -4), to: w.to }
@@ -35,9 +41,10 @@ export function health(): Health {
 
   const total = checks.reduce((a, c) => a + c.score, 0)
   const weak = checks.filter((c) => c.score < 0)
-  if (weak.length) return { rating: 'Needs attention', tone: 'warn', summary: weak[0].label === 'Profit' ? 'Profit is thin after food, staff and fees.' : 'Sales have dropped on last week.', checks }
-  if (total >= 1) return { rating: 'Good', tone: 'good', summary: checks[0].score > 0 ? 'Sales are up and profit is healthy.' : 'Profit is healthy and sales are holding.', checks }
-  return { rating: 'Steady', tone: 'info', summary: checks[1]?.score > 0 ? 'Sales level with last week, profit healthy.' : 'Sales level with last week; profit could be better.', checks }
+  const salesWord = perDay ? 'Sales a day' : 'Sales'
+  if (weak.length) return { rating: 'Needs attention', tone: 'warn', summary: weak[0].label === 'Profit' ? 'Profit is thin after food, staff and fees.' : `${salesWord} are down on last week${daysNote}.`, checks }
+  if (total >= 1) return { rating: 'Good', tone: 'good', summary: checks[0].score > 0 ? `${salesWord} are up and profit is healthy.` : 'Profit is healthy and sales are holding.', checks }
+  return { rating: 'Steady', tone: 'info', summary: checks[1]?.score > 0 ? `${salesWord} level with last week, profit healthy.` : `${salesWord} level with last week; profit could be better.`, checks }
 }
 
 /** The market-side check, shown on the Market tab rather than Home. */
