@@ -57,7 +57,7 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
                   <span>{x.days} {x.days === 1 ? 'day' : 'days'}{fee > 0.12 ? ` · venue takes ${pct(fee, false)}` : ''}</span>
                 </span>
                 <span className="feed-right">
-                  <span className="feed-amt"><Amt v={x.netPerHour} /><small>/hr</small></span>
+                  <span className="feed-amt pos"><Amt v={x.netPerHour} /><small>/hr</small></span>
                   <span className="feed-bar"><span className={fee > 0.12 ? 'warn' : ''} style={{ width: `${Math.max(3, (x.netPerHour / max) * 100)}%` }} /></span>
                 </span>
               </li>

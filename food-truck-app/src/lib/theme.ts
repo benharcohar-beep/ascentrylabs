@@ -8,13 +8,13 @@ function stored(): Theme | null {
   try { const v = localStorage.getItem(KEY); return v === 'light' || v === 'dark' ? v : null } catch { return null }
 }
 function system(): Theme {
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  return 'dark' // the app's native look is dark; light is there for owners who prefer it
 }
 export function currentTheme(): Theme { return stored() ?? system() }
 
 export function applyTheme(t: Theme) {
   document.documentElement.dataset.theme = t
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'dark' ? '#0b1413' : '#f2f3f3')
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'dark' ? '#0C2426' : '#EAF6F5')
   window.dispatchEvent(new Event('themechange'))
 }
 export function setTheme(t: Theme) {

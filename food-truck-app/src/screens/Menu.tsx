@@ -39,7 +39,7 @@ export default function Menu({ range, setRange }: { range: RangeKey; setRange: (
               <span>{i.qty.toLocaleString()} sold · {money(i.item.price, { cents: true })} · costs {money(i.item.cost, { cents: true })}</span>
             </span>
             <span className="feed-right">
-              <span className="feed-amt"><Amt v={i.revenue} /></span>
+              <span className="feed-amt pos"><Amt v={i.revenue} /></span>
               <span className={`feed-tag ${i.margin < 0.6 ? 'warn' : 'good'}`}>{pct(i.margin, false)} margin</span>
             </span>
           </li>

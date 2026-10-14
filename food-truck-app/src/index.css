@@ -1,49 +1,41 @@
 :root {
-  color-scheme: light;
-  --bg: #f2f3f3;          /* soft grey page so white panels read as groups (Monzo-style) */
-  --card: #ffffff;
-  --panel: #eef0ef;       /* inset grey for chips and small tiles inside panels */
-  --ink: #111111;
-  --ink-2: #4b4b4b;
-  --ink-3: #777777;
-  --line: #e5e8e7;
-  --on-ink: #ffffff;      /* text sitting on an --ink background */
-  --accent: #6fb3b0;      /* Eventini seafoam, used sparingly */
-  --accent-soft: #e3f1f0;
-  --accent-ink: #2f7f7b;
-  --brand: #2f7f7b;       /* solid seafoam fill, same in both themes, always takes white text */
-  /* Status: green = better, red = worse, amber = watch. Soft = tinted pill background, ink = text on it, fill = solid card. */
-  --good: #1f9d55; --good-soft: #e6f4ec; --good-ink: #15713d; --good-fill: #1f8a4c;
-  --bad: #d64545;  --bad-soft: #fde8e8;  --bad-ink: #a83232;  --bad-fill: #c73e3e;
-  --warn: #e0a233; --warn-soft: #fdf0d5; --warn-ink: #8a5a0b;
-  --shadow: rgba(0,0,0,0.08);
-  --radius: 14px;
-  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Look: deep teal ground, lighter teal panels, bright teal accent with dark text on it, coral for anything negative. */
+  --display: "Bricolage Grotesque", "DM Sans", sans-serif;
+  color-scheme: dark;
+  --bg: #0C2426;          /* page */
+  --card: #133638;        /* panels */
+  --panel: #1C4447;       /* inset: icon tiles, chips, pills */
+  --nav: #081B1D;         /* tab bar */
+  --ink: #EAF6F5;
+  --ink-2: #9FC2C0;
+  --ink-3: #7FA3A1;
+  --line: #22494C;
+  --on-ink: #0C2426;
+  --accent: #2EC4B6;      /* bright teal */
+  --accent-ink: #2EC4B6;  /* accent as text on the page */
+  --accent-soft: #1C4447;
+  --brand: #2EC4B6;       /* solid accent fill */
+  --on-brand: #0C2426;    /* text on the accent */
+  --good: #2EC4B6; --good-soft: #1C4447; --good-ink: #2EC4B6; --good-fill: #2EC4B6;
+  --bad: #F7A39C;  --bad-soft: #3A2A2C;  --bad-ink: #F7A39C;  --bad-fill: #F28B82;
+  --warn: #F2C14E; --warn-soft: #3A3420; --warn-ink: #F2C14E;
+  --muted-bar: #2F5E61;   /* non-highlighted chart bars */
+  --shadow: rgba(0,0,0,0.45);
+  --radius: 20px;
+  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --bg: #0b1413; --card: #142120; --panel: #1d2d2b;
-    --ink: #eef4f3; --ink-2: #b5c3c1; --ink-3: #879694; --line: #22322f;
-    --on-ink: #111111;
-    --accent-soft: #1a3532; --accent-ink: #8fd0cc; --brand: #2f8a85;
-    --good: #3fcf7a; --good-soft: #15321f; --good-ink: #6fe0a0; --good-fill: #23945a;
-    --bad: #ff6b6b;  --bad-soft: #3a1b1b;  --bad-ink: #ff8a8a;  --bad-fill: #c94444;
-    --warn: #f0b84a; --warn-soft: #3a2d12; --warn-ink: #f3c86a;
-    --shadow: rgba(0,0,0,0.5);
-  }
-}
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --bg: #0b1413; --card: #142120; --panel: #1d2d2b;
-  --ink: #eef4f3; --ink-2: #b5c3c1; --ink-3: #879694; --line: #22322f;
-  --on-ink: #111111;
-  --accent-soft: #1a3532; --accent-ink: #8fd0cc; --brand: #2f8a85;
-  --good: #3fcf7a; --good-soft: #15321f; --good-ink: #6fe0a0; --good-fill: #23945a;
-  --bad: #ff6b6b;  --bad-soft: #3a1b1b;  --bad-ink: #ff8a8a;  --bad-fill: #c94444;
-  --warn: #f0b84a; --warn-soft: #3a2d12; --warn-ink: #f3c86a;
-  --shadow: rgba(0,0,0,0.5);
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #EAF6F5; --card: #FFFFFF; --panel: #D9ECEA; --nav: #FFFFFF;
+  --ink: #0C2426; --ink-2: #4E7270; --ink-3: #6F8F8D; --line: #D3E6E4;
+  --on-ink: #EAF6F5;
+  --accent: #2EC4B6; --accent-ink: #118F84; --accent-soft: #D3F3EF; --brand: #2EC4B6; --on-brand: #0C2426;
+  --good: #118F84; --good-soft: #D3F3EF; --good-ink: #118F84; --good-fill: #2EC4B6;
+  --bad: #C9463F;  --bad-soft: #FBE3E1;  --bad-ink: #C9463F;  --bad-fill: #F28B82;
+  --warn: #B8860B; --warn-soft: #FBF1D3; --warn-ink: #8A6508;
+  --muted-bar: #B9D9D6;
+  --shadow: rgba(12,36,38,0.12);
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); }

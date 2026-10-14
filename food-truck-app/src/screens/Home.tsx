@@ -34,8 +34,8 @@ export default function Home() {
     <div className="screen">
       <header className="top">
         <div className="head-mid">
-          <span className="eyebrow">Updated {ago} · Eventini POS</span>
           <b>{data.truck.name}</b>
+          <span className="eyebrow">Updated {ago}</span>
         </div>
         <div className="head-right"><ThemeToggle /><Brand /></div>
       </header>
@@ -55,9 +55,8 @@ export default function Home() {
         <div className="label">In the bank today</div>
         <div className="hero-num"><Amt v={cash.balance} animate /></div>
         <div className="hero-sub">
-          <span><b><Amt v={cash.available} cents={false} /></b> yours to spend</span>
-          <span className="dot-sep">·</span>
-          <span><b><Amt v={cash.taxOwed} cents={false} /></b> owed in sales tax</span>
+          <span className="hero-pill">Yours to spend <Amt v={cash.available} /></span>
+          <span>after <Amt v={cash.taxOwed} cents={false} /> sales tax</span>
         </div>
       </section>
 
@@ -116,7 +115,7 @@ export default function Home() {
                   <b>{loc.name.replace(/ \(.*\)/, '').split(',')[0]}</b>
                   <span>{weekday(d.date)} {shortDate(d.date)} · {d.orders} orders · {d.condition}, {d.temp_f}°</span>
                 </span>
-                <span className="feed-amt"><Amt v={d.gross_sales ?? 0} /></span>
+                <span className="feed-amt pos"><Amt v={d.gross_sales ?? 0} /></span>
               </li>
             )
           })}
