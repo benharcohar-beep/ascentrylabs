@@ -63,6 +63,8 @@ HOUR_PROFILE = {10: 0.4, 11: 0.8, 12: 1.3, 13: 1.2, 14: 0.6, 15: 0.4,
                 16: 0.5, 17: 0.9, 18: 1.2, 19: 1.2, 20: 0.9, 21: 0.6, 22: 0.4}
 DEMAND_SCALE = 0.5       # scales every location's base orders/hour; tuned to hit the revenue target
 RAIN_MULT = 0.5          # planted story: rain halves a day
+RECENT_DAYS = 28         # planted story: strong finish over the last four weeks (students back, dry October)
+RECENT_LIFT = (1.38, 1.12, 1.06)   # demand multiplier for the last 7 days, the 7 before, and the 14 before that
 COLD_MULT = 0.75         # below 35F
 HOT_MULT = 0.9           # above 88F
 
@@ -86,6 +88,7 @@ ASSUMPTIONS = [
     ("Day-of-week multiplier", json.dumps(DOW), "estimate", "0=Mon"),
     ("Hour profile", json.dumps(HOUR_PROFILE), "estimate", "lunch and dinner peaks"),
     ("Rain multiplier", RAIN_MULT, "estimate", "PLANTED STORY: a rainy day halves sales"),
+    ("Strong finish", json.dumps(RECENT_LIFT), "estimate", "PLANTED STORY: the truck works most days in the last 4 weeks and demand builds, so the demo opens on a good week"),
     ("Cold multiplier (<35F)", COLD_MULT, "estimate", ""),
     ("Hot multiplier (>88F)", HOT_MULT, "estimate", ""),
     ("Monthly mean temp F", json.dumps(MONTH_TEMP_F), "estimate", "rough Milwaukee climatology"),
@@ -339,6 +342,11 @@ def make_weather():
         by[ds].update(rain=True, rain_mm=14.2, condition="rain")
     for ds in ("2026-06-27", "2026-07-04"):  # keep the festival weekends dry
         by[ds].update(rain=False, rain_mm=0.0, condition="clear")
+    # Planted story: a dry final week, so the demo opens on a good one
+    for d in daterange(END - timedelta(days=6), END):
+        r = by[d.isoformat()]
+        if r["rain"]:
+            r.update(rain=False, rain_mm=0.0, condition="clear")
     return rows
 
 
@@ -418,6 +426,8 @@ def make_schedule(events):
             p = 0.25 if winter else 0.5 if shoulder else 0.68
             if dow in (4, 5):
                 p += 0.12
+            if (END - d).days < RECENT_DAYS:
+                p = 0.88  # PLANTED STORY: a strong finish, the truck is out most days in the last four weeks
             if rng.random() > p:
                 rows.append({"date": d.isoformat(), "trading": False, "location_id": None, "reason": "day off"})
                 continue
@@ -499,6 +509,13 @@ def make_orders(schedule, weather, events):
             mult *= e["boost"]
         if ltype in ("event", "festival", "office", "hospital", "market", "campus"):
             mult *= 1.0 / SEASON[d.month] ** 0.5  # bookings are less seasonal than walk-up
+        left = (END - d).days
+        if left < 7:
+            mult *= RECENT_LIFT[0]   # PLANTED STORY: demand builds over the last four weeks so the demo opens on a good week
+        elif left < 14:
+            mult *= RECENT_LIFT[1]
+        elif left < RECENT_DAYS:
+            mult *= RECENT_LIFT[2]
         day_noise = rng.lognormvariate(0, 0.12)
         menu_w = menu_weights(d)
         for h in range(s["start_hour"], s["end_hour"]):
