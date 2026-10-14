@@ -6,6 +6,30 @@ import { MARK } from '../components/Brand'
 
 const STARTERS = ['What should I know this week?', 'How did this week go?', 'Which spot should I do more of?', 'Should I raise the birria taco price?', 'Write my weekly summary']
 
+/** Render a reply as short paragraphs and bullet lists: lines starting "- " or "• " become bullets, blank lines split blocks. */
+function Reply({ text }: { text: string }) {
+  const blocks: { kind: 'p' | 'ul'; lines: string[] }[] = []
+  for (const raw of text.split('\n')) {
+    const line = raw.trim()
+    if (!line) { continue }
+    const bullet = /^([-•*]|\d+[.)])\s+/.test(line)
+    const last = blocks[blocks.length - 1]
+    if (bullet) {
+      const item = line.replace(/^([-•*]|\d+[.)])\s+/, '')
+      if (last?.kind === 'ul') last.lines.push(item); else blocks.push({ kind: 'ul', lines: [item] })
+    } else {
+      blocks.push({ kind: 'p', lines: [line] })
+    }
+  }
+  return (
+    <>
+      {blocks.map((b, i) => b.kind === 'ul'
+        ? <ul key={i}>{b.lines.map((l, j) => <li key={j}>{l}</li>)}</ul>
+        : <p key={i}>{b.lines[0]}</p>)}
+    </>
+  )
+}
+
 export default function Insights() {
   const today = shortDate(TODAY)
   const [msgs, setMsgs] = useState<ChatMsg[]>([])
@@ -61,7 +85,7 @@ export default function Insights() {
         {msgs.map((m, i) => (
           <div key={i} className={`msg ${m.role}`}>
             {m.role === 'assistant' && <span className="ai-avatar"><img src={MARK} alt="" className="mark" /></span>}
-            <div className={`bubble ${m.role}`}>{m.content}</div>
+            <div className={`bubble ${m.role}`}>{m.role === 'assistant' ? <Reply text={m.content} /> : m.content}</div>
           </div>
         ))}
         {busy && <div className="msg assistant"><span className="ai-avatar"><img src={MARK} alt="" className="mark" /></span><div className="bubble assistant typing"><i /><i /><i /></div></div>}
