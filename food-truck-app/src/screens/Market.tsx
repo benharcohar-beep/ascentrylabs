@@ -25,7 +25,7 @@ export default function Market() {
 
       <Card className="rows">
         <div className="price-head">
-          <span>Item</span><span>You</span><span>Market avg</span><span>Diff</span>
+          <span>Item</span><span>You</span><span>Market</span><span>Diff</span>
         </div>
         {rows.map((b) => {
           const you = b.hero_price!
@@ -62,7 +62,7 @@ export default function Market() {
         <p className="sub" style={{ margin: '0 0 4px' }}>What other trucks sell that you don't. Tap one to see who sells it.</p>
         <Card className="rows">
           <div className="price-head">
-            <span>Item</span><span>Trucks</span><span>Market avg</span><span>Range</span>
+            <span>Item</span><span>Trucks</span><span>Market</span><span>Range</span>
           </div>
           {missing.map((b) => {
             const isOpen = open === b.standard_item

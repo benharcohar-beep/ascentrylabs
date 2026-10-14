@@ -93,10 +93,10 @@ h2 { font-size: 16px; font-weight: 700; }
 .feed-amt { font-size: 16px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .feed-amt small { font-size: 11px; color: var(--ink-3); font-weight: 600; }
 .feed-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none; }
-.feed-tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
-.feed-tag.good { background: var(--good-soft); color: var(--good-ink); }
-.feed-tag.warn { background: var(--warn-soft); color: var(--warn-ink); }
-.feed-tag.bad { background: var(--bad-soft); color: var(--bad-ink); }
+.feed-tag { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 999px; border: 1px solid transparent; }
+.feed-tag.good { color: var(--good); border-color: var(--good); }
+.feed-tag.warn { color: var(--warn-ink); border-color: var(--warn); }
+.feed-tag.bad { color: var(--bad); border-color: var(--bad); }
 .feed-bar { width: 72px; height: 5px; background: var(--line); border-radius: 999px; overflow: hidden; }
 .feed-bar span { display: block; height: 100%; background: var(--ink); border-radius: 999px; }
 .feed-bar span.warn { background: var(--warn); }
@@ -117,7 +117,7 @@ h2 { font-size: 16px; font-weight: 700; }
 
 /* ===== Breakdown (Money) ===== */
 .bd { list-style: none; margin: 0; padding: 0; }
-.bd-row { display: grid; grid-template-columns: 1fr 44px 36px 74px 40px; gap: 6px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.bd-row { display: grid; grid-template-columns: 1fr 36px 34px 72px 50px; gap: 6px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); font-size: 13px; }
 .bd-row.plain { grid-template-columns: 1fr auto; }
 .bd-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bd-row:first-child { border-top: 0; }
@@ -128,9 +128,9 @@ h2 { font-size: 16px; font-weight: 700; }
 .bd-bar span { display: block; height: 100%; background: var(--ink); border-radius: 999px; }
 .bd-share { font-size: 12px; color: var(--ink-3); text-align: right; font-variant-numeric: tabular-nums; }
 .bd-val { text-align: right; font-variant-numeric: tabular-nums; }
-.bd-ch { font-size: 11px; text-align: right; color: var(--ink-3); font-variant-numeric: tabular-nums; }
-.bd-ch.up { color: var(--good); }
-.bd-ch.down { color: var(--bad); }
+.bd-ch { font-size: 10px; font-weight: 700; text-align: center; color: var(--ink-3); font-variant-numeric: tabular-nums; border-radius: 999px; border: 1px solid transparent; padding: 1px 0; justify-self: end; min-width: 44px; }
+.bd-ch.up { color: var(--good); border-color: var(--good); }
+.bd-ch.down { color: var(--bad); border-color: var(--bad); }
 
 /* ===== Bars chart ===== */
 .bars { margin-top: 10px; position: relative; }
@@ -196,7 +196,7 @@ h2 { font-size: 16px; font-weight: 700; }
 
 /* ===== Market table ===== */
 .rows { padding: 0 2px; }
-.price-head, .price-main { display: grid; grid-template-columns: 1fr 64px 76px 54px; gap: 6px; align-items: center; }
+.price-head, .price-main { display: grid; grid-template-columns: 1fr 60px 72px 62px; gap: 6px; align-items: center; }
 .price-head { font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.04em; padding: 10px 0 6px; }
 .price-head span:not(:first-child), .price-you, .price-avg, .price-diff { text-align: right; font-variant-numeric: tabular-nums; }
 .price-row { border-top: 1px solid var(--line); padding: 12px 0; cursor: pointer; min-height: 48px; }
@@ -204,9 +204,9 @@ h2 { font-size: 16px; font-weight: 700; }
 .price-you { font-weight: 800; font-size: 16px; }
 .price-avg { font-weight: 600; font-size: 14px; color: var(--ink-2); }
 .price-range { font-size: 11px; color: var(--ink-3); text-align: right; line-height: 1.3; font-variant-numeric: tabular-nums; }
-.price-diff { font-size: 13px; font-weight: 700; }
-.price-diff.down { color: var(--bad); }
-.price-diff.up { color: var(--good); }
+.price-diff { font-size: 12px; font-weight: 700; border-radius: 999px; border: 1px solid transparent; padding: 1px 6px; justify-self: end; text-align: center !important; white-space: nowrap; }
+.price-diff.down { color: var(--bad); border-color: var(--bad); }
+.price-diff.up { color: var(--good); border-color: var(--good); }
 .price-diff.flat { color: var(--ink-3); }
 .rivals { list-style: none; margin: 10px 0 0; padding: 10px 0 0; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
 .rivals li { display: grid; grid-template-columns: 1fr auto 58px; gap: 8px; align-items: baseline; }
