@@ -255,6 +255,7 @@ h2 { font-size: 16px; font-weight: 700; }
 .bubble ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
 .bubble li { padding-left: 2px; }
 .bubble li::marker { color: var(--accent-ink); }
+.bubble strong { font-weight: 800; }
 .bubble.error { align-self: flex-start; background: var(--warn-soft); color: var(--warn-ink); }
 .bubble.typing { display: flex; gap: 4px; padding: 14px 16px; }
 .bubble.typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3); animation: blink 1.2s infinite ease-in-out; }

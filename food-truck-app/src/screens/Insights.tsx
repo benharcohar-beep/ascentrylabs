@@ -6,6 +6,12 @@ import { MARK } from '../components/Brand'
 
 const STARTERS = ['What should I know this week?', 'How did this week go?', 'Which spot should I do more of?', 'Should I raise the birria taco price?', 'Write my weekly summary']
 
+/** **text** becomes bold; nothing else is interpreted. */
+function Inline({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g)
+  return <>{parts.map((p, i) => p.startsWith('**') && p.endsWith('**') ? <strong key={i}>{p.slice(2, -2)}</strong> : p)}</>
+}
+
 /** Render a reply as short paragraphs and bullet lists: lines starting "- " or "• " become bullets, blank lines split blocks. */
 function Reply({ text }: { text: string }) {
   const blocks: { kind: 'p' | 'ul'; lines: string[] }[] = []
@@ -24,8 +30,8 @@ function Reply({ text }: { text: string }) {
   return (
     <>
       {blocks.map((b, i) => b.kind === 'ul'
-        ? <ul key={i}>{b.lines.map((l, j) => <li key={j}>{l}</li>)}</ul>
-        : <p key={i}>{b.lines[0]}</p>)}
+        ? <ul key={i}>{b.lines.map((l, j) => <li key={j}><Inline text={l} /></li>)}</ul>
+        : <p key={i}><Inline text={b.lines[0]} /></p>)}
     </>
   )
 }
