@@ -64,8 +64,9 @@ export default async function handler(req: any, res: any) {
     const answer = response.content.filter((b) => b.type === "text").map((b) => (b as { text: string }).text).join("\n").trim();
     return res.status(200).json({ answer, usage: { in: response.usage.input_tokens, out: response.usage.output_tokens, cached: response.usage.cache_read_input_tokens ?? 0 } });
   } catch (err: unknown) {
-    if (err instanceof Anthropic.AuthenticationError) return res.status(500).json({ error: "The API key was rejected. Check ANTHROPIC_API_KEY in Vercel." });
+    if (err instanceof Anthropic.AuthenticationError) return res.status(500).json({ error: "Anthropic rejected the API key. Create a new key at console.anthropic.com (it should start sk-ant-api), put it in ANTHROPIC_API_KEY on Vercel, and redeploy." });
     if (err instanceof Anthropic.RateLimitError) return res.status(429).json({ error: "Anthropic rate limit hit. Try again in a moment." });
+    if (err instanceof Anthropic.PermissionDeniedError) return res.status(500).json({ error: "The API key works but is not allowed to use this model. Check the key's workspace and billing at console.anthropic.com." });
     if (err instanceof Anthropic.APIError) return res.status(502).json({ error: `Anthropic error ${err.status}: ${err.message}` });
     return res.status(500).json({ error: "Something went wrong." });
   }
