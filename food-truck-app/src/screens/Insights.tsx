@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { SendHorizontal } from 'lucide-react'
 import { ask, getPasscode, setPasscode, type ChatMsg } from '../lib/ask'
-import { TODAY, shortDate } from '../lib/data'
+
 import { MARK } from '../components/Brand'
 
 const STARTERS = ['What should I know this week?', 'How did this week go?', 'Which spot should I do more of?', 'Should I raise the birria taco price?', 'Write my weekly summary']
@@ -37,7 +37,6 @@ function Reply({ text }: { text: string }) {
 }
 
 export default function Insights() {
-  const today = shortDate(TODAY)
   const [msgs, setMsgs] = useState<ChatMsg[]>([])
   const [q, setQ] = useState('')
   const [busy, setBusy] = useState(false)
@@ -80,7 +79,6 @@ export default function Insights() {
           <div className="welcome">
             <span className="ai-avatar big"><img src={MARK} alt="" className="mark" /></span>
             <b>Ask me anything about the truck.</b>
-            <span>I know your numbers up to {today}.</span>
           </div>
         )}
         {msgs.length === 0 && (
