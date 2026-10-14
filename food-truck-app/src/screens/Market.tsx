@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Card } from '../components/ui'
+import { Skeleton } from '../components/states'
+import { useFirstLoad } from '../lib/sync'
 import { data, money, rivalById } from '../lib/data'
 
 export default function Market() {
@@ -7,6 +9,7 @@ export default function Market() {
     .filter((b) => b.hero_price !== null && b.n_trucks >= 3)
     .sort((a, b) => (a.hero_vs_median ?? 0) - (b.hero_vs_median ?? 0))
   const [open, setOpen] = useState<string | null>(null)
+  const loading = useFirstLoad('market')
   // Items other trucks sell that this truck does not. Needs at least 2 trucks so it is a real gap, not one truck's quirk.
   const missing = data.benchmarks.filter((b) => b.hero_price === null && b.n_trucks >= 2).sort((a, b) => b.n_trucks - a.n_trucks)
 
@@ -23,6 +26,7 @@ export default function Market() {
         <span />
       </header>
 
+      {loading ? <Skeleton hero={false} rows={8} /> : <>
       <Card className="rows">
         <div className="price-head">
           <span>Item</span><span>You</span><span>Market</span><span>Diff</span>
@@ -94,6 +98,7 @@ export default function Market() {
           })}
         </Card>
       </section>
+      </>}
     </div>
   )
 }

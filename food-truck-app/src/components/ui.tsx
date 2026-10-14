@@ -1,4 +1,5 @@
 import React, { useState, type ReactNode } from 'react'
+import { useCountUp } from '../lib/sync'
 import { NavLink } from 'react-router-dom'
 import { Home as HomeIcon, MapPin, UtensilsCrossed, Store, Sparkles } from 'lucide-react'
 import { RANGES, money, type RangeKey } from '../lib/data'
@@ -169,7 +170,14 @@ export function Delta({ value, suffix = 'vs last' }: { value: number | null; suf
 }
 
 /** Money the way banking apps show it: small raised $, big dollars, small cents. */
-export function Amt({ v, cents = true, signed = false }: { v: number; cents?: boolean; signed?: boolean }) {
+export function Amt({ v, cents = true, signed = false, animate = false }: { v: number; cents?: boolean; signed?: boolean; animate?: boolean }) {
+  return animate ? <Counting v={v} cents={cents} signed={signed} /> : <AmtText v={v} cents={cents} signed={signed} />
+}
+function Counting({ v, cents, signed }: { v: number; cents: boolean; signed: boolean }) {
+  const n = useCountUp(v)
+  return <AmtText v={n} cents={cents} signed={signed} />
+}
+function AmtText({ v, cents, signed }: { v: number; cents: boolean; signed: boolean }) {
   const neg = v < 0
   const [whole, dec] = Math.abs(v).toFixed(2).split('.')
   const sign = neg ? '-' : signed && v > 0 ? '+' : ''

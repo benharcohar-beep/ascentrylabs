@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Amt, Bars, Pills } from '../components/ui'
 import { SpotMap } from '../components/SpotMap'
+import { Empty, Skeleton } from '../components/states'
+import { useFirstLoad } from '../lib/sync'
+import { MapPinOff } from 'lucide-react'
 import { hourLabel, hourlyFor, money, pct, rangeWindow, spotStats, type RangeKey } from '../lib/data'
 
 export default function Spots({ range, setRange }: { range: RangeKey; setRange: (k: RangeKey) => void }) {
@@ -18,6 +21,7 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
   const detailRef = useRef<HTMLDivElement>(null)
   useEffect(() => { if (sel) detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }, [sel])
   const short = (n: string) => n.replace(/ \(.*\)/, '').split(',')[0]
+  const loading = useFirstLoad('spots')
 
   return (
     <div className="screen">
@@ -30,16 +34,17 @@ export default function Spots({ range, setRange }: { range: RangeKey; setRange: 
         {kinds.map((k) => <button key={k} className={`chip-btn ${kind === k ? 'on' : ''}`} onClick={() => setKind(kind === k ? null : k)}>{KIND[k] ?? k}</button>)}
       </div>
 
-      {spots.length > 0 && (
+      {loading && <Skeleton hero={false} rows={5} />}
+      {!loading && spots.length > 0 && (
         <div className="card mapcard">
           <SpotMap spots={spots} sel={sel} onSelect={setSel} />
           <div className="hbar-key"><span className="sw" /> low fees <span className="sw warn" /> venue takes over 12% <span className="sw sel" /> selected</div>
         </div>
       )}
 
-      {spots.length === 0 && <section className="card empty">No working days in this range.</section>}
+      {!loading && spots.length === 0 && <Empty icon={<MapPinOff size={26} />} title={kind ? `No ${(KIND[kind] ?? kind).toLowerCase()} days in this range` : 'No working days in this range'} text="Try a longer range, or clear the filter." />}
 
-      {spots.length > 0 && (
+      {!loading && spots.length > 0 && (
         <ul className="feed flat">
           {spots.map((x, i) => {
             const fee = x.gross ? x.fees / x.gross : 0

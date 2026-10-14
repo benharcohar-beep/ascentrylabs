@@ -6,6 +6,8 @@ import { Amt } from '../components/ui'
 import { TODAY, data, daysBetween, locationById, pctChange, rangeWindow, shortDate, weekday, totals } from '../lib/data'
 import { health } from '../lib/health'
 import { cashAt, statementFor } from '../lib/money'
+import { useFirstLoad, useSyncedAgo } from '../lib/sync'
+import { Skeleton } from '../components/states'
 
 export const VENUE_ICON: Record<string, React.ComponentType<{ size?: number }>> = {
   food_park: Store, street: MapPin, brewery: Beer, event: Trophy, office: Briefcase, campus: GraduationCap,
@@ -25,16 +27,19 @@ export default function Home() {
   const feed = daysBetween(rangeWindow('1M').from, TODAY).filter((d) => d.trading).reverse().slice(0, 12)
   const billsMonth = data.fixedCosts.filter((f) => f.month === TODAY.slice(0, 7)).reduce((a, f) => a + f.amount, 0)
   const putAway = cash.taxOwed + billsMonth + wk.now.tips
+  const ago = useSyncedAgo()
+  const loading = useFirstLoad('home')
 
   return (
     <div className="screen">
       <header className="top">
         <div className="head-mid">
-          <span className="eyebrow">Numbers to {weekday(TODAY)} {shortDate(TODAY)}</span>
+          <span className="eyebrow">Updated {ago} · Eventini POS</span>
           <b>{data.truck.name}</b>
         </div>
         <div className="head-right"><ThemeToggle /><Brand /></div>
       </header>
+      {loading ? <Skeleton rows={4} /> : <>
 
       <section className={`status ${h.tone}`} onClick={() => navigate('/money')} role="link">
         <span className="label">Business is</span>
@@ -48,7 +53,7 @@ export default function Home() {
 
       <section className="hero" onClick={() => navigate('/money')} role="link">
         <div className="label">In the bank today</div>
-        <div className="hero-num"><Amt v={cash.balance} /></div>
+        <div className="hero-num"><Amt v={cash.balance} animate /></div>
         <div className="hero-sub">
           <span><b><Amt v={cash.available} cents={false} /></b> yours to spend</span>
           <span className="dot-sep">·</span>
@@ -117,6 +122,7 @@ export default function Home() {
           })}
         </ul>
       </section>
+      </>}
     </div>
   )
 }

@@ -68,6 +68,6 @@ export async function ask(question: string, history: ChatMsg[]): Promise<{ answe
     if (!res.ok) return { error: j.error ?? `Server error ${res.status}.` }
     return { answer: j.answer }
   } catch {
-    return { error: 'Could not reach the server.' }
+    return { error: "Can't reach Eventini AI right now. Check your connection and try again." }
   }
 }

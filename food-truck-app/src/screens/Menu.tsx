@@ -1,4 +1,7 @@
 import { Amt, Pills } from '../components/ui'
+import { Empty, Skeleton } from '../components/states'
+import { useFirstLoad } from '../lib/sync'
+import { UtensilsCrossed } from 'lucide-react'
 
 // A face for each dish so the list is not twenty identical rows.
 const FACE: [RegExp, string][] = [[/quesabirria|birria/i, '🥘'], [/taco plate/i, '🍽️'], [/taco/i, '🌮'], [/burrito/i, '🌯'], [/quesadilla/i, '🧀'], [/torta/i, '🥪'], [/elote/i, '🌽'], [/guac/i, '🥑'], [/salsa/i, '🌶️'], [/churro/i, '🍩'], [/agua/i, '🍹'], [/jarritos|soda/i, '🥤'], [/water/i, '💧']]
@@ -10,6 +13,7 @@ export default function Menu({ range, setRange }: { range: RangeKey; setRange: (
   const items = itemTotals(w.from, w.to)
   const total = items.reduce((a, i) => a + i.revenue, 0)
   const cogs = items.reduce((a, i) => a + i.cogs, 0)
+  const loading = useFirstLoad('menu')
 
   return (
     <div className="screen">
@@ -24,7 +28,9 @@ export default function Menu({ range, setRange }: { range: RangeKey; setRange: (
         <div className="hero-sub"><span>on <b><Amt v={total} cents={false} /></b> of sales</span></div>
       </section>
 
-      <ul className="feed flat">
+      {loading && <Skeleton hero={false} rows={6} />}
+      {!loading && items.length === 0 && <Empty icon={<UtensilsCrossed size={26} />} title="Nothing sold in this range" text="Pick a longer range to see the menu." />}
+      {!loading && items.length > 0 && <ul className="feed flat">
         {items.map((i) => (
           <li key={i.item.id} className="feed-row">
             <span className="feed-ico face">{face(i.item.name)}</span>
@@ -38,7 +44,7 @@ export default function Menu({ range, setRange }: { range: RangeKey; setRange: (
             </span>
           </li>
         ))}
-      </ul>
+      </ul>}
     </div>
   )
 }

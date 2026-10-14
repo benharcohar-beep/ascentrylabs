@@ -93,7 +93,7 @@ export default function Insights() {
           </div>
         ))}
         {busy && <div className="msg assistant"><span className="ai-avatar"><img src={MARK} alt="" className="mark" /></span><div className="bubble assistant typing"><i /><i /><i /></div></div>}
-        {err && <div className="bubble error">{err}</div>}
+        {err && <div className="bubble error">{err} <button className="linkish" onClick={() => { setErr(null); if (q) send(q) }}>Try again</button></div>}
         <div ref={endRef} />
       </div>
 

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { Amt, Bars } from '../components/ui'
 import { TODAY, daysBetween, money, monthName, pct, pctChange, shortDate } from '../lib/data'
 import { cashAt, months, statement } from '../lib/money'
+import { useFirstLoad } from '../lib/sync'
+import { Skeleton } from '../components/states'
 
 function Line({ label, value, sales, prev, sign = '', strong = false }: { label: string; value: number; sales: number; prev?: number; sign?: string; strong?: boolean }) {
   const ch = prev !== undefined ? pctChange(value, prev) : null
@@ -31,9 +33,10 @@ export default function Money() {
   const cash = cashAt()
   const [showFixed, setShowFixed] = useState(false)
   const days = daysBetween(first, last)
+  const loading = useFirstLoad('money')
 
   return (
-    <div className="screen">
+    <div className="screen push">
       <header className="top">
         <Link to="/" className="back">‹</Link>
         <h1>Money</h1>
@@ -46,9 +49,10 @@ export default function Money() {
         ))}
       </div>
 
+      {loading ? <Skeleton rows={6} /> : <>
       <section className="hero">
         <div className="label">Profit, {monthName(ym, true)}{partial ? ' so far' : ''}</div>
-        <div className="hero-num"><Amt v={now.profit} /></div>
+        <div className="hero-num"><Amt v={now.profit} animate /></div>
         <div className="hero-sub">
           <span>{pct(now.sales ? now.profit / now.sales : 0, false)} of {money(now.sales)} sales</span>
           <span className="dot-sep">·</span>
@@ -91,6 +95,7 @@ export default function Money() {
         </ul>
         <p className="note">Sales tax is paid on the 20th of the following month. Cash is rolled forward from {money(cash.opening)} on day one; connect the bank for the real figure.</p>
       </section>
+      </>}
     </div>
   )
 }

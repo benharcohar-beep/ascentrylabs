@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { Nav } from './components/ui'
+import { PullToRefresh } from './components/states'
 import type { RangeKey } from './lib/data'
 import Home from './screens/Home'
 import Market from './screens/Market'
@@ -17,6 +18,7 @@ export default function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <main className="shell">
+        <PullToRefresh>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/spots" element={<Spots range={range} setRange={setRange} />} />
@@ -28,6 +30,7 @@ export default function App() {
           <Route path="/money" element={<Money />} />
           <Route path="/ask" element={<Insights />} />
         </Routes>
+        </PullToRefresh>
         <Nav />
       </main>
     </BrowserRouter>

@@ -32,7 +32,7 @@ export default function History() {
   const avgWeek = nonZero.length ? nonZero.reduce((a, b) => a + b.value, 0) / nonZero.length : 0
 
   return (
-    <div className="screen">
+    <div className="screen push">
       <header className="top">
         <Link to="/" className="back">‹</Link>
         <h1>{METRIC_LABEL[metric]}</h1>
@@ -47,7 +47,7 @@ export default function History() {
         <div className="row hero-row">
           <div>
             <div className="label">{METRIC_LABEL[metric]}, this {label}</div>
-            <div className="big">{metric === 'orders' ? formatMetric(now, metric) : <Amt v={now} cents={metric === 'avg'} />}</div>
+            <div className="big">{metric === 'orders' ? formatMetric(now, metric) : <Amt v={now} cents={metric === 'avg'} animate />}</div>
             <Delta value={pctChange(now, prev)} suffix={`vs previous ${label}`} />
           </div>
           <Pills value={range} onChange={setRange} />
