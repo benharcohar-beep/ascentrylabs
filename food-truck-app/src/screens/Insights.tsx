@@ -31,7 +31,7 @@ export default function Insights() {
   }
 
   return (
-    <div className="screen">
+    <div className="screen ai-screen">
       <header className="top"><h1>Eventini AI</h1><button className="linkish" onClick={() => { setMsgs([]); setErr(null) }}>New chat</button></header>
 
       {needPass && (
@@ -69,10 +69,12 @@ export default function Insights() {
         <div ref={endRef} />
       </div>
 
+      <div className="askbar-wrap">
       <form className="askbar" onSubmit={(e) => { e.preventDefault(); send(q) }}>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask about sales, spots, prices…" disabled={busy} />
         <button type="submit" aria-label="Send" disabled={busy || !q.trim()}><SendHorizontal size={18} /></button>
       </form>
+      </div>
     </div>
   )
 }
