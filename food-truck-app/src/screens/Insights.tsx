@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { SendHorizontal } from 'lucide-react'
+import { History, MessageSquarePlus, SendHorizontal, Trash2, ChevronLeft, MessageSquare } from 'lucide-react'
 import { ask, getPasscode, setPasscode, type ChatMsg } from '../lib/ask'
+import { currentId, deleteChat, getChat, listChats, newId, saveChat, setCurrent, whenLabel, type Chat } from '../lib/chats'
+import { Empty } from '../components/states'
 
 import { MARK } from '../components/Brand'
 
@@ -37,7 +39,15 @@ function Reply({ text }: { text: string }) {
 }
 
 export default function Insights() {
-  const [msgs, setMsgs] = useState<ChatMsg[]>([])
+  const [chatId, setChatId] = useState<string>(() => currentId() ?? newId())
+  const [msgs, setMsgsRaw] = useState<ChatMsg[]>(() => getChat(chatId)?.msgs ?? [])
+  const [showHistory, setShowHistory] = useState(false)
+  const [chats, setChats] = useState<Chat[]>(() => listChats())
+  // Every change is written to the device straight away, so the chat survives tab switches and reopening the app.
+  const setMsgs = (m: ChatMsg[]) => { setMsgsRaw(m); if (m.length) { saveChat(chatId, m); setCurrent(chatId); setChats(listChats()) } }
+  const openChat = (id: string) => { setChatId(id); setMsgsRaw(getChat(id)?.msgs ?? []); setCurrent(id); setErr(null); setShowHistory(false) }
+  const startNew = () => { const id = newId(); setChatId(id); setMsgsRaw([]); setCurrent(null); setErr(null); setShowHistory(false) }
+  const remove = (id: string) => { deleteChat(id); setChats(listChats()); if (id === chatId) startNew() }
   const [q, setQ] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
@@ -61,7 +71,29 @@ export default function Insights() {
 
   return (
     <div className="screen ai-screen">
-      <header className="top"><h1>Eventini AI</h1><button className="linkish" onClick={() => { setMsgs([]); setErr(null) }}>New chat</button></header>
+      <header className="top">
+        {showHistory ? <h1>Chats</h1> : <h1>Eventini AI</h1>}
+        <div className="head-right">
+          {showHistory
+            ? <button className="icon-btn" aria-label="Back to chat" onClick={() => setShowHistory(false)}><ChevronLeft size={18} /></button>
+            : <button className="icon-btn" aria-label="Chat history" onClick={() => { setChats(listChats()); setShowHistory(true) }}><History size={17} /></button>}
+          <button className="icon-btn" aria-label="New chat" onClick={startNew}><MessageSquarePlus size={17} /></button>
+        </div>
+      </header>
+
+      {showHistory && (
+        chats.length === 0
+          ? <Empty icon={<MessageSquare size={26} />} title="No chats yet" text="Your conversations are saved here on this device." />
+          : <ul className="feed flat chats">
+              {chats.map((c) => (
+                <li key={c.id} className={`feed-row ${c.id === chatId ? 'on' : ''}`} onClick={() => openChat(c.id)}>
+                  <span className="feed-ico"><MessageSquare size={18} /></span>
+                  <span className="feed-main"><b>{c.title}</b><span>{whenLabel(c.updated)} · {Math.floor(c.msgs.length / 2)} {c.msgs.length >= 4 ? 'questions' : 'question'}</span></span>
+                  <button className="icon-btn del" aria-label="Delete chat" onClick={(e) => { e.stopPropagation(); remove(c.id) }}><Trash2 size={16} /></button>
+                </li>
+              ))}
+            </ul>
+      )}
 
       {needPass && (
         <div className="card passbox">
@@ -74,7 +106,7 @@ export default function Insights() {
         </div>
       )}
 
-      <div className="chat">
+      {!showHistory && <div className="chat">
         {msgs.length === 0 && (
           <div className="welcome">
             <span className="ai-avatar big"><img src={MARK} alt="" className="mark" /></span>
@@ -95,14 +127,14 @@ export default function Insights() {
         {busy && <div className="msg assistant"><span className="ai-avatar"><img src={MARK} alt="" className="mark" /></span><div className="bubble assistant typing"><i /><i /><i /></div></div>}
         {err && <div className="bubble error">{err} <button className="linkish" onClick={() => { setErr(null); if (q) send(q) }}>Try again</button></div>}
         <div ref={endRef} />
-      </div>
+      </div>}
 
-      <div className="askbar-wrap">
+      {!showHistory && <div className="askbar-wrap">
       <form className="askbar" onSubmit={(e) => { e.preventDefault(); send(q) }}>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask about sales, spots, prices…" disabled={busy} />
         <button type="submit" aria-label="Send" disabled={busy || !q.trim()}><SendHorizontal size={18} /></button>
       </form>
-      </div>
+      </div>}
     </div>
   )
 }
